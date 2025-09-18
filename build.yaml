@@ -1,0 +1,16 @@
+builders:
+  easy_json_builder:
+    import: "package:easy_json/builder.dart"
+    builder_factories: ["easyJsonBuilder"]
+    build_extensions:
+      "^lib/{{}}.dart": ["lib/generated/{{}}.easy.dart"]
+    auto_apply: dependents
+    build_to: source
+
+targets:
+  $default:
+    builders:
+      easy_json:easy_json_builder:
+        options:
+          build_extensions:
+            "^lib/{{}}.dart": "lib/generated/{{}}.easy.dart"
