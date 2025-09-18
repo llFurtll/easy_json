@@ -1,42 +1,54 @@
-// example/bin/main.dart
-import 'package:example/generated/models.easy.dart';
+import 'dart:convert';
+import 'package:easy_json/easy_json.dart';
+import 'package:example/dolar_rate.dart';
+import 'package:example/generated/dolar_rate.easy.dart';
+import 'package:http/http.dart' as http;
 
-void main() {
-  final badJson = {
-    "orderId": 123, // deveria ser string
-    "createdAt": 1715790000000, // epoch ms (ok, converter de campo cuida)
-    "buyerRole": "superuser", // inválido -> cai no enumFallback = guest
-    "shipping": {
-      "street": "Main St",
-      "number": "12" // inválido -> issue e fallback 0
-    },
-    "items": {
-      "1": {"id": 1, "price": "9.9", "name": "T-shirt"}, // price string -> fallback 0.0
-      "x": {"id": 2, "price": 20.0, "name": "Jeans"}      // chave 'x' inválida para int -> descartado + issue
-    },
-    "quantities": {
-      "1": "2",    // inválido -> itemFallback 0
-      "2": 3       // ok
-    },
-    "notes": ["ok", 123, null, "another"], // 123/null -> fallback '' no SAFE
-    "tags": ["summer", 10, "sale", "sale"], // 10 -> '' no SAFE; Set remove duplicados
-    "statusHistory": {
-      "2024-05-01": "paid",
-      "2024-05-02": "shipped",
-      "2024/05/03": "invalid" // enum inválido -> fallback do enum do campo (primeiro valor) + issue
-    },
-    "scores": {
-      "alice": "10",
-      "bob": 7.9,
-      "carol": "x" // vira 0 pelo valueFromJson
+Future<List<DollarRate>> fetchDollarRates() async {
+  final uri = Uri.parse('https://dolarapi.com/v1/dolares');
+  final res = await http.get(uri);
+
+  if (res.statusCode != 200) {
+    throw Exception('Falha ao carregar: ${res.statusCode}');
+  }
+
+  final raw = jsonDecode(res.body);
+  if (raw is! List) {
+    throw Exception('Resposta inesperada (não é uma lista)');
+  }
+
+  final issues = <EasyIssue>[];
+  final rates = raw.map((e) {
+    final map = Map<String, dynamic>.from(e as Map);
+    // Usamos o SAFE para não quebrar se vier tipo trocado
+    return dollarRateFromJsonSafe(map, onIssue: issues.add);
+  }).toList();
+
+  if (issues.isNotEmpty) {
+    // apenas para depuração
+    for (final i in issues) {
+      // Ex.: "compra", "venta", etc.
+      print('[issue] ${i.path} - ${i.code} - ${i.message}');
     }
-  };
+  }
 
-  final order = orderFromJsonSafe(
-    badJson,
-    onIssue: (i) => print("[${i.code}] ${i.path}: ${i.message}"),
-  );
+  return rates;
+}
 
-  print("\n=== OBJETO GERADO (SAFE) ===");
-  print(order.toJson()); // já aplica os toJson (inclui conversores e normalizações)
+void main() async {
+  try {
+    final rates = await fetchDollarRates();
+
+    // imprime um resumo bonitinho
+    for (final r in rates) {
+      print(
+        '${r.name.padRight(24)} | '
+        'buy: ${r.buy.toStringAsFixed(2).padLeft(8)} | '
+        'sell: ${r.sell.toStringAsFixed(2).padLeft(8)} | '
+        'updated: ${r.updatedAt.toIso8601String()}',
+      );
+    }
+  } catch (e) {
+    print('Erro: $e');
+  }
 }
