@@ -81,29 +81,3 @@ class EasyMapKey {
 
 /// Estilos de chave para o JSON gerado/lido quando o campo não tiver `@EasyKey(name: ...)`.
 enum CaseStyle { none, snake, kebab, camel, pascal }
-
-/// Discriminador para polimorfismo: mapeia um valor de `json[discriminator]` para uma subclasse.
-///
-/// Ex.:
-/// @EasyUnion(
-///   discriminator: 'type',
-///   cases: {'cat': Cat, 'dog': Dog},
-///   fallback: UnknownAnimal,
-/// )
-/// abstract class Animal {}
-class EasyUnion {
-  /// Nome do campo no JSON que decide a subclasse.
-  final String discriminator;
-
-  /// Mapa valor->Tipo. Ex.: {'cat': Cat, 'dog': Dog}
-  final Map<String, Type> cases;
-
-  /// Tipo fallback se o valor vier inválido/ausente.
-  final Type? fallback;
-
-  const EasyUnion({
-    required this.discriminator,
-    required this.cases,
-    this.fallback,
-  });
-}
