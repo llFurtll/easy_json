@@ -46,30 +46,59 @@ class EasyJsonGenerator extends GeneratorForAnnotation<EasyJson> {
       _collectReferencedClasses(f.type, referenced);
     }
 
-    final inputId = buildStep.inputId; // lib/foo/models.dart
+    // === Caminho do output do arquivo ATUAL (para evitar auto-import) ===
+    final inputId = buildStep.inputId; // ex.: lib/star_trek/season.dart
+    final inputRel = p.relative(
+      inputId.path,
+      from: 'lib',
+    ); // star_trek/season.dart
     final expectedOutputPath = p
         .join(
           'lib',
           'generated',
-          p.setExtension(p.basename(inputId.path), '.easy.dart'),
+          p.dirname(inputRel), // star_trek
+          p.setExtension(
+            p.basename(inputRel),
+            '.easy.dart',
+          ), // season.easy.dart
         )
         .replaceAll('\\', '/');
 
     for (final cls in referenced) {
-      imports.add(cls.library.uri.toString());
+      // 1) Ignore tipos do SDK (String, int, etc.)
+      final libUri = cls.library.uri;
+      if (libUri.scheme == 'dart') continue;
+
+      // 2) Importa o .dart da classe referenciada via package:
+      final clsId = await buildStep.resolver.assetIdForElement(cls);
+      imports.add(clsId.uri.toString());
+
+      // 3) Se a classe referenciada também é @EasyJson, importe o .easy.dart PRESERVANDO subpastas
       if (const TypeChecker.typeNamed(
         EasyJson,
       ).hasAnnotationOf(cls, throwOnUnresolved: false)) {
-        final assetId = await buildStep.resolver.assetIdForElement(cls);
-        final generatedFileName = p.setExtension(
-          p.basename(assetId.path),
-          '.easy.dart',
-        );
+        final clsRel = p.relative(
+          clsId.path,
+          from: 'lib',
+        ); // ex.: star_trek/name.dart
         final generatedPath = p
-            .join('lib', 'generated', generatedFileName)
+            .join(
+              'lib',
+              'generated',
+              p.dirname(clsRel), // star_trek
+              p.setExtension(
+                p.basename(clsRel),
+                '.easy.dart',
+              ), // name.easy.dart
+            )
             .replaceAll('\\', '/');
+
+        // Evita importar o arquivo que estamos gerando agora
         if (generatedPath != expectedOutputPath) {
-          imports.add(AssetId(assetId.package, generatedPath).uri.toString());
+          final genId = AssetId(clsId.package, generatedPath);
+          imports.add(
+            genId.uri.toString(),
+          ); // -> package:example/generated/star_trek/name.easy.dart
         }
       }
     }

@@ -6,7 +6,6 @@
 // **************************************************************************
 
 // ignore_for_file: type=lint
-import 'dart:core';
 import 'package:easy_json/src/easy_issue.dart';
 import 'package:example/dolar_rate.dart';
 import 'package:easy_json/src/runtime.dart' as ej;
