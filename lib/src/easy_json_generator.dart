@@ -27,30 +27,16 @@ class EasyJsonGenerator extends GeneratorForAnnotation<EasyJson> {
     }
 
     final clazz = element;
-    final className = clazz.name;
+    final className = clazz.displayName;
     final varName = _lcFirst(className);
     final classIncludeIfNull =
         (annotation.peek('includeIfNull')?.literalValue as bool?) ?? false;
     final classCaseStyle = _readClassCaseStyle(annotation);
 
-    // === Descobrir se esta é a "execução primária" do arquivo para emitir imports só uma vez ===
-    final library = element.library;
-    final annotatedClasses =
-        library.topLevelElements
-            .whereType<ClassElement>()
-            .where(
-              (c) => const TypeChecker.fromRuntime(
-                EasyJson,
-              ).hasAnnotationOf(c, throwOnUnresolved: false),
-            )
-            .toList()
-          ..sort((a, b) => a.name.compareTo(b.name));
-    final isPrimary = identical(element, annotatedClasses.first);
-
     // === Imports ===
     final imports = <String>{};
     // lib atual
-    imports.add(clazz.library.source.uri.toString());
+    imports.add(clazz.library.uri.toString());
     // issues
     imports.add(_issueImport);
 
@@ -70,8 +56,8 @@ class EasyJsonGenerator extends GeneratorForAnnotation<EasyJson> {
         .replaceAll('\\', '/');
 
     for (final cls in referenced) {
-      imports.add(cls.library.source.uri.toString());
-      if (const TypeChecker.fromRuntime(
+      imports.add(cls.library.uri.toString());
+      if (const TypeChecker.typeNamed(
         EasyJson,
       ).hasAnnotationOf(cls, throwOnUnresolved: false)) {
         final assetId = await buildStep.resolver.assetIdForElement(cls);
@@ -96,7 +82,7 @@ class EasyJsonGenerator extends GeneratorForAnnotation<EasyJson> {
           enclosingClass: clazz,
           element: f,
           classIncludeIfNull: classIncludeIfNull,
-          classCaseStyle: classCaseStyle
+          classCaseStyle: classCaseStyle,
         ),
     ];
 
@@ -218,6 +204,8 @@ class EasyJsonGenerator extends GeneratorForAnnotation<EasyJson> {
         ),
       );
 
+    final companion = _companionClass(className, varName);
+
     // === Header ===
     final orderedImports = imports.toList()..sort();
     final extraImports = <String>[
@@ -225,13 +213,11 @@ class EasyJsonGenerator extends GeneratorForAnnotation<EasyJson> {
       "import 'package:easy_json/src/messages.dart';",
     ];
 
-    final header = isPrimary
-        ? [
-            "// ignore_for_file: type=lint",
-            ...orderedImports.map((u) => "import '$u';"),
-            ...extraImports,
-          ].join('\n')
-        : '';
+    final header = [
+      "// ignore_for_file: type=lint",
+      ...orderedImports.map((u) => "import '$u';"),
+      ...extraImports,
+    ].join('\n');
 
     final src =
         '''
@@ -239,13 +225,16 @@ class EasyJsonGenerator extends GeneratorForAnnotation<EasyJson> {
 
         ${mFromJson().accept(emitter)}
         ${mToJson().accept(emitter)}
-        ${mixin.build().accept(emitter)}
+        ${mixin.build().accept(emitter)}\n
         ${mValidate().accept(emitter)}
         ${mFromJsonSafe().accept(emitter)}
+        ${companion.accept(emitter)}
     ''';
 
     try {
-      return DartFormatter().format(src);
+      return DartFormatter(
+        languageVersion: DartFormatter.latestLanguageVersion,
+      ).format(src);
     } catch (_) {
       return src; // facilita debugar se format falhar
     }
@@ -284,4 +273,71 @@ class EasyJsonGenerator extends GeneratorForAnnotation<EasyJson> {
       orElse: () => CaseStyle.none,
     );
   }
+
+  Class _companionClass(String className, String varName) => Class((b) {
+    b
+      ..name = '${className}Json'
+      ..constructors.add(Constructor((c) => c..constant = true))
+      ..methods.addAll([
+        Method(
+          (m) => m
+            ..name = 'fromJson'
+            ..static = true
+            ..returns = refer(className)
+            ..requiredParameters.add(
+              Parameter(
+                (p) => p
+                  ..name = 'json'
+                  ..type = refer('Map<String, dynamic>'),
+              ),
+            )
+            ..body = Code('return ${varName}FromJson(json);'),
+        ),
+        Method(
+          (m) => m
+            ..name = 'fromJsonSafe'
+            ..static = true
+            ..returns = refer(className)
+            ..requiredParameters.add(
+              Parameter(
+                (p) => p
+                  ..name = 'json'
+                  ..type = refer('Map<String, dynamic>'),
+              ),
+            )
+            ..optionalParameters.addAll([
+              Parameter(
+                (p) => p
+                  ..named = true
+                  ..name = 'onIssue'
+                  ..type = refer('void Function(EasyIssue)?'),
+              ),
+              Parameter(
+                (p) => p
+                  ..named = true
+                  ..name = 'runValidate'
+                  ..type = refer('bool')
+                  ..defaultTo = const Code('true'),
+              ),
+            ])
+            ..body = Code(
+              'return ${varName}FromJsonSafe(json, onIssue: onIssue, runValidate: runValidate);',
+            ),
+        ),
+        Method(
+          (m) => m
+            ..name = 'validate'
+            ..static = true
+            ..returns = refer('List<EasyIssue>')
+            ..requiredParameters.add(
+              Parameter(
+                (p) => p
+                  ..name = 'json'
+                  ..type = refer('Map<String, dynamic>'),
+              ),
+            )
+            ..body = Code('return ${varName}Validate(json);'),
+        ),
+      ]);
+  });
 }

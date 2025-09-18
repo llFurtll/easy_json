@@ -21,7 +21,7 @@ Future<List<DollarRate>> fetchDollarRates() async {
   final rates = raw.map((e) {
     final map = Map<String, dynamic>.from(e as Map);
     // Usamos o SAFE para não quebrar se vier tipo trocado
-    return dollarRateFromJsonSafe(map, onIssue: issues.add);
+    return DollarRateJson.fromJsonSafe(map, onIssue: issues.add);
   }).toList();
 
   if (issues.isNotEmpty) {

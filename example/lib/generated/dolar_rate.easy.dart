@@ -1,4 +1,5 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
+// dart format width=80
 
 // **************************************************************************
 // EasyJsonGenerator
@@ -38,98 +39,144 @@ mixin DollarRateSerializer {
     return dollarRateToJson(this as DollarRate);
   }
 }
+
 List<EasyIssue> dollarRateValidate(Map<String, dynamic> json) {
   final issues = <EasyIssue>[];
   if (!json.containsKey('moneda')) {
-    issues.add(EasyIssue(
+    issues.add(
+      EasyIssue(
         path: 'moneda',
         code: 'missing_required',
-        message: 'Campo obrigatório ausente.'));
+        message: 'Campo obrigatório ausente.',
+      ),
+    );
   }
   if (json.containsKey('moneda')) {
     final v = json['moneda'];
     if (v != null && v is! String) {
-      issues.add(EasyIssue(
-          path: 'moneda', code: 'type_mismatch', message: 'Esperado String.'));
+      issues.add(
+        EasyIssue(
+          path: 'moneda',
+          code: 'type_mismatch',
+          message: 'Esperado String.',
+        ),
+      );
     }
   }
   if (!json.containsKey('casa')) {
-    issues.add(EasyIssue(
+    issues.add(
+      EasyIssue(
         path: 'casa',
         code: 'missing_required',
-        message: 'Campo obrigatório ausente.'));
+        message: 'Campo obrigatório ausente.',
+      ),
+    );
   }
   if (json.containsKey('casa')) {
     final v = json['casa'];
     if (v != null && v is! String) {
-      issues.add(EasyIssue(
-          path: 'casa', code: 'type_mismatch', message: 'Esperado String.'));
+      issues.add(
+        EasyIssue(
+          path: 'casa',
+          code: 'type_mismatch',
+          message: 'Esperado String.',
+        ),
+      );
     }
   }
   if (!json.containsKey('nombre')) {
-    issues.add(EasyIssue(
+    issues.add(
+      EasyIssue(
         path: 'nombre',
         code: 'missing_required',
-        message: 'Campo obrigatório ausente.'));
+        message: 'Campo obrigatório ausente.',
+      ),
+    );
   }
   if (json.containsKey('nombre')) {
     final v = json['nombre'];
     if (v != null && v is! String) {
-      issues.add(EasyIssue(
-          path: 'nombre', code: 'type_mismatch', message: 'Esperado String.'));
+      issues.add(
+        EasyIssue(
+          path: 'nombre',
+          code: 'type_mismatch',
+          message: 'Esperado String.',
+        ),
+      );
     }
   }
   if (!json.containsKey('compra')) {
-    issues.add(EasyIssue(
+    issues.add(
+      EasyIssue(
         path: 'compra',
         code: 'missing_required',
-        message: 'Campo obrigatório ausente.'));
+        message: 'Campo obrigatório ausente.',
+      ),
+    );
   }
   if (json.containsKey('compra')) {
     final v = json['compra'];
     if (v != null && v is! num) {
-      issues.add(EasyIssue(
+      issues.add(
+        EasyIssue(
           path: 'compra',
           code: 'type_mismatch',
-          message: 'Esperado número (int/double).'));
+          message: 'Esperado número (int/double).',
+        ),
+      );
     }
   }
   if (!json.containsKey('venta')) {
-    issues.add(EasyIssue(
+    issues.add(
+      EasyIssue(
         path: 'venta',
         code: 'missing_required',
-        message: 'Campo obrigatório ausente.'));
+        message: 'Campo obrigatório ausente.',
+      ),
+    );
   }
   if (json.containsKey('venta')) {
     final v = json['venta'];
     if (v != null && v is! num) {
-      issues.add(EasyIssue(
+      issues.add(
+        EasyIssue(
           path: 'venta',
           code: 'type_mismatch',
-          message: 'Esperado número (int/double).'));
+          message: 'Esperado número (int/double).',
+        ),
+      );
     }
   }
   if (!json.containsKey('fechaActualizacion')) {
-    issues.add(EasyIssue(
+    issues.add(
+      EasyIssue(
         path: 'fechaActualizacion',
         code: 'missing_required',
-        message: 'Campo obrigatório ausente.'));
+        message: 'Campo obrigatório ausente.',
+      ),
+    );
   }
   if (json.containsKey('fechaActualizacion')) {
     final v = json['fechaActualizacion'];
     if (v != null && v is! String) {
-      issues.add(EasyIssue(
+      issues.add(
+        EasyIssue(
           path: 'fechaActualizacion',
           code: 'type_mismatch',
-          message: 'Esperado String (ISO-8601) para DateTime.'));
+          message: 'Esperado String (ISO-8601) para DateTime.',
+        ),
+      );
     } else if (v != null) {
       try {
         DateTime.parse(v as String);
       } catch (_) {
-        issues.add(EasyIssue(
+        issues.add(
+          EasyIssue(
             path: 'fechaActualizacion',
             code: 'type_mismatch',
-            message: 'Formato inválido de DateTime.'));
+            message: 'Formato inválido de DateTime.',
+          ),
+        );
       }
     }
   }
@@ -178,18 +225,48 @@ DollarRate dollarRateFromJsonSafe(
         try {
           return DateTime.parse(v);
         } catch (_) {
-          onIssue?.call(EasyIssue(
+          onIssue?.call(
+            EasyIssue(
               path: 'fechaActualizacion',
               code: 'type_mismatch',
-              message: 'Formato inválido de DateTime.'));
+              message: 'Formato inválido de DateTime.',
+            ),
+          );
           return DateTime.fromMillisecondsSinceEpoch(0);
         }
       }
-      onIssue?.call(EasyIssue(
+      onIssue?.call(
+        EasyIssue(
           path: 'fechaActualizacion',
           code: 'type_mismatch',
-          message: 'Esperado String/epoch/DateTime.'));
+          message: 'Esperado String/epoch/DateTime.',
+        ),
+      );
       return DateTime.fromMillisecondsSinceEpoch(0);
     })(),
   );
+}
+
+class DollarRateJson {
+  const DollarRateJson();
+
+  static DollarRate fromJson(Map<String, dynamic> json) {
+    return dollarRateFromJson(json);
+  }
+
+  static DollarRate fromJsonSafe(
+    Map<String, dynamic> json, {
+    void Function(EasyIssue)? onIssue,
+    bool runValidate = true,
+  }) {
+    return dollarRateFromJsonSafe(
+      json,
+      onIssue: onIssue,
+      runValidate: runValidate,
+    );
+  }
+
+  static List<EasyIssue> validate(Map<String, dynamic> json) {
+    return dollarRateValidate(json);
+  }
 }

@@ -4,37 +4,38 @@ import 'package:source_gen/source_gen.dart';
 
 import 'annotations.dart';
 
-final _easyKeyChecker     = const TypeChecker.fromRuntime(EasyKey);
-final _easyJsonChecker    = const TypeChecker.fromRuntime(EasyJson);
-final _easyConvertChecker = const TypeChecker.fromRuntime(EasyConvert);
-final _easyMapKeyChecker  = const TypeChecker.fromRuntime(EasyMapKey);
+final _easyKeyChecker = const TypeChecker.typeNamed(EasyKey);
+final _easyJsonChecker = const TypeChecker.typeNamed(EasyJson);
+final _easyConvertChecker = const TypeChecker.typeNamed(EasyConvert);
+final _easyMapKeyChecker = const TypeChecker.typeNamed(EasyMapKey);
 
 class FieldContext {
-
   FieldContext({
     required this.enclosingClass,
     required this.element,
     required this.classIncludeIfNull,
-    this.classCaseStyle
-  })  : name = element.name,
-        type = element.type,
-        isNullable = _isNullableType(element.type),
-        jsonKey = _jsonKeyFor(element) ?? _applyCaseStyle(element.name, classCaseStyle),
-        includeIfNull = _includeIfNullFor(element),
-        enumFallbackName = _easyKey(element)?.peek('enumFallback')?.stringValue,
-        fieldFallback = _easyKey(element)?.peek('fallback')?.literalValue,
-        itemFallback = _easyKey(element)?.peek('itemFallback')?.literalValue,
-        mapKeyCoercion = _easyMapKey(element)
-            ?.peek('type')
-            ?.revive()
-            .accessor
-            .split('.')
-            .last
-            .let((s) => s == 'int' ? EasyMapKeyType.int : EasyMapKeyType.string),
-        convertFromJson = _fnRefOrNull(_easyConvert(element), 'fromJson'),
-        convertToJson   = _fnRefOrNull(_easyConvert(element), 'toJson'),
-        valueFromJson   = _fnRefOrNull(_easyConvert(element), 'valueFromJson'),
-        valueToJson     = _fnRefOrNull(_easyConvert(element), 'valueToJson') {
+    this.classCaseStyle,
+  }) : name = element.displayName,
+       type = element.type,
+       isNullable = _isNullableType(element.type),
+       jsonKey =
+           _jsonKeyFor(element) ??
+           _applyCaseStyle(element.displayName, classCaseStyle),
+       includeIfNull = _includeIfNullFor(element),
+       enumFallbackName = _easyKey(element)?.peek('enumFallback')?.stringValue,
+       fieldFallback = _easyKey(element)?.peek('fallback')?.literalValue,
+       itemFallback = _easyKey(element)?.peek('itemFallback')?.literalValue,
+       mapKeyCoercion = _easyMapKey(element)
+           ?.peek('type')
+           ?.revive()
+           .accessor
+           .split('.')
+           .last
+           .let((s) => s == 'int' ? EasyMapKeyType.int : EasyMapKeyType.string),
+       convertFromJson = _fnRefOrNull(_easyConvert(element), 'fromJson'),
+       convertToJson = _fnRefOrNull(_easyConvert(element), 'toJson'),
+       valueFromJson = _fnRefOrNull(_easyConvert(element), 'valueFromJson'),
+       valueToJson = _fnRefOrNull(_easyConvert(element), 'valueToJson') {
     final it = type;
     if (it is InterfaceType) {
       if (isList) listItemType = it.typeArguments.first;
@@ -65,7 +66,7 @@ class FieldContext {
   final String? convertFromJson;
   final String? convertToJson;
   final String? valueFromJson; // Map value
-  final String? valueToJson;   // Map value
+  final String? valueToJson; // Map value
 
   final EasyMapKeyType? mapKeyCoercion; // null => string (default)
   final CaseStyle? classCaseStyle;
@@ -78,11 +79,18 @@ class FieldContext {
 
   // Queries
   bool get isEnum => type.element is EnumElement;
-  bool get isEasyJsonObject => type.element is ClassElement &&
-      _easyJsonChecker.hasAnnotationOf(type.element as ClassElement, throwOnUnresolved: false);
-  bool get isList => type is InterfaceType && (type as InterfaceType).element.name == 'List';
-  bool get isSet  => type is InterfaceType && (type as InterfaceType).element.name == 'Set';
-  bool get isMap  => type is InterfaceType && (type as InterfaceType).element.name == 'Map';
+  bool get isEasyJsonObject =>
+      type.element is ClassElement &&
+      _easyJsonChecker.hasAnnotationOf(
+        type.element as ClassElement,
+        throwOnUnresolved: false,
+      );
+  bool get isList =>
+      type is InterfaceType && (type as InterfaceType).element.name == 'List';
+  bool get isSet =>
+      type is InterfaceType && (type as InterfaceType).element.name == 'Set';
+  bool get isMap =>
+      type is InterfaceType && (type as InterfaceType).element.name == 'Map';
 
   bool get emitNulls => (includeIfNull ?? classIncludeIfNull) == true;
 
@@ -91,8 +99,7 @@ class FieldContext {
   String get pathExpr => "'$jsonKey'";
 
   // helpers
-  static bool _isNullableType(DartType t) =>
-      t.getDisplayString(withNullability: true).endsWith('?');
+  static bool _isNullableType(DartType t) => t.getDisplayString().endsWith('?');
 
   static ConstantReader? _easyKey(FieldElement f) {
     final a = _easyKeyChecker.firstAnnotationOfExact(f);
@@ -109,8 +116,10 @@ class FieldContext {
     return a == null ? null : ConstantReader(a);
   }
 
-  static String? _jsonKeyFor(FieldElement f) => _easyKey(f)?.peek('name')?.stringValue;
-  static bool? _includeIfNullFor(FieldElement f) => _easyKey(f)?.peek('includeIfNull')?.literalValue as bool?;
+  static String? _jsonKeyFor(FieldElement f) =>
+      _easyKey(f)?.peek('name')?.stringValue;
+  static bool? _includeIfNullFor(FieldElement f) =>
+      _easyKey(f)?.peek('includeIfNull')?.literalValue as bool?;
 
   static String? _fnRefOrNull(ConstantReader? ann, String key) {
     final v = ann?.peek(key);
@@ -127,25 +136,37 @@ extension _Let<T> on T {
 }
 
 // ===== Utils de tipos =====
-bool isExactlyDateTime(DartType t) => TypeChecker.fromRuntime(DateTime).isExactlyType(t);
+bool isExactlyDateTime(DartType t) =>
+    TypeChecker.typeNamed(DateTime).isExactlyType(t);
 
-String displayNonNull(DartType t) => t.getDisplayString(withNullability: false);
-String displayWithNull(DartType t) => t.getDisplayString(withNullability: true);
+String displayWithNull(DartType t) => t.getDisplayString();
+String displayNonNull(DartType t) {
+  final s = t.getDisplayString();
+  return s.endsWith('?') ? s.substring(0, s.length - 1) : s;
+}
 
-bool isEasyJsonClass(DartType t) => t.element is ClassElement &&
-    _easyJsonChecker.hasAnnotationOf(t.element as ClassElement, throwOnUnresolved: false);
+bool isEasyJsonClass(DartType t) =>
+    t.element is ClassElement &&
+    _easyJsonChecker.hasAnnotationOf(
+      t.element as ClassElement,
+      throwOnUnresolved: false,
+    );
 
 bool isEnumType(DartType t) => t.element is EnumElement;
 
 DartType? asSetItem(DartType t) {
-  if (t is InterfaceType && t.element.name == 'Set' && t.typeArguments.length == 1) {
+  if (t is InterfaceType &&
+      t.element.name == 'Set' &&
+      t.typeArguments.length == 1) {
     return t.typeArguments.first;
   }
   return null;
 }
 
 ({DartType? key, DartType? value}) asMapKV(DartType t) {
-  if (t is InterfaceType && t.element.name == 'Map' && t.typeArguments.length == 2) {
+  if (t is InterfaceType &&
+      t.element.name == 'Map' &&
+      t.typeArguments.length == 2) {
     return (key: t.typeArguments[0], value: t.typeArguments[1]);
   }
   return (key: null, value: null);
@@ -174,7 +195,9 @@ String _applyCaseStyle(String name, CaseStyle? style) {
     case CaseStyle.kebab:
       return parts.map(low).join('-');
     case CaseStyle.camel:
-      return parts.isEmpty ? name : parts.first.toLowerCase() + parts.skip(1).map(cap).join();
+      return parts.isEmpty
+          ? name
+          : parts.first.toLowerCase() + parts.skip(1).map(cap).join();
     case CaseStyle.pascal:
       return parts.map(cap).join();
     case CaseStyle.none:

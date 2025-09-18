@@ -165,7 +165,7 @@ class PrimitiveStrategy implements TypeStrategy {
   void validate(FieldContext c, StringBuffer out) {
     final t = displayNonNull(c.type);
     final hasCtorDefault =
-        c.enclosingClass.unnamedConstructor?.parameters
+        c.enclosingClass.unnamedConstructor?.formalParameters
             .firstWhereOrNull((p) => p.name == c.name)
             ?.defaultValueCode !=
         null;
@@ -232,7 +232,7 @@ class PrimitiveStrategy implements TypeStrategy {
 class EnumStrategy implements TypeStrategy {
   @override
   String fromJson(FieldContext c) {
-    final en = (c.type.element as EnumElement).name;
+    final en = displayNonNull(c.type);
     // Fast: assume String válida (byName)
     return c.isNullable
         ? "(${c.jsonAccessor} == null ? null : $en.values.byName(${c.jsonAccessor} as String))"
@@ -241,7 +241,7 @@ class EnumStrategy implements TypeStrategy {
 
   @override
   String fromJsonSafe(FieldContext c) {
-    final en = (c.type.element as EnumElement).name;
+    final en = displayNonNull(c.type);
     final isN = c.isNullable;
     final fb = _enumFallbackExpr(en, c.enumFallbackName); // ex: TmRole.guest
 
@@ -287,9 +287,9 @@ class EnumStrategy implements TypeStrategy {
 
   @override
   void validate(FieldContext c, StringBuffer out) {
-    final en = (c.type.element as EnumElement).name;
+    final en = displayNonNull(c.type);
     final hasCtorDefault =
-        c.enclosingClass.unnamedConstructor?.parameters
+        c.enclosingClass.unnamedConstructor?.formalParameters
             .firstWhereOrNull((p) => p.name == c.name)
             ?.defaultValueCode !=
         null;
@@ -327,7 +327,7 @@ class EnumStrategy implements TypeStrategy {
 class ObjectStrategy implements TypeStrategy {
   @override
   String fromJson(FieldContext c) {
-    final cn = (c.type.element as ClassElement).name;
+    final cn = displayNonNull(c.type);
     final vn = _lcFirst(cn);
     final cast = "${c.jsonAccessor} as Map<String, dynamic>";
     return c.isNullable
@@ -337,7 +337,7 @@ class ObjectStrategy implements TypeStrategy {
 
   @override
   String fromJsonSafe(FieldContext c) {
-    final cn = (c.type.element as ClassElement).name; // ex.: Address
+    final cn = displayNonNull(c.type); // ex.: Address
     final vn = _lcFirst(cn);
     final cb =
         "onIssue: (i)=>onIssue?.call(EasyIssue(path: ${c.pathExpr} + '.' + i.path, code: i.code, message: i.message)), runValidate:false";
@@ -367,11 +367,11 @@ class ObjectStrategy implements TypeStrategy {
 
   @override
   void validate(FieldContext c, StringBuffer out) {
-    final cn = (c.type.element as ClassElement).name;
+    final cn = displayNonNull(c.type);
     final vn = _lcFirst(cn);
 
     final hasCtorDefault =
-        c.enclosingClass.unnamedConstructor?.parameters
+        c.enclosingClass.unnamedConstructor?.formalParameters
             .firstWhereOrNull((p) => p.name == c.name)
             ?.defaultValueCode !=
         null;
@@ -436,7 +436,7 @@ class ListStrategy implements TypeStrategy {
   @override
   void validate(FieldContext c, StringBuffer out) {
     final hasCtorDefault =
-        c.enclosingClass.unnamedConstructor?.parameters
+        c.enclosingClass.unnamedConstructor?.formalParameters
             .firstWhereOrNull((p) => p.name == c.name)
             ?.defaultValueCode !=
         null;
@@ -465,7 +465,7 @@ class ListStrategy implements TypeStrategy {
   """);
 
     if (isEasyJsonClass(item)) {
-      final cn = (item.element as ClassElement).name;
+      final cn = displayNonNull(item);
       final vn = _lcFirst(cn);
       out.writeln("""
             if (e is! Map) {
@@ -478,7 +478,7 @@ class ListStrategy implements TypeStrategy {
             }
     """);
     } else if (isEnumType(item)) {
-      final en = (item.element as EnumElement).name;
+      final en = displayNonNull(item);
       out.writeln("""
             if (e is! String) {
               issues.add(EasyIssue(path: '${c.jsonKey}[' + i.toString() + ']', code: 'type_mismatch', message: 'Esperado String com nome do enum.'));
@@ -566,7 +566,7 @@ class SetStrategy implements TypeStrategy {
   @override
   void validate(FieldContext c, StringBuffer out) {
     final hasCtorDefault =
-        c.enclosingClass.unnamedConstructor?.parameters
+        c.enclosingClass.unnamedConstructor?.formalParameters
             .firstWhereOrNull((p) => p.name == c.name)
             ?.defaultValueCode !=
         null;
@@ -595,7 +595,7 @@ class SetStrategy implements TypeStrategy {
   """);
 
     if (isEasyJsonClass(item)) {
-      final cn = (item.element as ClassElement).name;
+      final cn = displayNonNull(item);
       final vn = _lcFirst(cn);
       out.writeln("""
             if (e is! Map) {
@@ -608,7 +608,7 @@ class SetStrategy implements TypeStrategy {
             }
     """);
     } else if (isEnumType(item)) {
-      final en = (item.element as EnumElement).name;
+      final en = displayNonNull(item);
       out.writeln("""
             if (e is! String) {
               issues.add(EasyIssue(path: '${c.jsonKey}[' + i.toString() + ']', code: 'type_mismatch', message: 'Esperado String com nome do enum.'));
@@ -725,7 +725,7 @@ class MapStrategy implements TypeStrategy {
   @override
   void validate(FieldContext c, StringBuffer out) {
     final hasCtorDefault =
-        c.enclosingClass.unnamedConstructor?.parameters
+        c.enclosingClass.unnamedConstructor?.formalParameters
             .firstWhereOrNull((p) => p.name == c.name)
             ?.defaultValueCode !=
         null;
@@ -764,7 +764,7 @@ class MapStrategy implements TypeStrategy {
     // Se há conversor de valor, não validamos tipo de valor (terceirizamos).
     if (c.valueFromJson == null) {
       if (isEasyJsonClass(V)) {
-        final cn = (V.element as ClassElement).name;
+        final cn = displayNonNull(V);
         final vn = _lcFirst(cn);
         out.writeln("""
           for (final e in v.entries) {
@@ -780,7 +780,7 @@ class MapStrategy implements TypeStrategy {
           }
         """);
       } else if (isEnumType(V)) {
-        final en = (V.element as EnumElement).name;
+        final en = displayNonNull(V);
         out.writeln("""
           for (final e in v.entries) {
             final val = e.value;
@@ -845,12 +845,12 @@ class MapStrategy implements TypeStrategy {
 // ====== Parsers auxiliares (itens/valores) ======
 String _fastItemParse(DartType item) {
   if (isEasyJsonClass(item)) {
-    final cn = (item.element as ClassElement).name;
+    final cn = displayNonNull(item);
     final vn = _lcFirst(cn);
     return "${vn}FromJson(Map<String,dynamic>.from(e as Map))";
   }
   if (isEnumType(item)) {
-    final en = (item.element as EnumElement).name;
+    final en = displayNonNull(item);
     final nullable = displayWithNull(item).endsWith('?');
     return nullable
         ? "(e as String?) == null ? null : $en.values.byName(e as String)"
@@ -884,7 +884,7 @@ String _safeItemParse(DartType item, FieldContext c, {bool indexPath = false}) {
 
   // ===== Objetos @EasyJson =====
   if (isEasyJsonClass(item)) {
-    final cn = (item.element as ClassElement).name;
+    final cn = displayNonNull(item);
     final vn = _lcFirst(cn);
     final isNullableItem = displayWithNull(item).endsWith('?');
 
@@ -926,7 +926,7 @@ String _safeItemParse(DartType item, FieldContext c, {bool indexPath = false}) {
 
   // ===== Enum =====
   if (isEnumType(item)) {
-    final en = (item.element as EnumElement).name;
+    final en = displayNonNull(item);
     final nullable = displayWithNull(item).endsWith('?');
     final fb = _enumFallbackExpr(en, c.enumFallbackName);
 
@@ -986,7 +986,7 @@ String _safeItemParse(DartType item, FieldContext c, {bool indexPath = false}) {
 
 String _fastValueParse(DartType V, FieldContext c) {
   if (isEasyJsonClass(V)) {
-    final cn = (V.element as ClassElement).name;
+    final cn = displayNonNull(V);
     final vn = _lcFirst(cn);
     return "${vn}FromJson(Map<String,dynamic>.from(entry.value as Map))";
   }
@@ -1026,7 +1026,7 @@ String _safeValueParse(DartType V, FieldContext c, {bool keyPath = false}) {
       ? "${c.pathExpr} + '.' + k.toString()"
       : c.pathExpr;
   if (isEasyJsonClass(V)) {
-    final cn = (V.element as ClassElement).name;
+    final cn = displayNonNull(V);
     final vn = _lcFirst(cn);
     final isNullableValue = displayWithNull(V).endsWith('?');
 
@@ -1053,7 +1053,7 @@ String _safeValueParse(DartType V, FieldContext c, {bool keyPath = false}) {
     """;
   }
   if (isEnumType(V)) {
-    final en = (V.element as EnumElement).name;
+    final en = displayNonNull(V);
     final nullable = displayWithNull(V).endsWith('?');
     final fb = _enumFallbackExpr(en, c.enumFallbackName);
     return nullable
@@ -1096,7 +1096,7 @@ String _safeItemParseForSet(DartType item, FieldContext c) {
 
   // EasyJson class
   if (isEasyJsonClass(item)) {
-    final cn = (item.element as ClassElement).name;
+    final cn = displayNonNull(item);
     final vn = _lcFirst(cn);
     // Aceita apenas Map; se não for Map, emite issue e descarta (null)
     return """
@@ -1123,7 +1123,7 @@ String _safeItemParseForSet(DartType item, FieldContext c) {
 
   // Enum
   if (isEnumType(item)) {
-    final en = (item.element as EnumElement).name;
+    final en = displayNonNull(item);
     return """
       (() {
         final vv = entry.value;
