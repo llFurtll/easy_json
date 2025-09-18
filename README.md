@@ -6,7 +6,9 @@ Geração de `fromJson/toJson/validate/*Safe` com validação, fallback e *issue
 
 ```yaml
 dependencies:
-  easy_json: ^0.1.0
+   easy_json:
+    git:
+      url: https://github.com/llFurtll/easy_json.git
 
 dev_dependencies:
   build_runner: ^2.4.0
