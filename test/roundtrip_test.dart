@@ -1,7 +1,7 @@
 // test/roundtrip_test.dart
 import 'package:flutter_test/flutter_test.dart';
-import 'package:easy_json/test_models.dart';
-import 'package:easy_json/generated/test_models.easy.dart';
+import 'package:dart_easy_json/test_models.dart';
+import 'package:dart_easy_json/generated/test_models.easy.dart';
 
 void main() {
   test('toJson e roundtrip básico', () {

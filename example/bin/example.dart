@@ -1,5 +1,5 @@
 import 'dart:convert';
-import 'package:easy_json/easy_json.dart';
+import 'package:dart_easy_json/easy_json.dart';
 import 'package:example/dolar_rate.dart';
 import 'package:example/generated/dolar_rate.easy.dart';
 import 'package:http/http.dart' as http;

@@ -6,14 +6,14 @@
 // **************************************************************************
 
 // ignore_for_file: type=lint
-import 'package:easy_json/src/easy_issue.dart';
+import 'package:dart_easy_json/src/easy_issue.dart';
 import 'package:example/generated/star_trek/episode.easy.dart';
 import 'package:example/generated/star_trek/series.easy.dart';
 import 'package:example/star_trek/episode.dart';
 import 'package:example/star_trek/seasson.dart';
 import 'package:example/star_trek/series.dart';
-import 'package:easy_json/src/runtime.dart' as ej;
-import 'package:easy_json/src/messages.dart';
+import 'package:dart_easy_json/src/runtime.dart' as ej;
+import 'package:dart_easy_json/src/messages.dart';
 
 Season seasonFromJson(Map<String, dynamic> json) {
   return Season(

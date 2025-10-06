@@ -1,4 +1,4 @@
-import 'package:easy_json/easy_json.dart';
+import 'package:dart_easy_json/easy_json.dart';
 import 'package:example/star_trek/company.dart';
 import 'package:example/generated/star_trek/series.easy.dart';
 

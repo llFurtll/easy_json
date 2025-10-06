@@ -1,4 +1,4 @@
-name: easy_json
+name: dart_easy_json
 description: 'Ferramenta para facilitar a (de)serialização de objetos JSON.'
 version: 0.1.0
 homepage: https://github.com/llFurtll/easy_json

@@ -1,5 +1,5 @@
-import 'package:easy_json/easy_json.dart';
-import 'package:easy_json/generated/test_models.easy.dart';
+import 'package:dart_easy_json/easy_json.dart';
+import 'package:dart_easy_json/generated/test_models.easy.dart';
 
 enum TmRole { admin, viewer, guest, editor }
 enum TmStatus { pending, paid, shipped, delivered, cancelled }

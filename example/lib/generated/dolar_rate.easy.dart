@@ -6,10 +6,10 @@
 // **************************************************************************
 
 // ignore_for_file: type=lint
-import 'package:easy_json/src/easy_issue.dart';
+import 'package:dart_easy_json/src/easy_issue.dart';
 import 'package:example/dolar_rate.dart';
-import 'package:easy_json/src/runtime.dart' as ej;
-import 'package:easy_json/src/messages.dart';
+import 'package:dart_easy_json/src/runtime.dart' as ej;
+import 'package:dart_easy_json/src/messages.dart';
 
 DollarRate dollarRateFromJson(Map<String, dynamic> json) {
   return DollarRate(

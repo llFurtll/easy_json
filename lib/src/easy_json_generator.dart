@@ -10,7 +10,7 @@ import 'annotations.dart';
 import 'field_context.dart';
 import 'strategies.dart';
 
-const _issueImport = "package:easy_json/src/easy_issue.dart";
+const _issueImport = "package:dart_easy_json/src/easy_issue.dart";
 
 class EasyJsonGenerator extends GeneratorForAnnotation<EasyJson> {
   @override
@@ -238,8 +238,8 @@ class EasyJsonGenerator extends GeneratorForAnnotation<EasyJson> {
     // === Header ===
     final orderedImports = imports.toList()..sort();
     final extraImports = <String>[
-      "import 'package:easy_json/src/runtime.dart' as ej;",
-      "import 'package:easy_json/src/messages.dart';",
+      "import 'package:dart_easy_json/src/runtime.dart' as ej;",
+      "import 'package:dart_easy_json/src/messages.dart';",
     ];
 
     final header = [

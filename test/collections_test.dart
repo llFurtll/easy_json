@@ -1,7 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:easy_json/generated/test_models.easy.dart';
-import 'package:easy_json/src/easy_issue.dart';
+import 'package:dart_easy_json/generated/test_models.easy.dart';
+import 'package:dart_easy_json/src/easy_issue.dart';
 
 void main() {
   group('Coleções (List/Set/Map) - safe', () {
