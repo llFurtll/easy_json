@@ -1,7 +1,7 @@
 name: easy_json
 description: 'Ferramenta para facilitar a (de)serialização de objetos JSON.'
 version: 0.1.0
-homepage:
+homepage: https://github.com/llFurtll/easy_json
 
 environment:
   sdk: ^3.9.0

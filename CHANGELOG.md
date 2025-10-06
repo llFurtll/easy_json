@@ -1,3 +1,3 @@
-## 0.0.1
+## 0.1.0
 
-* TODO: Describe initial release.
+Geração de `fromJson/toJson/validate/*Safe` com validação, fallback e *issue tracking*.
