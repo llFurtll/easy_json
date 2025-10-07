@@ -2,7 +2,7 @@
 targets:
   $default:
     builders:
-      easy_json:easy_json_builder:
+      dart_easy_json:easy_json_builder:
         options:
           build_extensions:
             "^lib/{{}}.dart": "lib/generated/{{}}.easy.dart"

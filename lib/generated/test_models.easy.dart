@@ -5,8 +5,14 @@
 // EasyJsonGenerator
 // **************************************************************************
 
+// GENERATED CODE - DO NOT MODIFY BY HAND
+
+// **************************************************************************
+// EasyJsonGenerator
+// **************************************************************************
+
 // ignore_for_file: type=lint
-import 'dart:core';
+import 'package:dart_easy_json/generated/test_models.easy.dart';
 import 'package:dart_easy_json/src/easy_issue.dart';
 import 'package:dart_easy_json/test_models.dart';
 import 'package:dart_easy_json/src/runtime.dart' as ej;
@@ -31,6 +37,7 @@ mixin AddressSerializer {
     return addressToJson(this as Address);
   }
 }
+
 List<EasyIssue> addressValidate(Map<String, dynamic> json) {
   final issues = <EasyIssue>[];
   if (json.containsKey('street')) {
@@ -128,6 +135,7 @@ mixin ProductSerializer {
     return productToJson(this as Product);
   }
 }
+
 List<EasyIssue> productValidate(Map<String, dynamic> json) {
   final issues = <EasyIssue>[];
   if (!json.containsKey('id')) {
@@ -331,6 +339,7 @@ mixin OrderSerializer {
     return orderToJson(this as Order);
   }
 }
+
 List<EasyIssue> orderValidate(Map<String, dynamic> json) {
   final issues = <EasyIssue>[];
   if (!json.containsKey('orderId')) {
@@ -1054,6 +1063,7 @@ mixin UserSerializer {
     return userToJson(this as User);
   }
 }
+
 List<EasyIssue> userValidate(Map<String, dynamic> json) {
   final issues = <EasyIssue>[];
   if (!json.containsKey('user_name')) {

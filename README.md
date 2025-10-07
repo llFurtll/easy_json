@@ -1,70 +1,87 @@
-# easy\_json
+# Easy JSON
 
-Geração de `fromJson/toJson/validate/*Safe` com validação, fallback e *issue tracking*.
+Uma poderosa ferramenta de geração de código para serialização e desserialização JSON em Dart. Focada em segurança, performance e facilidade de uso, ela cria métodos `fromJson`, `toJson`, `validate` e `fromJsonSafe` com validação robusta, fallbacks configuráveis e rastreamento de issues.
+
+## Principais Funcionalidades
+
+*   **Geração Automática**: Cria todo o boilerplate de serialização para você.
+*   **Segurança de Tipos**: Valida os tipos de dados do JSON antes da desserialização.
+*   **Desserialização Segura**: Oferece um método `fromJsonSafe` que nunca lança exceções, usando fallbacks e reportando problemas.
+*   **Validação Detalhada**: Gera um método `validate` que retorna uma lista de problemas (`EasyIssue`) encontrados no JSON, sem precisar instanciar o objeto.
+*   **Altamente Customizável**: Suporte para `caseStyle`, nomes de chaves customizados, conversores, fallbacks por campo e muito mais.
 
 ## Instalação
 
+Adicione as dependências ao seu arquivo `pubspec.yaml`:
+
 ```yaml
 dependencies:
-   easy_json:
-    git:
-      url: https://github.com/llFurtll/easy_json.git
+  dart_easy_json: ^0.2.0 # Verifique a versão mais recente no pub.dev
 
 dev_dependencies:
   build_runner: ^2.4.0
 ```
 
-Gere os arquivos:
+## Uso Básico
 
-```bash
-dart run build_runner build -d
-```
-
----
-
-## Como usar (rápido)
+1.  **Anote sua classe** com `@EasyJson` e adicione o `mixin` correspondente para ter o método `toJson()` diretamente na sua instância.
 
 ```dart
+import 'package:dart_easy_json/easy_json.dart';
+
+// Importe o arquivo que será gerado
+import 'package:meu_projeto/generated/user.easy.dart';
+
 @EasyJson(caseStyle: CaseStyle.snake, includeIfNull: false)
 class User with UserSerializer {
-  final String userName;     // "user_name"
-  final DateTime createdAt;  // "created_at"
+  final String userName;
+  final DateTime createdAt;
+
   @EasyKey(name: 'e_mail')
-  final String? email;       // "e_mail"
+  final String? email;
+
+  // Construtor e factory para conveniência
+  const User({required this.userName, required this.createdAt, this.email});
+  factory User.fromJson(Map<String, dynamic> json) => userFromJson(json);
 }
 ```
 
-Gerado (nomes podem variar):
+2.  **Execute o gerador de código** na raiz do seu projeto:
 
-```dart
-User userFromJson(Map<String,dynamic> json)
-Map<String,dynamic> userToJson(User instance)
-List<EasyIssue> userValidate(Map<String,dynamic> json)
-User userFromJsonSafe(Map<String,dynamic> json, {onIssue, runValidate=true})
+```bash
+dart run build_runner build --delete-conflicting-outputs
 ```
 
----
+Isso irá gerar um arquivo `user.easy.dart` (o nome pode variar) com os seguintes métodos:
 
-## O que cada método faz
+*   `userFromJson(Map<String, dynamic> json)`: Conversão rápida, mas pode lançar erros.
+*   `userToJson(User instance)`: Serializa o objeto para um mapa.
+*   `userValidate(Map<String, dynamic> json)`: Valida o mapa e retorna uma lista de `EasyIssue`.
+*   `userFromJsonSafe(...)`: Conversão segura que nunca falha e reporta problemas.
 
-* `fromJson`
-  Conversão **rápida**. Lança erro em tipos inconsistentes (especialmente primitivos/enum/DateTime).
-  Útil quando input é confiável.
+## Configurando a Geração de Código (`build.yaml`)
 
-* `toJson`
-  Serializa respeitando `caseStyle` e `includeIfNull` (ou `@EasyKey(name)` por campo).
+Por padrão, os arquivos são gerados ao lado dos arquivos de origem com a extensão `.easy.dart`. Para organizar melhor seu projeto, você pode especificar um diretório de saída customizado.
 
-* `validate`
-  Só analisa o `Map` (não instancia a classe).
-  Retorna `List<EasyIssue>` com: `missing_required`, `type_mismatch`, `invalid_enum`, etc.
+Crie um arquivo `build.yaml` na raiz do seu projeto e configure a saída para um diretório como `lib/generated`:
 
-* `fromJsonSafe`
-  Conversão **tolerante**. Nunca lança; aplica fallbacks e reporta problemas via `onIssue(EasyIssue)`.
-  Por padrão roda `validate` antes (`runValidate:true`).
+```yaml
+# build.yaml
+targets:
+  $default:
+    builders:
+      dart_easy_json:easy_json_builder:
+        options:
+          build_extensions:
+            # Mapeia entrada (lib/models/user.dart) para saída (lib/generated/models/user.easy.dart)
+            "^lib/{{}}.dart": "lib/generated/{{}}.easy.dart"
+```
 
----
+Com essa configuração, o `build_runner` colocará todos os arquivos gerados dentro de `lib/generated`, preservando a estrutura de pastas original. Lembre-se de ajustar os `import`s nos seus arquivos de modelo para apontar para o novo local.
 
-## EasyIssue (retorno de problemas)
+## Tratamento de Erros com `EasyIssue`
+
+O método `fromJsonSafe` é a forma mais robusta de desserializar dados, pois ele captura todos os problemas sem interromper a execução.
 
 ```dart
 class EasyIssue {
@@ -78,11 +95,13 @@ Exemplo de uso:
 
 ```dart
 final issues = <EasyIssue>[];
-final user = userFromJsonSafe(json, onIssue: issues.add);
-for (final i in issues) print('${i.path} - ${i.code}');
-```
+final user = User.fromJsonSafe(json, onIssue: issues.add);
 
----
+for (final i in issues) print('${i.path} - ${i.code}');
+// Saída:
+// e_mail - type_mismatch
+// user_name - missing_required
+```
 
 ## Regras rápidas
 
@@ -117,7 +136,7 @@ for (final i in issues) print('${i.path} - ${i.code}');
 class TmDateMs {
   static DateTime fromJson(Object? v) => DateTime.fromMillisecondsSinceEpoch(v as int);
   static Object toJson(DateTime v) => v.millisecondsSinceEpoch;
-}
+} 
 
 @EasyJson()
 class Order {
@@ -128,7 +147,9 @@ class Order {
 
 ---
 
-## Validação isolada (sem instanciar)
+## Validação Isolada
+
+Se você precisa apenas validar um payload JSON sem o custo de criar o objeto, use o método `validate`:
 
 ```dart
 final problems = orderValidate(json);

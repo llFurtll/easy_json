@@ -12,96 +12,110 @@ import 'strategies.dart';
 
 const _issueImport = "package:dart_easy_json/src/easy_issue.dart";
 
-class EasyJsonGenerator extends GeneratorForAnnotation<EasyJson> {
+class EasyJsonGenerator extends Generator {
   @override
-  Future<String> generateForAnnotatedElement(
-    Element element,
-    ConstantReader annotation,
-    BuildStep buildStep,
-  ) async {
-    if (element is! ClassElement) {
-      throw InvalidGenerationSourceError(
-        '`@EasyJson` só pode ser usada em classes.',
-        element: element,
-      );
+  Future<String?> generate(LibraryReader library, BuildStep buildStep) async {
+    final annotated = library.annotatedWith(const TypeChecker.typeNamed(EasyJson));
+    if (annotated.isEmpty) return null;
+
+    final allGeneratedCode = StringBuffer();
+    final allImports = <String>{};
+
+    // Adiciona imports fixos
+    allImports.add(_issueImport);
+
+    // --- 1. Coleta todos os imports de todas as classes ---
+    for (final annotatedElement in annotated) {
+      final clazz = annotatedElement.element as ClassElement;
+      final inputId = buildStep.inputId;
+
+      // Importa a biblioteca atual
+      allImports.add(clazz.library.uri.toString());
+
+      // Coleta tipos referenciados nos campos
+      final referenced = <ClassElement>{};
+      for (final f in clazz.fields.where((f) => !f.isStatic)) {
+        _collectReferencedClasses(f.type, referenced);
+      }
+
+      for (final cls in referenced) {
+        // Ignora tipos do SDK
+        if (cls.library.uri.scheme == 'dart') continue;
+
+        final clsId = await buildStep.resolver.assetIdForElement(cls);
+
+        // Evita importar o próprio arquivo que está sendo lido
+        if (clsId != inputId) {
+          allImports.add(clsId.uri.toString());
+        }
+
+        // Se a classe referenciada também é @EasyJson, importa o .easy.dart
+        if (const TypeChecker.typeNamed(EasyJson).hasAnnotationOf(cls, throwOnUnresolved: false)) {
+          // Esta lógica de resolução de caminho para o arquivo gerado pode ser simplificada
+          // ou melhorada, mas por agora vamos manter a consistência.
+          final clsRel = p.relative(clsId.path, from: 'lib');
+          final generatedPath = p.join(
+            'lib',
+            'generated',
+            p.dirname(clsRel),
+            p.setExtension(p.basename(clsRel), '.easy.dart'),
+          ).replaceAll('\\', '/');
+
+          final genId = AssetId(clsId.package, generatedPath);
+          allImports.add(genId.uri.toString());
+        }
+      }
     }
 
-    final clazz = element;
+    // --- 2. Gera o código para cada classe ---
+    for (final annotatedElement in annotated) {
+      final code = _generateForClass(
+        annotatedElement.element as ClassElement,
+        annotatedElement.annotation,
+      );
+      allGeneratedCode.writeln(code);
+    }
+
+    // --- 3. Monta o arquivo final ---
+    final orderedImports = allImports.toList()..sort();
+    final extraImports = <String>[
+      "import 'package:dart_easy_json/src/runtime.dart' as ej;",
+      "import 'package:dart_easy_json/src/messages.dart';",
+    ];
+
+    final header = [
+      "// ignore_for_file: type=lint",
+      ...orderedImports.map((u) => "import '$u';"),
+      ...extraImports,
+    ].join('\n');
+
+    final finalContent = '''
+      // GENERATED CODE - DO NOT MODIFY BY HAND
+
+      // **************************************************************************
+      // EasyJsonGenerator
+      // **************************************************************************
+
+      $header
+
+      ${allGeneratedCode.toString()}
+    ''';
+
+    try {
+      return DartFormatter(
+        languageVersion: DartFormatter.latestLanguageVersion,
+      ).format(finalContent);
+    } catch (_) {
+      return finalContent; // Facilita debugar se format falhar
+    }
+  }
+
+  String _generateForClass(ClassElement clazz, ConstantReader annotation) {
     final className = clazz.displayName;
     final varName = _lcFirst(className);
     final classIncludeIfNull =
         (annotation.peek('includeIfNull')?.literalValue as bool?) ?? false;
     final classCaseStyle = _readClassCaseStyle(annotation);
-
-    // === Imports ===
-    final imports = <String>{};
-    // lib atual
-    imports.add(clazz.library.uri.toString());
-    // issues
-    imports.add(_issueImport);
-
-    // Tipos referenciados para importar original .dart e, se @EasyJson, o .easy.dart
-    final referenced = <ClassElement>{};
-    for (final f in clazz.fields.where((f) => !f.isStatic)) {
-      _collectReferencedClasses(f.type, referenced);
-    }
-
-    // === Caminho do output do arquivo ATUAL (para evitar auto-import) ===
-    final inputId = buildStep.inputId; // ex.: lib/star_trek/season.dart
-    final inputRel = p.relative(
-      inputId.path,
-      from: 'lib',
-    ); // star_trek/season.dart
-    final expectedOutputPath = p
-        .join(
-          'lib',
-          'generated',
-          p.dirname(inputRel), // star_trek
-          p.setExtension(
-            p.basename(inputRel),
-            '.easy.dart',
-          ), // season.easy.dart
-        )
-        .replaceAll('\\', '/');
-
-    for (final cls in referenced) {
-      // 1) Ignore tipos do SDK (String, int, etc.)
-      final libUri = cls.library.uri;
-      if (libUri.scheme == 'dart') continue;
-
-      // 2) Importa o .dart da classe referenciada via package:
-      final clsId = await buildStep.resolver.assetIdForElement(cls);
-      imports.add(clsId.uri.toString());
-
-      // 3) Se a classe referenciada também é @EasyJson, importe o .easy.dart PRESERVANDO subpastas
-      if (const TypeChecker.typeNamed(
-        EasyJson,
-      ).hasAnnotationOf(cls, throwOnUnresolved: false)) {
-        final clsRel = p.relative(
-          clsId.path,
-          from: 'lib',
-        ); // ex.: star_trek/name.dart
-        final generatedPath = p
-            .join(
-              'lib',
-              'generated',
-              p.dirname(clsRel), // star_trek
-              p.setExtension(
-                p.basename(clsRel),
-                '.easy.dart',
-              ), // name.easy.dart
-            )
-            .replaceAll('\\', '/');
-
-        // Evita importar o arquivo que estamos gerando agora
-        if (generatedPath != expectedOutputPath) {
-          final genId = AssetId(clsId.package, generatedPath);
-          imports.add(
-            genId.uri.toString(),
-          ); // -> package:example/generated/star_trek/name.easy.dart
-        }
-      }
-    }
 
     // === Cria FieldContexts ===
     final fields = clazz.fields.where((f) => !f.isStatic).toList();
@@ -235,23 +249,8 @@ class EasyJsonGenerator extends GeneratorForAnnotation<EasyJson> {
 
     final companion = _companionClass(className, varName);
 
-    // === Header ===
-    final orderedImports = imports.toList()..sort();
-    final extraImports = <String>[
-      "import 'package:dart_easy_json/src/runtime.dart' as ej;",
-      "import 'package:dart_easy_json/src/messages.dart';",
-    ];
-
-    final header = [
-      "// ignore_for_file: type=lint",
-      ...orderedImports.map((u) => "import '$u';"),
-      ...extraImports,
-    ].join('\n');
-
     final src =
         '''
-        $header
-
         ${mFromJson().accept(emitter)}
         ${mToJson().accept(emitter)}
         ${mixin.build().accept(emitter)}\n
@@ -260,13 +259,7 @@ class EasyJsonGenerator extends GeneratorForAnnotation<EasyJson> {
         ${companion.accept(emitter)}
     ''';
 
-    try {
-      return DartFormatter(
-        languageVersion: DartFormatter.latestLanguageVersion,
-      ).format(src);
-    } catch (_) {
-      return src; // facilita debugar se format falhar
-    }
+    return src;
   }
 
   // ===== infra =====

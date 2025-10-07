@@ -5,6 +5,12 @@
 // EasyJsonGenerator
 // **************************************************************************
 
+// GENERATED CODE - DO NOT MODIFY BY HAND
+
+// **************************************************************************
+// EasyJsonGenerator
+// **************************************************************************
+
 // ignore_for_file: type=lint
 import 'package:dart_easy_json/src/easy_issue.dart';
 import 'package:example/star_trek/simple_ref.dart';
