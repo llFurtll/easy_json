@@ -3,7 +3,6 @@ import 'package:analyzer/dart/element/type.dart';
 import 'package:build/build.dart';
 import 'package:code_builder/code_builder.dart';
 import 'package:dart_style/dart_style.dart';
-import 'package:path/path.dart' as p;
 import 'package:source_gen/source_gen.dart';
 
 import 'annotations.dart';
@@ -13,8 +12,17 @@ import 'strategies.dart';
 const _issueImport = "package:dart_easy_json/src/easy_issue.dart";
 
 class EasyJsonGenerator extends Generator {
+  final BuilderOptions options;
+
+  EasyJsonGenerator(this.options);
+
   @override
   Future<String?> generate(LibraryReader library, BuildStep buildStep) async {
+    // Lê as opções do build.yaml para obter as extensões de saída.
+    // O fallback é o comportamento padrão do build_runner se nada for especificado.
+    final buildExtensions = (options.config['build_extensions'] as Map?)?.cast<String, String>() ??
+        {r'{{}}.dart': r'{{}}.easy.dart'};
+ 
     final annotated = library.annotatedWith(const TypeChecker.typeNamed(EasyJson));
     if (annotated.isEmpty) return null;
 
@@ -51,17 +59,8 @@ class EasyJsonGenerator extends Generator {
 
         // Se a classe referenciada também é @EasyJson, importa o .easy.dart
         if (const TypeChecker.typeNamed(EasyJson).hasAnnotationOf(cls, throwOnUnresolved: false)) {
-          // Esta lógica de resolução de caminho para o arquivo gerado pode ser simplificada
-          // ou melhorada, mas por agora vamos manter a consistência.
-          final clsRel = p.relative(clsId.path, from: 'lib');
-          final generatedPath = p.join(
-            'lib',
-            'generated',
-            p.dirname(clsRel),
-            p.setExtension(p.basename(clsRel), '.easy.dart'),
-          ).replaceAll('\\', '/');
-
-          final genId = AssetId(clsId.package, generatedPath);
+          // Calcula o AssetId do arquivo gerado (.easy.dart) a partir do AssetId da classe de origem.
+          final genId = _expectedOutput(clsId, buildExtensions);
           allImports.add(genId.uri.toString());
         }
       }
@@ -362,4 +361,23 @@ class EasyJsonGenerator extends Generator {
         ),
       ]);
   });
+}
+
+/// Calcula o AssetId de saída para um AssetId de entrada com base nas regras de build_extensions.
+AssetId _expectedOutput(AssetId inputId, Map<String, String> buildExtensions) {
+  final matchingExtensions = buildExtensions.entries.where((entry) {
+    final regex = RegExp(entry.key.replaceFirst(r'{{}}', r'(.+)'));
+    return regex.hasMatch(inputId.path);
+  });
+
+  if (matchingExtensions.isEmpty) {
+    // Fallback se nenhuma regra corresponder (improvável com a configuração padrão)
+    return inputId.changeExtension('.easy.dart');
+  }
+
+  final rule = matchingExtensions.first;
+  final newPath = inputId.path.replaceFirstMapped(RegExp(rule.key.replaceFirst(r'{{}}', r'(.+)')), (match) {
+    return rule.value.replaceFirst(r'{{}}', match.group(1)!);
+  });
+  return AssetId(inputId.package, newPath);
 }

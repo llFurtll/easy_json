@@ -1,6 +1,6 @@
 import 'package:dart_easy_json/easy_json.dart';
-import 'package:example/star_trek/simple_ref.dart';
 import 'package:example/generated/star_trek/episode.easy.dart';
+import 'package:example/star_trek/simple_ref.dart';
 
 @EasyJson()
 class Episode with EpisodeSerializer {

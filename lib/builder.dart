@@ -5,7 +5,7 @@ import 'src/easy_json_generator.dart';
 
 Builder easyJsonBuilder(BuilderOptions options) {
   return LibraryBuilder(
-    EasyJsonGenerator(),
+    EasyJsonGenerator(options),
     generatedExtension: '.easy.dart',
     options: options
   );

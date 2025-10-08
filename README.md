@@ -79,6 +79,30 @@ targets:
 
 Com essa configuração, o `build_runner` colocará todos os arquivos gerados dentro de `lib/generated`, preservando a estrutura de pastas original. Lembre-se de ajustar os `import`s nos seus arquivos de modelo para apontar para o novo local.
 
+### Ignorando Arquivos Gerados na Análise Estática
+
+Para evitar que o analisador do Dart mostre avisos ou erros desnecessários nos arquivos `.easy.dart` (que são gerados automaticamente), é uma boa prática excluí-los da análise estática. Você pode fazer isso no seu arquivo `analysis_options.yaml`.
+
+**Opção 1 (Recomendada): Ignorar o diretório de saída**
+
+Se você configurou o `build.yaml` para usar um diretório como `lib/generated/`, adicione a seguinte regra ao `analysis_options.yaml`:
+
+```yaml
+analyzer:
+  exclude:
+    - lib/generated/**
+```
+
+**Opção 2: Ignorar arquivos pelo padrão de nome**
+
+Se você não especificou um diretório de saída e os arquivos `.easy.dart` são criados ao lado dos seus arquivos de origem, você pode ignorá-los usando um padrão glob:
+
+```yaml
+analyzer:
+  exclude:
+    - "**.easy.dart"
+```
+
 ## Tratamento de Erros com `EasyIssue`
 
 O método `fromJsonSafe` é a forma mais robusta de desserializar dados, pois ele captura todos os problemas sem interromper a execução.
