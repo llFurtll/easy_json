@@ -99,9 +99,9 @@ class User with UserSerializer {
   });
 
   // Factory constructors that delegate to the generated top-level functions.
-  factory User.fromJson(Map<String, dynamic> json) => _userFromJson(json);
+  factory User.fromJson(Map<String, dynamic> json) => userFromJson(json);
   factory User.fromJsonSafe(Map<String, dynamic> json, {void Function(EasyIssue)? onIssue})
-    => _userFromJsonSafe(json, onIssue: onIssue);
+    => userFromJsonSafe(json, onIssue: onIssue);
 }
 ```
 
