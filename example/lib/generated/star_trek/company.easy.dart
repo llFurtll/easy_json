@@ -41,7 +41,7 @@ List<EasyIssue> companyValidate(Map<String, dynamic> json) {
       EasyIssue(
         path: 'uid',
         code: 'missing_required',
-        message: 'Campo obrigatório ausente.',
+        message: 'Missing required field.',
       ),
     );
   }
@@ -52,17 +52,17 @@ List<EasyIssue> companyValidate(Map<String, dynamic> json) {
         EasyIssue(
           path: 'uid',
           code: 'type_mismatch',
-          message: 'Esperado String.',
+          message: 'Expected String.',
         ),
       );
-    }
+    } else if (v != null) {}
   }
   if (!json.containsKey('name')) {
     issues.add(
       EasyIssue(
         path: 'name',
         code: 'missing_required',
-        message: 'Campo obrigatório ausente.',
+        message: 'Missing required field.',
       ),
     );
   }
@@ -73,10 +73,10 @@ List<EasyIssue> companyValidate(Map<String, dynamic> json) {
         EasyIssue(
           path: 'name',
           code: 'type_mismatch',
-          message: 'Esperado String.',
+          message: 'Expected String.',
         ),
       );
-    }
+    } else if (v != null) {}
   }
   return issues;
 }

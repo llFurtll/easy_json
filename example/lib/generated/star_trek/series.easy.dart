@@ -77,7 +77,7 @@ List<EasyIssue> seriesValidate(Map<String, dynamic> json) {
       EasyIssue(
         path: 'uid',
         code: 'missing_required',
-        message: 'Campo obrigatório ausente.',
+        message: 'Missing required field.',
       ),
     );
   }
@@ -88,17 +88,17 @@ List<EasyIssue> seriesValidate(Map<String, dynamic> json) {
         EasyIssue(
           path: 'uid',
           code: 'type_mismatch',
-          message: 'Esperado String.',
+          message: 'Expected String.',
         ),
       );
-    }
+    } else if (v != null) {}
   }
   if (!json.containsKey('title')) {
     issues.add(
       EasyIssue(
         path: 'title',
         code: 'missing_required',
-        message: 'Campo obrigatório ausente.',
+        message: 'Missing required field.',
       ),
     );
   }
@@ -109,10 +109,10 @@ List<EasyIssue> seriesValidate(Map<String, dynamic> json) {
         EasyIssue(
           path: 'title',
           code: 'type_mismatch',
-          message: 'Esperado String.',
+          message: 'Expected String.',
         ),
       );
-    }
+    } else if (v != null) {}
   }
   if (json.containsKey('abbreviation')) {
     final v = json['abbreviation'];
@@ -121,10 +121,10 @@ List<EasyIssue> seriesValidate(Map<String, dynamic> json) {
         EasyIssue(
           path: 'abbreviation',
           code: 'type_mismatch',
-          message: 'Esperado String.',
+          message: 'Expected String.',
         ),
       );
-    }
+    } else if (v != null) {}
   }
   if (json.containsKey('originalRunStartDate')) {
     final v = json['originalRunStartDate'];
@@ -133,21 +133,20 @@ List<EasyIssue> seriesValidate(Map<String, dynamic> json) {
         EasyIssue(
           path: 'originalRunStartDate',
           code: 'type_mismatch',
-          message: 'Esperado String (ISO-8601) para DateTime.',
+          message: 'Expected String (ISO-8601) for DateTime.',
         ),
       );
     } else if (v != null) {
-      try {
-        DateTime.parse(v as String);
-      } catch (_) {
+      final dt = DateTime.tryParse(v as String);
+      if (dt == null) {
         issues.add(
           EasyIssue(
             path: 'originalRunStartDate',
             code: 'type_mismatch',
-            message: 'Formato inválido de DateTime.',
+            message: 'Invalid DateTime format.',
           ),
         );
-      }
+      } else {}
     }
   }
   if (json.containsKey('originalRunEndDate')) {
@@ -157,21 +156,20 @@ List<EasyIssue> seriesValidate(Map<String, dynamic> json) {
         EasyIssue(
           path: 'originalRunEndDate',
           code: 'type_mismatch',
-          message: 'Esperado String (ISO-8601) para DateTime.',
+          message: 'Expected String (ISO-8601) for DateTime.',
         ),
       );
     } else if (v != null) {
-      try {
-        DateTime.parse(v as String);
-      } catch (_) {
+      final dt = DateTime.tryParse(v as String);
+      if (dt == null) {
         issues.add(
           EasyIssue(
             path: 'originalRunEndDate',
             code: 'type_mismatch',
-            message: 'Formato inválido de DateTime.',
+            message: 'Invalid DateTime format.',
           ),
         );
-      }
+      } else {}
     }
   }
   if (json.containsKey('productionStartYear')) {
@@ -181,10 +179,10 @@ List<EasyIssue> seriesValidate(Map<String, dynamic> json) {
         EasyIssue(
           path: 'productionStartYear',
           code: 'type_mismatch',
-          message: 'Esperado int.',
+          message: 'Expected int.',
         ),
       );
-    }
+    } else if (v != null) {}
   }
   if (json.containsKey('productionEndYear')) {
     final v = json['productionEndYear'];
@@ -193,10 +191,10 @@ List<EasyIssue> seriesValidate(Map<String, dynamic> json) {
         EasyIssue(
           path: 'productionEndYear',
           code: 'type_mismatch',
-          message: 'Esperado int.',
+          message: 'Expected int.',
         ),
       );
-    }
+    } else if (v != null) {}
   }
   if (json.containsKey('seasonsCount')) {
     final v = json['seasonsCount'];
@@ -205,10 +203,10 @@ List<EasyIssue> seriesValidate(Map<String, dynamic> json) {
         EasyIssue(
           path: 'seasonsCount',
           code: 'type_mismatch',
-          message: 'Esperado int.',
+          message: 'Expected int.',
         ),
       );
-    }
+    } else if (v != null) {}
   }
   if (json.containsKey('episodesCount')) {
     final v = json['episodesCount'];
@@ -217,10 +215,10 @@ List<EasyIssue> seriesValidate(Map<String, dynamic> json) {
         EasyIssue(
           path: 'episodesCount',
           code: 'type_mismatch',
-          message: 'Esperado int.',
+          message: 'Expected int.',
         ),
       );
-    }
+    } else if (v != null) {}
   }
   if (json.containsKey('featureLengthEpisodesCount')) {
     final v = json['featureLengthEpisodesCount'];
@@ -229,10 +227,10 @@ List<EasyIssue> seriesValidate(Map<String, dynamic> json) {
         EasyIssue(
           path: 'featureLengthEpisodesCount',
           code: 'type_mismatch',
-          message: 'Esperado int.',
+          message: 'Expected int.',
         ),
       );
-    }
+    } else if (v != null) {}
   }
   if (json.containsKey('productionCompany')) {
     final v = json['productionCompany'];
@@ -241,7 +239,7 @@ List<EasyIssue> seriesValidate(Map<String, dynamic> json) {
         EasyIssue(
           path: 'productionCompany',
           code: 'type_mismatch',
-          message: 'Esperado Map para Company.',
+          message: 'Expected Map for Company.',
         ),
       );
     } else if (v is Map) {
@@ -265,7 +263,7 @@ List<EasyIssue> seriesValidate(Map<String, dynamic> json) {
         EasyIssue(
           path: 'originalBroadcaster',
           code: 'type_mismatch',
-          message: 'Esperado Map para Company.',
+          message: 'Expected Map for Company.',
         ),
       );
     } else if (v is Map) {
@@ -326,7 +324,7 @@ Series seriesFromJsonSafe(
               message: 'Formato inválido de DateTime.',
             ),
           );
-          return null;
+          return null; // TODO: message
         }
       }
       onIssue?.call(
@@ -355,7 +353,7 @@ Series seriesFromJsonSafe(
               message: 'Formato inválido de DateTime.',
             ),
           );
-          return null;
+          return null; // TODO: message
         }
       }
       onIssue?.call(

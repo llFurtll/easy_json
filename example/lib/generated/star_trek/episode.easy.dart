@@ -79,7 +79,7 @@ List<EasyIssue> episodeValidate(Map<String, dynamic> json) {
       EasyIssue(
         path: 'uid',
         code: 'missing_required',
-        message: 'Campo obrigatório ausente.',
+        message: 'Missing required field.',
       ),
     );
   }
@@ -90,17 +90,17 @@ List<EasyIssue> episodeValidate(Map<String, dynamic> json) {
         EasyIssue(
           path: 'uid',
           code: 'type_mismatch',
-          message: 'Esperado String.',
+          message: 'Expected String.',
         ),
       );
-    }
+    } else if (v != null) {}
   }
   if (!json.containsKey('title')) {
     issues.add(
       EasyIssue(
         path: 'title',
         code: 'missing_required',
-        message: 'Campo obrigatório ausente.',
+        message: 'Missing required field.',
       ),
     );
   }
@@ -111,10 +111,10 @@ List<EasyIssue> episodeValidate(Map<String, dynamic> json) {
         EasyIssue(
           path: 'title',
           code: 'type_mismatch',
-          message: 'Esperado String.',
+          message: 'Expected String.',
         ),
       );
-    }
+    } else if (v != null) {}
   }
   if (json.containsKey('titleGerman')) {
     final v = json['titleGerman'];
@@ -123,10 +123,10 @@ List<EasyIssue> episodeValidate(Map<String, dynamic> json) {
         EasyIssue(
           path: 'titleGerman',
           code: 'type_mismatch',
-          message: 'Esperado String.',
+          message: 'Expected String.',
         ),
       );
-    }
+    } else if (v != null) {}
   }
   if (json.containsKey('titleItalian')) {
     final v = json['titleItalian'];
@@ -135,10 +135,10 @@ List<EasyIssue> episodeValidate(Map<String, dynamic> json) {
         EasyIssue(
           path: 'titleItalian',
           code: 'type_mismatch',
-          message: 'Esperado String.',
+          message: 'Expected String.',
         ),
       );
-    }
+    } else if (v != null) {}
   }
   if (json.containsKey('titleJapanese')) {
     final v = json['titleJapanese'];
@@ -147,17 +147,17 @@ List<EasyIssue> episodeValidate(Map<String, dynamic> json) {
         EasyIssue(
           path: 'titleJapanese',
           code: 'type_mismatch',
-          message: 'Esperado String.',
+          message: 'Expected String.',
         ),
       );
-    }
+    } else if (v != null) {}
   }
   if (!json.containsKey('series')) {
     issues.add(
       EasyIssue(
         path: 'series',
         code: 'missing_required',
-        message: 'Campo obrigatório ausente.',
+        message: 'Missing required field.',
       ),
     );
   }
@@ -168,7 +168,7 @@ List<EasyIssue> episodeValidate(Map<String, dynamic> json) {
         EasyIssue(
           path: 'series',
           code: 'type_mismatch',
-          message: 'Esperado Map para SimpleRef.',
+          message: 'Expected Map for SimpleRef.',
         ),
       );
     } else if (v is Map) {
@@ -190,7 +190,7 @@ List<EasyIssue> episodeValidate(Map<String, dynamic> json) {
       EasyIssue(
         path: 'season',
         code: 'missing_required',
-        message: 'Campo obrigatório ausente.',
+        message: 'Missing required field.',
       ),
     );
   }
@@ -201,7 +201,7 @@ List<EasyIssue> episodeValidate(Map<String, dynamic> json) {
         EasyIssue(
           path: 'season',
           code: 'type_mismatch',
-          message: 'Esperado Map para SimpleRef.',
+          message: 'Expected Map for SimpleRef.',
         ),
       );
     } else if (v is Map) {
@@ -223,7 +223,7 @@ List<EasyIssue> episodeValidate(Map<String, dynamic> json) {
       EasyIssue(
         path: 'seasonNumber',
         code: 'missing_required',
-        message: 'Campo obrigatório ausente.',
+        message: 'Missing required field.',
       ),
     );
   }
@@ -234,17 +234,17 @@ List<EasyIssue> episodeValidate(Map<String, dynamic> json) {
         EasyIssue(
           path: 'seasonNumber',
           code: 'type_mismatch',
-          message: 'Esperado int.',
+          message: 'Expected int.',
         ),
       );
-    }
+    } else if (v != null) {}
   }
   if (!json.containsKey('episodeNumber')) {
     issues.add(
       EasyIssue(
         path: 'episodeNumber',
         code: 'missing_required',
-        message: 'Campo obrigatório ausente.',
+        message: 'Missing required field.',
       ),
     );
   }
@@ -255,10 +255,10 @@ List<EasyIssue> episodeValidate(Map<String, dynamic> json) {
         EasyIssue(
           path: 'episodeNumber',
           code: 'type_mismatch',
-          message: 'Esperado int.',
+          message: 'Expected int.',
         ),
       );
-    }
+    } else if (v != null) {}
   }
   if (json.containsKey('productionSerialNumber')) {
     final v = json['productionSerialNumber'];
@@ -267,10 +267,10 @@ List<EasyIssue> episodeValidate(Map<String, dynamic> json) {
         EasyIssue(
           path: 'productionSerialNumber',
           code: 'type_mismatch',
-          message: 'Esperado String.',
+          message: 'Expected String.',
         ),
       );
-    }
+    } else if (v != null) {}
   }
   if (json.containsKey('featureLength')) {
     final v = json['featureLength'];
@@ -279,10 +279,10 @@ List<EasyIssue> episodeValidate(Map<String, dynamic> json) {
         EasyIssue(
           path: 'featureLength',
           code: 'type_mismatch',
-          message: 'Esperado bool.',
+          message: 'Expected bool.',
         ),
       );
-    }
+    } else if (v != null) {}
   }
   if (json.containsKey('stardateFrom')) {
     final v = json['stardateFrom'];
@@ -291,7 +291,7 @@ List<EasyIssue> episodeValidate(Map<String, dynamic> json) {
         EasyIssue(
           path: 'stardateFrom',
           code: 'type_mismatch',
-          message: 'Esperado número (int/double).',
+          message: 'Expected number (int/double).',
         ),
       );
     }
@@ -303,7 +303,7 @@ List<EasyIssue> episodeValidate(Map<String, dynamic> json) {
         EasyIssue(
           path: 'stardateTo',
           code: 'type_mismatch',
-          message: 'Esperado número (int/double).',
+          message: 'Expected number (int/double).',
         ),
       );
     }
@@ -315,10 +315,10 @@ List<EasyIssue> episodeValidate(Map<String, dynamic> json) {
         EasyIssue(
           path: 'yearFrom',
           code: 'type_mismatch',
-          message: 'Esperado int.',
+          message: 'Expected int.',
         ),
       );
-    }
+    } else if (v != null) {}
   }
   if (json.containsKey('yearTo')) {
     final v = json['yearTo'];
@@ -327,10 +327,10 @@ List<EasyIssue> episodeValidate(Map<String, dynamic> json) {
         EasyIssue(
           path: 'yearTo',
           code: 'type_mismatch',
-          message: 'Esperado int.',
+          message: 'Expected int.',
         ),
       );
-    }
+    } else if (v != null) {}
   }
   if (json.containsKey('usAirDate')) {
     final v = json['usAirDate'];
@@ -339,21 +339,20 @@ List<EasyIssue> episodeValidate(Map<String, dynamic> json) {
         EasyIssue(
           path: 'usAirDate',
           code: 'type_mismatch',
-          message: 'Esperado String (ISO-8601) para DateTime.',
+          message: 'Expected String (ISO-8601) for DateTime.',
         ),
       );
     } else if (v != null) {
-      try {
-        DateTime.parse(v as String);
-      } catch (_) {
+      final dt = DateTime.tryParse(v as String);
+      if (dt == null) {
         issues.add(
           EasyIssue(
             path: 'usAirDate',
             code: 'type_mismatch',
-            message: 'Formato inválido de DateTime.',
+            message: 'Invalid DateTime format.',
           ),
         );
-      }
+      } else {}
     }
   }
   if (json.containsKey('finalScriptDate')) {
@@ -363,10 +362,10 @@ List<EasyIssue> episodeValidate(Map<String, dynamic> json) {
         EasyIssue(
           path: 'finalScriptDate',
           code: 'type_mismatch',
-          message: 'Esperado String.',
+          message: 'Expected String.',
         ),
       );
-    }
+    } else if (v != null) {}
   }
   return issues;
 }
@@ -530,7 +529,7 @@ Episode episodeFromJsonSafe(
               message: 'Formato inválido de DateTime.',
             ),
           );
-          return null;
+          return null; // TODO: message
         }
       }
       onIssue?.call(

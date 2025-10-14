@@ -81,3 +81,60 @@ class EasyMapKey {
 
 /// Estilos de chave para o JSON gerado/lido quando o campo não tiver `@EasyKey(name: ...)`.
 enum CaseStyle { none, snake, kebab, camel, pascal }
+
+/// Formatos de string pré-definidos para validação.
+enum EasyFormat {
+  /// Um endereço de e-mail válido.
+  email,
+  /// Uma URL válida (http ou https).
+  url,
+  /// Um UUID (Universally Unique Identifier) válido.
+  uuid,
+}
+
+/// Adiciona regras de validação customizadas para um campo, que serão
+/// verificadas pelos métodos `validate` e `fromJsonSafe`.
+class EasyValidate {
+  /// Para `String`: comprimento mínimo.
+  /// Para `List`/`Set`/`Map`: número mínimo de elementos.
+  final int? minLength;
+
+  /// Para `String`: comprimento máximo.
+  /// Para `List`/`Set`/`Map`: número máximo de elementos.
+  final int? maxLength;
+
+  /// Para `String`: um padrão de expressão regular que o valor deve corresponder.
+  final String? regex;
+
+  /// Para `num` (`int`/`double`): o valor mínimo permitido (inclusivo).
+  final num? min;
+
+  /// Para `num` (`int`/`double`): o valor máximo permitido (inclusivo).
+  final num? max;
+
+  /// Para `String`: um formato pré-definido que o valor deve corresponder.
+  final EasyFormat? format;
+
+  /// Para `DateTime`: o valor deve ser uma data no passado.
+  final bool? past;
+
+  /// Para `DateTime`: o valor deve ser uma data no futuro.
+  final bool? future;
+
+  /// Uma função de validação customizada.
+  /// A função deve ser estática ou de nível superior, receber um argumento
+  /// do tipo do campo e retornar `bool`.
+  final Function? custom;
+
+  const EasyValidate({
+    this.minLength,
+    this.maxLength,
+    this.regex,
+    this.min,
+    this.max,
+    this.format,
+    this.past,
+    this.future,
+    this.custom,
+  });
+}

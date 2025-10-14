@@ -1,4 +1,4 @@
-import 'package:dart_easy_json/test_models.dart';
+import 'package:dart_easy_json/types.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:dart_easy_json/generated/test_models.easy.dart';

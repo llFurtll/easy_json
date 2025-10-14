@@ -8,6 +8,7 @@ final _easyKeyChecker = const TypeChecker.typeNamed(EasyKey);
 final _easyJsonChecker = const TypeChecker.typeNamed(EasyJson);
 final _easyConvertChecker = const TypeChecker.typeNamed(EasyConvert);
 final _easyMapKeyChecker = const TypeChecker.typeNamed(EasyMapKey);
+final _easyValidateChecker = const TypeChecker.typeNamed(EasyValidate);
 
 class FieldContext {
   FieldContext({
@@ -35,7 +36,9 @@ class FieldContext {
        convertFromJson = _fnRefOrNull(_easyConvert(element), 'fromJson'),
        convertToJson = _fnRefOrNull(_easyConvert(element), 'toJson'),
        valueFromJson = _fnRefOrNull(_easyConvert(element), 'valueFromJson'),
-       valueToJson = _fnRefOrNull(_easyConvert(element), 'valueToJson') {
+       valueToJson = _fnRefOrNull(_easyConvert(element), 'valueToJson'),
+       customValidatorFn = _fnRefOrNull(_easyValidate(element), 'custom'),
+       validator = _easyValidate(element) {
     final it = type;
     if (it is InterfaceType) {
       if (isList) listItemType = it.typeArguments.first;
@@ -70,6 +73,12 @@ class FieldContext {
 
   final EasyMapKeyType? mapKeyCoercion; // null => string (default)
   final CaseStyle? classCaseStyle;
+
+  /// Dados da anotação `@EasyValidate`, se presente.
+  final ConstantReader? validator;
+
+  /// Referência à função de validação customizada, se presente.
+  final String? customValidatorFn;
 
   // Derived collection info
   DartType? listItemType;
@@ -113,6 +122,11 @@ class FieldContext {
 
   static ConstantReader? _easyMapKey(FieldElement f) {
     final a = _easyMapKeyChecker.firstAnnotationOfExact(f);
+    return a == null ? null : ConstantReader(a);
+  }
+
+  static ConstantReader? _easyValidate(FieldElement f) {
+    final a = _easyValidateChecker.firstAnnotationOfExact(f);
     return a == null ? null : ConstantReader(a);
   }
 

@@ -1,8 +1,6 @@
 import 'package:dart_easy_json/easy_json.dart';
 import 'package:dart_easy_json/generated/test_models.easy.dart';
-
-enum TmRole { admin, viewer, guest, editor }
-enum TmStatus { pending, paid, shipped, delivered, cancelled }
+import 'package:dart_easy_json/types.dart';
 
 // ---- Converters p/ testes ----
 class TmDateMs {
@@ -126,3 +124,43 @@ class User with UserSerializer {
       );
 }
 
+@EasyJson()
+class ValidationModel with ValidationModelSerializer {
+  @EasyValidate(minLength: 3, maxLength: 10)
+  final String username;
+
+  @EasyValidate(min: 18, max: 99, custom: MyCustomValidators.isPositive)
+  final int age;
+
+  @EasyValidate(regex: r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$')
+  final String? email;
+
+  @EasyValidate(minLength: 1, maxLength: 3)
+  final List<String> tags;
+
+  @EasyValidate(format: EasyFormat.url)
+  final String? websiteUrl;
+
+  @EasyValidate(format: EasyFormat.uuid)
+  final String uniqueId;
+
+  @EasyValidate(past: true)
+  final DateTime dateOfBirth;
+
+  @EasyValidate(future: true)
+  final DateTime? nextAppointment;
+
+  const ValidationModel({
+    required this.username,
+    required this.age,
+    this.email,
+    required this.tags,
+    this.websiteUrl,
+    required this.uniqueId,
+    required this.dateOfBirth,
+    this.nextAppointment,
+  });
+
+  factory ValidationModel.fromJson(Map<String, dynamic> json) =>
+      validationModelFromJson(json);
+}

@@ -15,6 +15,7 @@
 import 'package:dart_easy_json/generated/test_models.easy.dart';
 import 'package:dart_easy_json/src/easy_issue.dart';
 import 'package:dart_easy_json/test_models.dart';
+import 'package:dart_easy_json/types.dart';
 import 'package:dart_easy_json/src/runtime.dart' as ej;
 import 'package:dart_easy_json/src/messages.dart';
 
@@ -47,10 +48,10 @@ List<EasyIssue> addressValidate(Map<String, dynamic> json) {
         EasyIssue(
           path: 'street',
           code: 'type_mismatch',
-          message: 'Esperado String.',
+          message: 'Expected String.',
         ),
       );
-    }
+    } else if (v != null) {}
   }
   if (json.containsKey('number')) {
     final v = json['number'];
@@ -59,10 +60,10 @@ List<EasyIssue> addressValidate(Map<String, dynamic> json) {
         EasyIssue(
           path: 'number',
           code: 'type_mismatch',
-          message: 'Esperado int.',
+          message: 'Expected int.',
         ),
       );
-    }
+    } else if (v != null) {}
   }
   return issues;
 }
@@ -143,7 +144,7 @@ List<EasyIssue> productValidate(Map<String, dynamic> json) {
       EasyIssue(
         path: 'id',
         code: 'missing_required',
-        message: 'Campo obrigatório ausente.',
+        message: 'Missing required field.',
       ),
     );
   }
@@ -151,16 +152,16 @@ List<EasyIssue> productValidate(Map<String, dynamic> json) {
     final v = json['id'];
     if (v != null && v is! int) {
       issues.add(
-        EasyIssue(path: 'id', code: 'type_mismatch', message: 'Esperado int.'),
+        EasyIssue(path: 'id', code: 'type_mismatch', message: 'Expected int.'),
       );
-    }
+    } else if (v != null) {}
   }
   if (!json.containsKey('price')) {
     issues.add(
       EasyIssue(
         path: 'price',
         code: 'missing_required',
-        message: 'Campo obrigatório ausente.',
+        message: 'Missing required field.',
       ),
     );
   }
@@ -171,7 +172,7 @@ List<EasyIssue> productValidate(Map<String, dynamic> json) {
         EasyIssue(
           path: 'price',
           code: 'type_mismatch',
-          message: 'Esperado número (int/double).',
+          message: 'Expected number (int/double).',
         ),
       );
     }
@@ -181,7 +182,7 @@ List<EasyIssue> productValidate(Map<String, dynamic> json) {
       EasyIssue(
         path: 'name',
         code: 'missing_required',
-        message: 'Campo obrigatório ausente.',
+        message: 'Missing required field.',
       ),
     );
   }
@@ -192,10 +193,10 @@ List<EasyIssue> productValidate(Map<String, dynamic> json) {
         EasyIssue(
           path: 'name',
           code: 'type_mismatch',
-          message: 'Esperado String.',
+          message: 'Expected String.',
         ),
       );
-    }
+    } else if (v != null) {}
   }
   return issues;
 }
@@ -347,7 +348,7 @@ List<EasyIssue> orderValidate(Map<String, dynamic> json) {
       EasyIssue(
         path: 'orderId',
         code: 'missing_required',
-        message: 'Campo obrigatório ausente.',
+        message: 'Missing required field.',
       ),
     );
   }
@@ -358,17 +359,17 @@ List<EasyIssue> orderValidate(Map<String, dynamic> json) {
         EasyIssue(
           path: 'orderId',
           code: 'type_mismatch',
-          message: 'Esperado String.',
+          message: 'Expected String.',
         ),
       );
-    }
+    } else if (v != null) {}
   }
   if (!json.containsKey('createdAt')) {
     issues.add(
       EasyIssue(
         path: 'createdAt',
         code: 'missing_required',
-        message: 'Campo obrigatório ausente.',
+        message: 'Missing required field.',
       ),
     );
   }
@@ -377,7 +378,7 @@ List<EasyIssue> orderValidate(Map<String, dynamic> json) {
       EasyIssue(
         path: 'buyerRole',
         code: 'missing_required',
-        message: 'Campo obrigatório ausente.',
+        message: 'Missing required field.',
       ),
     );
   }
@@ -388,7 +389,7 @@ List<EasyIssue> orderValidate(Map<String, dynamic> json) {
         EasyIssue(
           path: 'buyerRole',
           code: 'type_mismatch',
-          message: 'Esperado String com o nome do enum.',
+          message: 'Expected String with the enum name.',
         ),
       );
     } else if (v != null) {
@@ -398,7 +399,7 @@ List<EasyIssue> orderValidate(Map<String, dynamic> json) {
           EasyIssue(
             path: 'buyerRole',
             code: 'invalid_enum',
-            message: "Valor '$v' não corresponde a TmRole.",
+            message: "Value '$v' does not match TmRole.",
           ),
         );
       }
@@ -410,7 +411,7 @@ List<EasyIssue> orderValidate(Map<String, dynamic> json) {
       EasyIssue(
         path: 'shipping',
         code: 'missing_required',
-        message: 'Campo obrigatório ausente.',
+        message: 'Missing required field.',
       ),
     );
   }
@@ -421,7 +422,7 @@ List<EasyIssue> orderValidate(Map<String, dynamic> json) {
         EasyIssue(
           path: 'shipping',
           code: 'type_mismatch',
-          message: 'Esperado Map para Address.',
+          message: 'Expected Map for Address.',
         ),
       );
     } else if (v is Map) {
@@ -443,7 +444,7 @@ List<EasyIssue> orderValidate(Map<String, dynamic> json) {
       EasyIssue(
         path: 'items',
         code: 'missing_required',
-        message: 'Campo obrigatório ausente.',
+        message: 'Missing required field.',
       ),
     );
   }
@@ -454,7 +455,7 @@ List<EasyIssue> orderValidate(Map<String, dynamic> json) {
         EasyIssue(
           path: 'items',
           code: 'type_mismatch',
-          message: 'Esperado Map.',
+          message: 'Expected Map.',
         ),
       );
     } else if (v is Map) {
@@ -469,7 +470,7 @@ List<EasyIssue> orderValidate(Map<String, dynamic> json) {
             EasyIssue(
               path: 'items.' + k.toString(),
               code: 'key_type_mismatch',
-              message: 'Chave incompatível com o tipo do mapa.',
+              message: 'Incompatible key type for map.',
             ),
           );
         }
@@ -482,7 +483,7 @@ List<EasyIssue> orderValidate(Map<String, dynamic> json) {
             EasyIssue(
               path: 'items.' + e.key.toString(),
               code: 'type_mismatch',
-              message: 'Esperado Map para Product.',
+              message: 'Expected Map for Product.',
             ),
           );
         } else if (val is Map) {
@@ -506,7 +507,7 @@ List<EasyIssue> orderValidate(Map<String, dynamic> json) {
       EasyIssue(
         path: 'quantities',
         code: 'missing_required',
-        message: 'Campo obrigatório ausente.',
+        message: 'Missing required field.',
       ),
     );
   }
@@ -517,7 +518,7 @@ List<EasyIssue> orderValidate(Map<String, dynamic> json) {
         EasyIssue(
           path: 'quantities',
           code: 'type_mismatch',
-          message: 'Esperado Map.',
+          message: 'Expected Map.',
         ),
       );
     } else if (v is Map) {
@@ -528,7 +529,7 @@ List<EasyIssue> orderValidate(Map<String, dynamic> json) {
             EasyIssue(
               path: 'quantities.' + e.key.toString(),
               code: 'type_mismatch',
-              message: 'Esperado int.',
+              message: 'Expected int.',
             ),
           );
         }
@@ -541,7 +542,7 @@ List<EasyIssue> orderValidate(Map<String, dynamic> json) {
       EasyIssue(
         path: 'notes',
         code: 'missing_required',
-        message: 'Campo obrigatório ausente.',
+        message: 'Missing required field.',
       ),
     );
   }
@@ -552,7 +553,7 @@ List<EasyIssue> orderValidate(Map<String, dynamic> json) {
         EasyIssue(
           path: 'notes',
           code: 'type_mismatch',
-          message: 'Esperado List.',
+          message: 'Expected List.',
         ),
       );
     } else if (v is List) {
@@ -563,7 +564,7 @@ List<EasyIssue> orderValidate(Map<String, dynamic> json) {
             EasyIssue(
               path: 'notes[' + i.toString() + ']',
               code: 'null_not_allowed',
-              message: 'Valor nulo não permitido.',
+              message: 'Null value not allowed.',
             ),
           );
         } else {
@@ -572,7 +573,7 @@ List<EasyIssue> orderValidate(Map<String, dynamic> json) {
               EasyIssue(
                 path: 'notes[' + i.toString() + ']',
                 code: 'type_mismatch',
-                message: 'Esperado String.',
+                message: 'Expected String.',
               ),
             );
           }
@@ -586,7 +587,7 @@ List<EasyIssue> orderValidate(Map<String, dynamic> json) {
       EasyIssue(
         path: 'tags',
         code: 'missing_required',
-        message: 'Campo obrigatório ausente.',
+        message: 'Missing required field.',
       ),
     );
   }
@@ -597,7 +598,7 @@ List<EasyIssue> orderValidate(Map<String, dynamic> json) {
         EasyIssue(
           path: 'tags',
           code: 'type_mismatch',
-          message: 'Esperado List para Set.',
+          message: 'Expected List for Set.',
         ),
       );
     } else if (v is List) {
@@ -608,7 +609,7 @@ List<EasyIssue> orderValidate(Map<String, dynamic> json) {
             EasyIssue(
               path: 'tags[' + i.toString() + ']',
               code: 'null_not_allowed',
-              message: 'Valor nulo não permitido.',
+              message: 'Null value not allowed.',
             ),
           );
         } else {
@@ -617,7 +618,7 @@ List<EasyIssue> orderValidate(Map<String, dynamic> json) {
               EasyIssue(
                 path: 'tags[' + i.toString() + ']',
                 code: 'type_mismatch',
-                message: 'Esperado String.',
+                message: 'Expected String.',
               ),
             );
           }
@@ -631,7 +632,7 @@ List<EasyIssue> orderValidate(Map<String, dynamic> json) {
       EasyIssue(
         path: 'statusHistory',
         code: 'missing_required',
-        message: 'Campo obrigatório ausente.',
+        message: 'Missing required field.',
       ),
     );
   }
@@ -642,7 +643,7 @@ List<EasyIssue> orderValidate(Map<String, dynamic> json) {
         EasyIssue(
           path: 'statusHistory',
           code: 'type_mismatch',
-          message: 'Esperado Map.',
+          message: 'Expected Map.',
         ),
       );
     } else if (v is Map) {
@@ -653,7 +654,7 @@ List<EasyIssue> orderValidate(Map<String, dynamic> json) {
             EasyIssue(
               path: 'statusHistory.' + e.key.toString(),
               code: 'type_mismatch',
-              message: 'Esperado String com nome do enum.',
+              message: 'Expected String with enum name.',
             ),
           );
         } else if (val != null) {
@@ -663,7 +664,7 @@ List<EasyIssue> orderValidate(Map<String, dynamic> json) {
               EasyIssue(
                 path: 'statusHistory.' + e.key.toString(),
                 code: 'invalid_enum',
-                message: "Valor '$val' não corresponde a TmStatus.",
+                message: "Value '$val' does not match TmStatus.",
               ),
             );
           }
@@ -677,7 +678,7 @@ List<EasyIssue> orderValidate(Map<String, dynamic> json) {
       EasyIssue(
         path: 'scores',
         code: 'missing_required',
-        message: 'Campo obrigatório ausente.',
+        message: 'Missing required field.',
       ),
     );
   }
@@ -688,7 +689,7 @@ List<EasyIssue> orderValidate(Map<String, dynamic> json) {
         EasyIssue(
           path: 'scores',
           code: 'type_mismatch',
-          message: 'Esperado Map.',
+          message: 'Expected Map.',
         ),
       );
     } else if (v is Map) {}
@@ -730,7 +731,7 @@ Order orderFromJsonSafe(
               message: 'Formato inválido de DateTime.',
             ),
           );
-          return DateTime.fromMillisecondsSinceEpoch(0);
+          return DateTime.fromMillisecondsSinceEpoch(0); // TODO: message
         }
       }
       onIssue?.call(
@@ -760,7 +761,7 @@ Order orderFromJsonSafe(
           EasyIssue(
             path: 'buyerRole',
             code: 'invalid_enum',
-            message: "Valor '$v' não corresponde a TmRole.",
+            message: "Value '$v' does not match TmRole.",
           ),
         );
         return TmRole.values.firstWhere(
@@ -776,7 +777,7 @@ Order orderFromJsonSafe(
           EasyIssue(
             path: 'buyerRole',
             code: 'invalid_enum_index',
-            message: 'Índice de enum fora do intervalo.',
+            message: 'Enum index out of range.',
           ),
         );
         return TmRole.values.firstWhere(
@@ -789,7 +790,7 @@ Order orderFromJsonSafe(
         EasyIssue(
           path: 'buyerRole',
           code: 'type_mismatch',
-          message: 'Esperado String com nome do enum ou índice int.',
+          message: 'Expected String with enum name or int index.',
         ),
       );
       return TmRole.values.firstWhere(
@@ -932,7 +933,7 @@ Order orderFromJsonSafe(
             EasyIssue(
               path: 'notes' + '[' + entry.key.toString() + ']',
               code: 'type_mismatch',
-              message: 'Esperado String.',
+              message: 'Expected String.',
             ),
           );
           return '';
@@ -954,7 +955,7 @@ Order orderFromJsonSafe(
                 EasyIssue(
                   path: 'tags' + '[' + entry.key.toString() + ']',
                   code: 'type_mismatch',
-                  message: 'Esperado String.',
+                  message: 'Expected String.',
                 ),
               );
               return null;
@@ -1071,7 +1072,7 @@ List<EasyIssue> userValidate(Map<String, dynamic> json) {
       EasyIssue(
         path: 'user_name',
         code: 'missing_required',
-        message: 'Campo obrigatório ausente.',
+        message: 'Missing required field.',
       ),
     );
   }
@@ -1082,17 +1083,17 @@ List<EasyIssue> userValidate(Map<String, dynamic> json) {
         EasyIssue(
           path: 'user_name',
           code: 'type_mismatch',
-          message: 'Esperado String.',
+          message: 'Expected String.',
         ),
       );
-    }
+    } else if (v != null) {}
   }
   if (!json.containsKey('created_at')) {
     issues.add(
       EasyIssue(
         path: 'created_at',
         code: 'missing_required',
-        message: 'Campo obrigatório ausente.',
+        message: 'Missing required field.',
       ),
     );
   }
@@ -1103,21 +1104,20 @@ List<EasyIssue> userValidate(Map<String, dynamic> json) {
         EasyIssue(
           path: 'created_at',
           code: 'type_mismatch',
-          message: 'Esperado String (ISO-8601) para DateTime.',
+          message: 'Expected String (ISO-8601) for DateTime.',
         ),
       );
     } else if (v != null) {
-      try {
-        DateTime.parse(v as String);
-      } catch (_) {
+      final dt = DateTime.tryParse(v as String);
+      if (dt == null) {
         issues.add(
           EasyIssue(
             path: 'created_at',
             code: 'type_mismatch',
-            message: 'Formato inválido de DateTime.',
+            message: 'Invalid DateTime format.',
           ),
         );
-      }
+      } else {}
     }
   }
   if (json.containsKey('e_mail')) {
@@ -1127,10 +1127,10 @@ List<EasyIssue> userValidate(Map<String, dynamic> json) {
         EasyIssue(
           path: 'e_mail',
           code: 'type_mismatch',
-          message: 'Esperado String.',
+          message: 'Expected String.',
         ),
       );
-    }
+    } else if (v != null) {}
   }
   return issues;
 }
@@ -1168,7 +1168,7 @@ User userFromJsonSafe(
               message: 'Formato inválido de DateTime.',
             ),
           );
-          return DateTime.fromMillisecondsSinceEpoch(0);
+          return DateTime.fromMillisecondsSinceEpoch(0); // TODO: message
         }
       }
       onIssue?.call(
@@ -1204,5 +1204,491 @@ class UserJson {
 
   static List<EasyIssue> validate(Map<String, dynamic> json) {
     return userValidate(json);
+  }
+}
+
+ValidationModel validationModelFromJson(Map<String, dynamic> json) {
+  return ValidationModel(
+    username: (json['username'] as String?) ?? '',
+    age: (json['age'] as int?) ?? 0,
+    email: json['email'] as String?,
+    tags:
+        ((json['tags'] as List?)?.asMap().entries.map<String>((entry) {
+          final i = entry.key;
+          final e = entry.value;
+          return (e as String?) ?? '';
+        }).toList()) ??
+        const <String>[],
+    websiteUrl: json['websiteUrl'] as String?,
+    uniqueId: (json['uniqueId'] as String?) ?? '',
+    dateOfBirth: ej.parseDateTime(json['dateOfBirth']),
+    nextAppointment: ej.parseDateTimeOrNull(json['nextAppointment']),
+  );
+}
+
+Map<String, dynamic> validationModelToJson(ValidationModel instance) {
+  return <String, dynamic>{
+    'username': instance.username,
+    'age': instance.age,
+    if (instance.email != null) 'email': instance.email,
+    'tags': instance.tags,
+    if (instance.websiteUrl != null) 'websiteUrl': instance.websiteUrl,
+    'uniqueId': instance.uniqueId,
+    'dateOfBirth': instance.dateOfBirth.toIso8601String(),
+    if (instance.nextAppointment != null)
+      'nextAppointment': instance.nextAppointment?.toIso8601String(),
+  };
+}
+
+mixin ValidationModelSerializer {
+  Map<String, dynamic> toJson() {
+    return validationModelToJson(this as ValidationModel);
+  }
+}
+
+List<EasyIssue> validationModelValidate(Map<String, dynamic> json) {
+  final issues = <EasyIssue>[];
+  if (!json.containsKey('username')) {
+    issues.add(
+      EasyIssue(
+        path: 'username',
+        code: 'missing_required',
+        message: 'Missing required field.',
+      ),
+    );
+  }
+  if (json.containsKey('username')) {
+    final v = json['username'];
+    if (v != null && v is! String) {
+      issues.add(
+        EasyIssue(
+          path: 'username',
+          code: 'type_mismatch',
+          message: 'Expected String.',
+        ),
+      );
+    } else if (v != null) {
+      if (v.length < 3) {
+        issues.add(
+          EasyIssue(
+            path: 'username',
+            code: 'min_length',
+            message: 'Must have at least 3 characters.',
+          ),
+        );
+      }
+      if (v.length > 10) {
+        issues.add(
+          EasyIssue(
+            path: 'username',
+            code: 'max_length',
+            message: 'Must have at most 10 characters.',
+          ),
+        );
+      }
+    }
+  }
+  if (!json.containsKey('age')) {
+    issues.add(
+      EasyIssue(
+        path: 'age',
+        code: 'missing_required',
+        message: 'Missing required field.',
+      ),
+    );
+  }
+  if (json.containsKey('age')) {
+    final v = json['age'];
+    if (v != null && v is! int) {
+      issues.add(
+        EasyIssue(path: 'age', code: 'type_mismatch', message: 'Expected int.'),
+      );
+    } else if (v != null) {
+      if ((v as num) < 18) {
+        issues.add(
+          EasyIssue(
+            path: 'age',
+            code: 'min_value',
+            message: 'The minimum value is 18.',
+          ),
+        );
+      }
+      if ((v as num) > 99) {
+        issues.add(
+          EasyIssue(
+            path: 'age',
+            code: 'max_value',
+            message: 'The maximum value is 99.',
+          ),
+        );
+      }
+      if (!(MyCustomValidators.isPositive(v as int))) {
+        issues.add(
+          EasyIssue(
+            path: 'age',
+            code: 'custom_validation_failed',
+            message: 'Custom validation failed.',
+          ),
+        );
+      }
+    }
+  }
+  if (json.containsKey('email')) {
+    final v = json['email'];
+    if (v != null && v is! String) {
+      issues.add(
+        EasyIssue(
+          path: 'email',
+          code: 'type_mismatch',
+          message: 'Expected String.',
+        ),
+      );
+    } else if (v != null) {
+      if (!RegExp(
+        r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$',
+      ).hasMatch(v as String)) {
+        issues.add(
+          EasyIssue(
+            path: 'email',
+            code: 'regex_mismatch',
+            message: 'Invalid format.',
+          ),
+        );
+      }
+    }
+  }
+  if (!json.containsKey('tags')) {
+    issues.add(
+      EasyIssue(
+        path: 'tags',
+        code: 'missing_required',
+        message: 'Missing required field.',
+      ),
+    );
+  }
+  if (json.containsKey('tags')) {
+    final v = json['tags'];
+    if (v != null && v is! List) {
+      issues.add(
+        EasyIssue(
+          path: 'tags',
+          code: 'type_mismatch',
+          message: 'Expected List.',
+        ),
+      );
+    } else if (v is List) {
+      if (v.length < 1) {
+        issues.add(
+          EasyIssue(
+            path: 'tags',
+            code: 'min_length',
+            message: 'Must have at least 1 elements.',
+          ),
+        );
+      }
+      if (v.length > 3) {
+        issues.add(
+          EasyIssue(
+            path: 'tags',
+            code: 'max_length',
+            message: 'Must have at most 3 elements.',
+          ),
+        );
+      }
+      for (var i = 0; i < v.length; i++) {
+        final e = v[i];
+        if (e == null) {
+          issues.add(
+            EasyIssue(
+              path: 'tags[' + i.toString() + ']',
+              code: 'null_not_allowed',
+              message: 'Null value not allowed.',
+            ),
+          );
+        } else {
+          if (e is! String) {
+            issues.add(
+              EasyIssue(
+                path: 'tags[' + i.toString() + ']',
+                code: 'type_mismatch',
+                message: 'Expected String.',
+              ),
+            );
+          }
+        }
+      }
+    }
+  }
+
+  if (json.containsKey('websiteUrl')) {
+    final v = json['websiteUrl'];
+    if (v != null && v is! String) {
+      issues.add(
+        EasyIssue(
+          path: 'websiteUrl',
+          code: 'type_mismatch',
+          message: 'Expected String.',
+        ),
+      );
+    } else if (v != null) {
+      if (!RegExp(
+        r'^(https|http)://[-a-zA-Z0-9@:%._+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_+.~#?&//=]*)$',
+      ).hasMatch(v as String)) {
+        issues.add(
+          EasyIssue(
+            path: 'websiteUrl',
+            code: 'invalid_url',
+            message: 'Invalid URL.',
+          ),
+        );
+      }
+    }
+  }
+  if (!json.containsKey('uniqueId')) {
+    issues.add(
+      EasyIssue(
+        path: 'uniqueId',
+        code: 'missing_required',
+        message: 'Missing required field.',
+      ),
+    );
+  }
+  if (json.containsKey('uniqueId')) {
+    final v = json['uniqueId'];
+    if (v != null && v is! String) {
+      issues.add(
+        EasyIssue(
+          path: 'uniqueId',
+          code: 'type_mismatch',
+          message: 'Expected String.',
+        ),
+      );
+    } else if (v != null) {
+      if (!RegExp(
+        r'^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$',
+      ).hasMatch(v as String)) {
+        issues.add(
+          EasyIssue(
+            path: 'uniqueId',
+            code: 'invalid_uuid',
+            message: 'Invalid UUID.',
+          ),
+        );
+      }
+    }
+  }
+  if (!json.containsKey('dateOfBirth')) {
+    issues.add(
+      EasyIssue(
+        path: 'dateOfBirth',
+        code: 'missing_required',
+        message: 'Missing required field.',
+      ),
+    );
+  }
+  if (json.containsKey('dateOfBirth')) {
+    final v = json['dateOfBirth'];
+    if (v != null && v is! String) {
+      issues.add(
+        EasyIssue(
+          path: 'dateOfBirth',
+          code: 'type_mismatch',
+          message: 'Expected String (ISO-8601) for DateTime.',
+        ),
+      );
+    } else if (v != null) {
+      final dt = DateTime.tryParse(v as String);
+      if (dt == null) {
+        issues.add(
+          EasyIssue(
+            path: 'dateOfBirth',
+            code: 'type_mismatch',
+            message: 'Invalid DateTime format.',
+          ),
+        );
+      } else {
+        if (dt.isAfter(DateTime.now())) {
+          issues.add(
+            EasyIssue(
+              path: 'dateOfBirth',
+              code: 'must_be_past',
+              message: 'The date must be in the past.',
+            ),
+          );
+        }
+      }
+    }
+  }
+  if (json.containsKey('nextAppointment')) {
+    final v = json['nextAppointment'];
+    if (v != null && v is! String) {
+      issues.add(
+        EasyIssue(
+          path: 'nextAppointment',
+          code: 'type_mismatch',
+          message: 'Expected String (ISO-8601) for DateTime.',
+        ),
+      );
+    } else if (v != null) {
+      final dt = DateTime.tryParse(v as String);
+      if (dt == null) {
+        issues.add(
+          EasyIssue(
+            path: 'nextAppointment',
+            code: 'type_mismatch',
+            message: 'Invalid DateTime format.',
+          ),
+        );
+      } else {
+        if (dt.isBefore(DateTime.now())) {
+          issues.add(
+            EasyIssue(
+              path: 'nextAppointment',
+              code: 'must_be_future',
+              message: 'The date must be in the future.',
+            ),
+          );
+        }
+      }
+    }
+  }
+  return issues;
+}
+
+ValidationModel validationModelFromJsonSafe(
+  Map<String, dynamic> json, {
+  void Function(EasyIssue)? onIssue,
+  bool runValidate = true,
+}) {
+  if (runValidate) {
+    final _issues = validationModelValidate(json);
+    if (onIssue != null) {
+      for (final i in _issues) onIssue(i);
+    }
+  }
+  return ValidationModel(
+    username: (() {
+      final v = json['username'];
+      return (v is String) ? v : '';
+    })(),
+    age: (() {
+      final v = json['age'];
+      return (v is int) ? v : 0;
+    })(),
+    email: (() {
+      final v = json['email'];
+      return (v is String) ? v : null;
+    })(),
+    tags: (() {
+      final _v = json['tags'];
+      if (_v is! List) return const <String>[];
+      final _list = _v;
+      return _list.asMap().entries.map<String>((entry) {
+        final idx = entry.key;
+        final elem = entry.value;
+        return (() {
+          final v = entry.value;
+          if (v is String) return v;
+          onIssue?.call(
+            EasyIssue(
+              path: 'tags' + '[' + entry.key.toString() + ']',
+              code: 'type_mismatch',
+              message: 'Expected String.',
+            ),
+          );
+          return '';
+        })();
+      }).toList();
+    })(),
+    websiteUrl: (() {
+      final v = json['websiteUrl'];
+      return (v is String) ? v : null;
+    })(),
+    uniqueId: (() {
+      final v = json['uniqueId'];
+      return (v is String) ? v : '';
+    })(),
+    dateOfBirth: (() {
+      final v = json['dateOfBirth'];
+      if (v == null) return DateTime.fromMillisecondsSinceEpoch(0);
+      if (v is DateTime) return v;
+      if (v is int) return DateTime.fromMillisecondsSinceEpoch(v);
+      if (v is num) return DateTime.fromMillisecondsSinceEpoch(v.toInt());
+      if (v is String) {
+        try {
+          return DateTime.parse(v);
+        } catch (_) {
+          onIssue?.call(
+            EasyIssue(
+              path: 'dateOfBirth',
+              code: 'type_mismatch',
+              message: 'Formato inválido de DateTime.',
+            ),
+          );
+          return DateTime.fromMillisecondsSinceEpoch(0); // TODO: message
+        }
+      }
+      onIssue?.call(
+        EasyIssue(
+          path: 'dateOfBirth',
+          code: 'type_mismatch',
+          message: 'Esperado String/epoch/DateTime.',
+        ),
+      );
+      return DateTime.fromMillisecondsSinceEpoch(0);
+    })(),
+    nextAppointment: (() {
+      final v = json['nextAppointment'];
+      if (v == null) return null;
+      if (v is DateTime) return v;
+      if (v is int) return DateTime.fromMillisecondsSinceEpoch(v);
+      if (v is num) return DateTime.fromMillisecondsSinceEpoch(v.toInt());
+      if (v is String) {
+        try {
+          return DateTime.parse(v);
+        } catch (_) {
+          onIssue?.call(
+            EasyIssue(
+              path: 'nextAppointment',
+              code: 'type_mismatch',
+              message: 'Formato inválido de DateTime.',
+            ),
+          );
+          return null; // TODO: message
+        }
+      }
+      onIssue?.call(
+        EasyIssue(
+          path: 'nextAppointment',
+          code: 'type_mismatch',
+          message: 'Esperado String/epoch/DateTime.',
+        ),
+      );
+      return null;
+    })(),
+  );
+}
+
+class ValidationModelJson {
+  const ValidationModelJson();
+
+  static ValidationModel fromJson(Map<String, dynamic> json) {
+    return validationModelFromJson(json);
+  }
+
+  static ValidationModel fromJsonSafe(
+    Map<String, dynamic> json, {
+    void Function(EasyIssue)? onIssue,
+    bool runValidate = true,
+  }) {
+    return validationModelFromJsonSafe(
+      json,
+      onIssue: onIssue,
+      runValidate: runValidate,
+    );
+  }
+
+  static List<EasyIssue> validate(Map<String, dynamic> json) {
+    return validationModelValidate(json);
   }
 }

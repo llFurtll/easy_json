@@ -41,7 +41,7 @@ List<EasyIssue> simpleRefValidate(Map<String, dynamic> json) {
       EasyIssue(
         path: 'uid',
         code: 'missing_required',
-        message: 'Campo obrigatório ausente.',
+        message: 'Missing required field.',
       ),
     );
   }
@@ -52,17 +52,17 @@ List<EasyIssue> simpleRefValidate(Map<String, dynamic> json) {
         EasyIssue(
           path: 'uid',
           code: 'type_mismatch',
-          message: 'Esperado String.',
+          message: 'Expected String.',
         ),
       );
-    }
+    } else if (v != null) {}
   }
   if (!json.containsKey('title')) {
     issues.add(
       EasyIssue(
         path: 'title',
         code: 'missing_required',
-        message: 'Campo obrigatório ausente.',
+        message: 'Missing required field.',
       ),
     );
   }
@@ -73,10 +73,10 @@ List<EasyIssue> simpleRefValidate(Map<String, dynamic> json) {
         EasyIssue(
           path: 'title',
           code: 'type_mismatch',
-          message: 'Esperado String.',
+          message: 'Expected String.',
         ),
       );
-    }
+    } else if (v != null) {}
   }
   return issues;
 }

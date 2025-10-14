@@ -13,6 +13,101 @@ abstract class TypeStrategy {
   String toJson(FieldContext c);
 }
 
+void _generateValidationChecks(FieldContext c, StringBuffer out) {
+  final validator = c.validator;
+  if (validator == null) return;
+
+  final type = c.type;
+  final isString = displayNonNull(type) == 'String';
+  final isNum = type.isDartCoreNum || type.isDartCoreInt || type.isDartCoreDouble;
+  final isCollection = c.isList || c.isSet || c.isMap;
+
+  // minLength
+  final minLength = validator.peek('minLength')?.intValue;
+  if (minLength != null && (isString || isCollection)) {
+    final accessor = 'v.length'; // .length works for String, List, Set, Map
+    out.writeln(
+      "if ($accessor < $minLength) { issues.add(EasyIssue(path: '${c.jsonKey}', code: 'min_length', message: 'Must have at least $minLength ${isString ? 'characters' : 'elements'}.')); }",
+    );
+  }
+
+  // maxLength
+  final maxLength = validator.peek('maxLength')?.intValue;
+  if (maxLength != null && (isString || isCollection)) {
+    final accessor = 'v.length';
+    out.writeln(
+      "if ($accessor > $maxLength) { issues.add(EasyIssue(path: '${c.jsonKey}', code: 'max_length', message: 'Must have at most $maxLength ${isString ? 'characters' : 'elements'}.')); }",
+    );
+  }
+
+  // regex
+  final regex = validator.peek('regex')?.stringValue;
+  if (regex != null && isString) {
+    // Escapa a string para ser usada dentro de uma string literal em Dart
+    final escapedRegex = regex.replaceAll("'", r"\'");
+    out.writeln(
+      "if (!RegExp(r'$escapedRegex').hasMatch(v as String)) { issues.add(EasyIssue(path: '${c.jsonKey}', code: 'regex_mismatch', message: 'Invalid format.')); }",
+    );
+  }
+
+  // format
+  final formatReader = validator.peek('format');
+  if (formatReader != null && !formatReader.isNull && isString) {
+    final formatName = formatReader.revive().accessor.split('.').last;
+    String? regex;
+    String code = 'format_mismatch';
+    String message = 'Invalid format.';
+
+    switch (formatName) {
+      case 'email':
+        regex = r"^[a-zA-Z0-9.a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,253}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,253}[a-zA-Z0-9])?)*$";
+        code = 'invalid_email';
+        message = 'Invalid email.';
+        break;
+      case 'url':
+        regex = r'^(https|http)://[-a-zA-Z0-9@:%._+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_+.~#?&//=]*)$';
+        code = 'invalid_url';
+        message = 'Invalid URL.';
+        break;
+      case 'uuid':
+        regex = r'^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$';
+        code = 'invalid_uuid';
+        message = 'Invalid UUID.';
+        break;
+    }
+    if (regex != null) {
+      final escapedRegex = regex.replaceAll("'", r"\'");
+      out.writeln("if (!RegExp(r'$escapedRegex').hasMatch(v as String)) { issues.add(EasyIssue(path: '${c.jsonKey}', code: '$code', message: '$message')); }");
+    }
+  }
+
+  // min
+  final minReader = validator.peek('min');
+  if (minReader != null && isNum) {
+    final min = minReader.literalValue as num;
+    out.writeln(
+      "if ((v as num) < $min) { issues.add(EasyIssue(path: '${c.jsonKey}', code: 'min_value', message: 'The minimum value is $min.')); }",
+    );
+  }
+
+  // max
+  final maxReader = validator.peek('max');
+  if (maxReader != null && isNum) {
+    final max = maxReader.literalValue as num;
+    out.writeln(
+      "if ((v as num) > $max) { issues.add(EasyIssue(path: '${c.jsonKey}', code: 'max_value', message: 'The maximum value is $max.')); }",
+    );
+  }
+
+  // custom
+  if (c.customValidatorFn != null) {
+    final fieldType = displayNonNull(c.type);
+    out.writeln(
+      "if (!(${c.customValidatorFn!}(v as $fieldType))) { issues.add(EasyIssue(path: '${c.jsonKey}', code: 'custom_validation_failed', message: 'Custom validation failed.')); }",
+    );
+  }
+}
+
 // ===== Helpers comuns =====
 String _enumFallbackExpr(String enumName, String? fallbackName) =>
     (fallbackName == null || fallbackName.isEmpty)
@@ -137,7 +232,7 @@ class PrimitiveStrategy implements TypeStrategy {
           if (v is String) {
             try { return DateTime.parse(v); } catch (_) {
               onIssue?.call(EasyIssue(path: ${c.pathExpr}, code: 'type_mismatch', message: 'Formato inválido de DateTime.'));
-              return $nfb;
+              return $nfb; // TODO: message
             }
           }
           onIssue?.call(EasyIssue(path: ${c.pathExpr}, code: 'type_mismatch', message: 'Esperado String/epoch/DateTime.'));
@@ -173,7 +268,7 @@ class PrimitiveStrategy implements TypeStrategy {
     if (!c.isNullable && !hasCtorDefault) {
       out.writeln(
         "if (!json.containsKey('${c.jsonKey}')) "
-        "{ issues.add(EasyIssue(path: '${c.jsonKey}', code: 'missing_required', message: 'Campo obrigatório ausente.')); }",
+        "{ issues.add(EasyIssue(path: '${c.jsonKey}', code: 'missing_required', message: 'Missing required field.')); }",
       );
     }
 
@@ -182,27 +277,34 @@ class PrimitiveStrategy implements TypeStrategy {
 
     String check;
     if (isExactlyDateTime(c.type)) {
-      check =
-          "if (v != null && v is! String) { "
-          "  issues.add(EasyIssue(path: '${c.jsonKey}', code: 'type_mismatch', message: 'Esperado String (ISO-8601) para DateTime.')); "
-          "} else if (v != null) { "
-          "  try { DateTime.parse(v as String); } catch(_) { "
-          "    issues.add(EasyIssue(path: '${c.jsonKey}', code: 'type_mismatch', message: 'Formato inválido de DateTime.')); "
-          "  } "
-          "}";
+      check = """
+        if (v != null && v is! String) {
+          issues.add(EasyIssue(path: '${c.jsonKey}', code: 'type_mismatch', message: 'Expected String (ISO-8601) for DateTime.'));
+        } else if (v != null) {
+          final dt = DateTime.tryParse(v as String);
+          if (dt == null) {
+            issues.add(EasyIssue(path: '${c.jsonKey}', code: 'type_mismatch', message: 'Invalid DateTime format.'));
+          } else {
+            ${_generateDateTimeValidationChecks(c, 'dt')}
+          }
+        }
+      """;
     } else if (t == 'double') {
       check =
           "if (v != null && v is! num) { "
-          "  issues.add(EasyIssue(path: '${c.jsonKey}', code: 'type_mismatch', message: 'Esperado número (int/double).')); "
+          "  issues.add(EasyIssue(path: '${c.jsonKey}', code: 'type_mismatch', message: 'Expected number (int/double).')); "
           "}";
     } else {
-      check =
+      final sb = StringBuffer(
           "if (v != null && v is! $t) { "
-          "  issues.add(EasyIssue(path: '${c.jsonKey}', code: 'type_mismatch', message: 'Esperado $t.')); "
-          "}";
+          "  issues.add(EasyIssue(path: '${c.jsonKey}', code: 'type_mismatch', message: 'Expected $t.')); "
+          "} else if (v != null) {");
+      _generateValidationChecks(c, sb);
+      sb.write('}');
+      check = sb.toString();
     }
     out.writeln(
-      "if (json.containsKey('${c.jsonKey}')) { final v=${c.jsonAccessor}; $check }",
+      "if (json.containsKey('${c.jsonKey}')) { final v = ${c.jsonAccessor}; $check }",
     );
   }
 
@@ -259,7 +361,7 @@ class EnumStrategy implements TypeStrategy {
           onIssue?.call(EasyIssue(
             path: ${c.pathExpr},
             code: 'invalid_enum',
-            message: "Valor '\$v' não corresponde a $en."
+            message: "Value '\$v' does not match $en."
           ));
           return $fb;
         }
@@ -270,7 +372,7 @@ class EnumStrategy implements TypeStrategy {
           onIssue?.call(EasyIssue(
             path: ${c.pathExpr},
             code: 'invalid_enum_index',
-            message: 'Índice de enum fora do intervalo.'
+            message: 'Enum index out of range.'
           ));
           return $fb;
         }
@@ -278,7 +380,7 @@ class EnumStrategy implements TypeStrategy {
         onIssue?.call(EasyIssue(
           path: ${c.pathExpr},
           code: 'type_mismatch',
-          message: 'Esperado String com nome do enum ou índice int.'
+          message: 'Expected String with enum name or int index.'
         ));
         return ${isN ? 'null' : fb};
       })()
@@ -297,7 +399,7 @@ class EnumStrategy implements TypeStrategy {
     if (!c.isNullable && !hasCtorDefault) {
       out.writeln(
         "if (!json.containsKey('${c.jsonKey}')) "
-        "{ issues.add(EasyIssue(path: '${c.jsonKey}', code: 'missing_required', message: 'Campo obrigatório ausente.')); }",
+        "{ issues.add(EasyIssue(path: '${c.jsonKey}', code: 'missing_required', message: 'Missing required field.')); }",
       );
     }
 
@@ -305,11 +407,11 @@ class EnumStrategy implements TypeStrategy {
       if (json.containsKey('${c.jsonKey}')) {
         final v = ${c.jsonAccessor};
         if (v != null && v is! String) {
-          issues.add(EasyIssue(path: '${c.jsonKey}', code: 'type_mismatch', message: 'Esperado String com o nome do enum.'));
+          issues.add(EasyIssue(path: '${c.jsonKey}', code: 'type_mismatch', message: 'Expected String with the enum name.'));
         } else if (v != null) {
           final ok = $en.values.any((e) => e.name == v);
           if (!ok) {
-            issues.add(EasyIssue(path: '${c.jsonKey}', code: 'invalid_enum', message: "Valor '\$v' não corresponde a $en."));
+            issues.add(EasyIssue(path: '${c.jsonKey}', code: 'invalid_enum', message: "Value '\$v' does not match $en."));
           }
         }
       }
@@ -378,7 +480,7 @@ class ObjectStrategy implements TypeStrategy {
     if (!c.isNullable && !hasCtorDefault) {
       out.writeln(
         "if (!json.containsKey('${c.jsonKey}')) "
-        "{ issues.add(EasyIssue(path: '${c.jsonKey}', code: 'missing_required', message: 'Campo obrigatório ausente.')); }",
+        "{ issues.add(EasyIssue(path: '${c.jsonKey}', code: 'missing_required', message: 'Missing required field.')); }",
       );
     }
 
@@ -386,7 +488,7 @@ class ObjectStrategy implements TypeStrategy {
       if (json.containsKey('${c.jsonKey}')) {
         final v = ${c.jsonAccessor};
         if (v != null && v is! Map) {
-          issues.add(EasyIssue(path: '${c.jsonKey}', code: 'type_mismatch', message: 'Esperado Map para $cn.'));
+          issues.add(EasyIssue(path: '${c.jsonKey}', code: 'type_mismatch', message: 'Expected Map for $cn.'));
         } else if (v is Map) {
           final child = ${vn}Validate(Map<String,dynamic>.from(v));
           for (final ci in child) {
@@ -443,7 +545,7 @@ class ListStrategy implements TypeStrategy {
     if (!c.isNullable && !hasCtorDefault) {
       out.writeln(
         "if (!json.containsKey('${c.jsonKey}')) "
-        "{ issues.add(EasyIssue(path: '${c.jsonKey}', code: 'missing_required', message: 'Campo obrigatório ausente.')); }",
+        "{ issues.add(EasyIssue(path: '${c.jsonKey}', code: 'missing_required', message: 'Missing required field.')); }",
       );
     }
 
@@ -455,12 +557,15 @@ class ListStrategy implements TypeStrategy {
     if (json.containsKey('${c.jsonKey}')) {
       final v = ${c.jsonAccessor};
       if (v != null && v is! List) {
-        issues.add(EasyIssue(path: '${c.jsonKey}', code: 'type_mismatch', message: 'Esperado List.'));
+        issues.add(EasyIssue(path: '${c.jsonKey}', code: 'type_mismatch', message: 'Expected List.'));
       } else if (v is List) {
+""");
+    _generateValidationChecks(c, out);
+    out.writeln("""
         for (var i = 0; i < v.length; i++) {
           final e = v[i];
           if (e == null) {
-            ${itemIsNullable ? '' : "issues.add(EasyIssue(path: '${c.jsonKey}[' + i.toString() + ']', code: 'null_not_allowed', message: 'Valor nulo não permitido.'));"} 
+            ${itemIsNullable ? '' : "issues.add(EasyIssue(path: '${c.jsonKey}[' + i.toString() + ']', code: 'null_not_allowed', message: 'Null value not allowed.'));"} 
           } else {
   """);
 
@@ -469,7 +574,7 @@ class ListStrategy implements TypeStrategy {
       final vn = _lcFirst(cn);
       out.writeln("""
             if (e is! Map) {
-              issues.add(EasyIssue(path: '${c.jsonKey}[' + i.toString() + ']', code: 'type_mismatch', message: 'Esperado Map para $cn.'));
+              issues.add(EasyIssue(path: '${c.jsonKey}[' + i.toString() + ']', code: 'type_mismatch', message: 'Expected Map for $cn.'));
             } else {
               final child = ${vn}Validate(Map<String,dynamic>.from(e as Map));
               for (final ci in child) {
@@ -481,18 +586,18 @@ class ListStrategy implements TypeStrategy {
       final en = displayNonNull(item);
       out.writeln("""
             if (e is! String) {
-              issues.add(EasyIssue(path: '${c.jsonKey}[' + i.toString() + ']', code: 'type_mismatch', message: 'Esperado String com nome do enum.'));
+              issues.add(EasyIssue(path: '${c.jsonKey}[' + i.toString() + ']', code: 'type_mismatch', message: 'Expected String with enum name.'));
             } else {
               final ok = $en.values.any((x) => x.name == e);
               if (!ok) {
-                issues.add(EasyIssue(path: '${c.jsonKey}[' + i.toString() + ']', code: 'invalid_enum', message: "Valor '\$e' não corresponde a $en."));
+                issues.add(EasyIssue(path: '${c.jsonKey}[' + i.toString() + ']', code: 'invalid_enum', message: "Value '\$e' does not match $en."));
               }
             }
     """);
     } else {
       out.writeln("""
             if (e is! $itemBase) {
-              issues.add(EasyIssue(path: '${c.jsonKey}[' + i.toString() + ']', code: 'type_mismatch', message: 'Esperado $itemBase.'));
+              issues.add(EasyIssue(path: '${c.jsonKey}[' + i.toString() + ']', code: 'type_mismatch', message: 'Expected $itemBase.'));
             }
     """);
     }
@@ -573,7 +678,7 @@ class SetStrategy implements TypeStrategy {
     if (!c.isNullable && !hasCtorDefault) {
       out.writeln(
         "if (!json.containsKey('${c.jsonKey}')) "
-        "{ issues.add(EasyIssue(path: '${c.jsonKey}', code: 'missing_required', message: 'Campo obrigatório ausente.')); }",
+        "{ issues.add(EasyIssue(path: '${c.jsonKey}', code: 'missing_required', message: 'Missing required field.')); }",
       );
     }
 
@@ -585,12 +690,15 @@ class SetStrategy implements TypeStrategy {
     if (json.containsKey('${c.jsonKey}')) {
       final v = ${c.jsonAccessor};
       if (v != null && v is! List) {
-        issues.add(EasyIssue(path: '${c.jsonKey}', code: 'type_mismatch', message: 'Esperado List para Set.'));
+        issues.add(EasyIssue(path: '${c.jsonKey}', code: 'type_mismatch', message: 'Expected List for Set.'));
       } else if (v is List) {
+""");
+    _generateValidationChecks(c, out);
+    out.writeln("""
         for (var i = 0; i < v.length; i++) {
           final e = v[i];
           if (e == null) {
-            ${itemIsNullable ? '' : "issues.add(EasyIssue(path: '${c.jsonKey}[' + i.toString() + ']', code: 'null_not_allowed', message: 'Valor nulo não permitido.'));"} 
+            ${itemIsNullable ? '' : "issues.add(EasyIssue(path: '${c.jsonKey}[' + i.toString() + ']', code: 'null_not_allowed', message: 'Null value not allowed.'));"} 
           } else {
   """);
 
@@ -599,7 +707,7 @@ class SetStrategy implements TypeStrategy {
       final vn = _lcFirst(cn);
       out.writeln("""
             if (e is! Map) {
-              issues.add(EasyIssue(path: '${c.jsonKey}[' + i.toString() + ']', code: 'type_mismatch', message: 'Esperado Map para $cn.'));
+              issues.add(EasyIssue(path: '${c.jsonKey}[' + i.toString() + ']', code: 'type_mismatch', message: 'Expected Map for $cn.'));
             } else {
               final child = ${vn}Validate(Map<String,dynamic>.from(e as Map));
               for (final ci in child) {
@@ -611,18 +719,18 @@ class SetStrategy implements TypeStrategy {
       final en = displayNonNull(item);
       out.writeln("""
             if (e is! String) {
-              issues.add(EasyIssue(path: '${c.jsonKey}[' + i.toString() + ']', code: 'type_mismatch', message: 'Esperado String com nome do enum.'));
+              issues.add(EasyIssue(path: '${c.jsonKey}[' + i.toString() + ']', code: 'type_mismatch', message: 'Expected String with enum name.'));
             } else {
               final ok = $en.values.any((x) => x.name == e);
               if (!ok) {
-                issues.add(EasyIssue(path: '${c.jsonKey}[' + i.toString() + ']', code: 'invalid_enum', message: "Valor '\$e' não corresponde a $en."));
+                issues.add(EasyIssue(path: '${c.jsonKey}[' + i.toString() + ']', code: 'invalid_enum', message: "Value '\$e' does not match $en."));
               }
             }
     """);
     } else {
       out.writeln("""
             if (e is! $itemBase) {
-              issues.add(EasyIssue(path: '${c.jsonKey}[' + i.toString() + ']', code: 'type_mismatch', message: 'Esperado $itemBase.'));
+              issues.add(EasyIssue(path: '${c.jsonKey}[' + i.toString() + ']', code: 'type_mismatch', message: 'Expected $itemBase.'));
             }
     """);
     }
@@ -732,7 +840,7 @@ class MapStrategy implements TypeStrategy {
     if (!c.isNullable && !hasCtorDefault) {
       out.writeln(
         "if (!json.containsKey('${c.jsonKey}')) "
-        "{ issues.add(EasyIssue(path: '${c.jsonKey}', code: 'missing_required', message: 'Campo obrigatório ausente.')); }",
+        "{ issues.add(EasyIssue(path: '${c.jsonKey}', code: 'missing_required', message: 'Missing required field.')); }",
       );
     }
 
@@ -744,9 +852,10 @@ class MapStrategy implements TypeStrategy {
       if (json.containsKey('${c.jsonKey}')) {
         final v = ${c.jsonAccessor};
         if (v != null && v is! Map) {
-          issues.add(EasyIssue(path: '${c.jsonKey}', code: 'type_mismatch', message: 'Esperado Map.'));
+          issues.add(EasyIssue(path: '${c.jsonKey}', code: 'type_mismatch', message: 'Expected Map.'));
         } else if (v is Map) {
     """);
+    _generateValidationChecks(c, out);
 
     // Key check (quando EasyMapKeyType.int)
     if (mk == EasyMapKeyType.int) {
@@ -755,7 +864,7 @@ class MapStrategy implements TypeStrategy {
             final k = e.key;
             final ok = (k is int) || (k is num) || (k is String && num.tryParse(k) != null);
             if (!ok) {
-              issues.add(EasyIssue(path: '${c.jsonKey}.' + k.toString(), code: 'key_type_mismatch', message: 'Chave incompatível com o tipo do mapa.'));
+              issues.add(EasyIssue(path: '${c.jsonKey}.' + k.toString(), code: 'key_type_mismatch', message: 'Incompatible key type for map.'));
             }
           }
       """);
@@ -770,7 +879,7 @@ class MapStrategy implements TypeStrategy {
           for (final e in v.entries) {
             final val = e.value;
             if (val != null && val is! Map) {
-              issues.add(EasyIssue(path: '${c.jsonKey}.' + e.key.toString(), code: 'type_mismatch', message: 'Esperado Map para $cn.'));
+              issues.add(EasyIssue(path: '${c.jsonKey}.' + e.key.toString(), code: 'type_mismatch', message: 'Expected Map for $cn.'));
             } else if (val is Map) {
               final child = ${vn}Validate(Map<String,dynamic>.from(val as Map));
               for (final ci in child) {
@@ -785,11 +894,11 @@ class MapStrategy implements TypeStrategy {
           for (final e in v.entries) {
             final val = e.value;
             if (val != null && val is! String) {
-              issues.add(EasyIssue(path: '${c.jsonKey}.' + e.key.toString(), code: 'type_mismatch', message: 'Esperado String com nome do enum.'));
+              issues.add(EasyIssue(path: '${c.jsonKey}.' + e.key.toString(), code: 'type_mismatch', message: 'Expected String with enum name.'));
             } else if (val != null) {
               final ok = $en.values.any((x) => x.name == val);
               if (!ok) {
-                issues.add(EasyIssue(path: '${c.jsonKey}.' + e.key.toString(), code: 'invalid_enum', message: "Valor '\$val' não corresponde a $en."));
+                issues.add(EasyIssue(path: '${c.jsonKey}.' + e.key.toString(), code: 'invalid_enum', message: "Value '\$val' does not match $en."));
               }
             }
           }
@@ -800,7 +909,7 @@ class MapStrategy implements TypeStrategy {
           for (final e in v.entries) {
             final val = e.value;
             if (val != null && val is! $vBase) {
-              issues.add(EasyIssue(path: '${c.jsonKey}.' + e.key.toString(), code: 'type_mismatch', message: 'Esperado $vBase.'));
+              issues.add(EasyIssue(path: '${c.jsonKey}.' + e.key.toString(), code: 'type_mismatch', message: 'Expected $vBase.'));
             }
           }
         """);
@@ -914,7 +1023,7 @@ String _safeItemParse(DartType item, FieldContext c, {bool indexPath = false}) {
   ${isNullableItem ? 'return null;' : '''return ${vn}FromJsonSafe(
             const <String,dynamic>{},
             onIssue:(i)=>onIssue?.call(EasyIssue(
-              path: $pathPrefix + '.' + i.path,
+              path: "$pathPrefix." + i.path,
               code: i.code,
               message: i.message
             )),
@@ -945,14 +1054,14 @@ String _safeItemParse(DartType item, FieldContext c, {bool indexPath = false}) {
           onIssue?.call(EasyIssue(
             path: $pathPrefix,
             code: 'invalid_enum',
-            message: "Valor '\$v' não corresponde a $en."
+            message: "Value '\$v' does not match $en."
           ));
           return $fb;
         }
         onIssue?.call(EasyIssue(
           path: $pathPrefix,
           code: 'type_mismatch',
-          message: 'Esperado String com nome do enum.'
+          message: 'Expected String with enum name.'
         ));
         return ${nullable ? 'null' : fb};
       })()
@@ -972,15 +1081,15 @@ String _safeItemParse(DartType item, FieldContext c, {bool indexPath = false}) {
   // - retorna fallback coerente
   switch (base) {
     case 'int':
-      return "((){ final v=entry.value; if (v is int) return v; onIssue?.call(EasyIssue(path: $pathPrefix, code: 'type_mismatch', message: 'Esperado int.')); return $itemFb; })()";
+      return "((){ final v=entry.value; if (v is int) return v; onIssue?.call(EasyIssue(path: $pathPrefix, code: 'type_mismatch', message: 'Expected int.')); return $itemFb; })()";
     case 'double':
-      return "((){ final v=entry.value; if (v is num) return v.toDouble(); onIssue?.call(EasyIssue(path: $pathPrefix, code: 'type_mismatch', message: 'Esperado número (int/double).')); return $itemFb; })()";
+      return "((){ final v=entry.value; if (v is num) return v.toDouble(); onIssue?.call(EasyIssue(path: $pathPrefix, code: 'type_mismatch', message: 'Expected number (int/double).')); return $itemFb; })()";
     case 'bool':
-      return "((){ final v=entry.value; if (v is bool) return v; onIssue?.call(EasyIssue(path: $pathPrefix, code: 'type_mismatch', message: 'Esperado bool.')); return $itemFb; })()";
+      return "((){ final v=entry.value; if (v is bool) return v; onIssue?.call(EasyIssue(path: $pathPrefix, code: 'type_mismatch', message: 'Expected bool.')); return $itemFb; })()";
     case 'String':
-      return "((){ final v=entry.value; if (v is String) return v; onIssue?.call(EasyIssue(path: $pathPrefix, code: 'type_mismatch', message: 'Esperado String.')); return $itemFb; })()";
+      return "((){ final v=entry.value; if (v is String) return v; onIssue?.call(EasyIssue(path: $pathPrefix, code: 'type_mismatch', message: 'Expected String.')); return $itemFb; })()";
     default:
-      return "((){ final v=entry.value; if (v is $base) return v; onIssue?.call(EasyIssue(path: $pathPrefix, code: 'type_mismatch', message: 'Esperado $base.')); return $itemFb; })()";
+      return "((){ final v=entry.value; if (v is $base) return v; onIssue?.call(EasyIssue(path: $pathPrefix, code: 'type_mismatch', message: 'Expected $base.')); return $itemFb; })()";
   }
 }
 
@@ -1088,6 +1197,29 @@ String _safeValueParse(DartType V, FieldContext c, {bool keyPath = false}) {
   }
 }
 
+String _generateDateTimeValidationChecks(FieldContext c, String varName) {
+  final validator = c.validator;
+  if (validator == null) return '';
+
+  final out = StringBuffer();
+  // past
+  final isPast = validator.peek('past')?.boolValue;
+  if (isPast == true) {
+    out.writeln(
+      "if ($varName.isAfter(DateTime.now())) { issues.add(EasyIssue(path: '${c.jsonKey}', code: 'must_be_past', message: 'The date must be in the past.')); }",
+    );
+  }
+
+  // future
+  final isFuture = validator.peek('future')?.boolValue;
+  if (isFuture == true) {
+    out.writeln(
+      "if ($varName.isBefore(DateTime.now())) { issues.add(EasyIssue(path: '${c.jsonKey}', code: 'must_be_future', message: 'The date must be in the future.')); }",
+    );
+  }
+  return out.toString();
+}
+
 String _lcFirst(String s) =>
     s.isEmpty ? s : (s[0].toLowerCase() + s.substring(1));
 
@@ -1114,7 +1246,7 @@ String _safeItemParseForSet(DartType item, FieldContext c) {
         onIssue?.call(EasyIssue(
           path: $pathWithIdx,
           code: 'type_mismatch',
-          message: 'Esperado Map para $cn.'
+          message: 'Expected Map for $cn.'
         ));
         return null;
       })()
@@ -1133,7 +1265,7 @@ String _safeItemParseForSet(DartType item, FieldContext c) {
           onIssue?.call(EasyIssue(
             path: $pathWithIdx,
             code: 'invalid_enum',
-            message: "Valor '\$vv' não corresponde a $en."
+            message: "Value '\$vv' does not match $en."
           ));
           return null;
         }
@@ -1142,14 +1274,14 @@ String _safeItemParseForSet(DartType item, FieldContext c) {
           onIssue?.call(EasyIssue(
             path: $pathWithIdx,
             code: 'invalid_enum_index',
-            message: 'Índice de enum fora do intervalo.'
+            message: 'Enum index out of range.'
           ));
           return null;
         }
         onIssue?.call(EasyIssue(
           path: $pathWithIdx,
           code: 'type_mismatch',
-          message: 'Esperado String com o nome do enum.'
+          message: 'Expected String with the enum name.'
         ));
         return null;
       })()
@@ -1158,7 +1290,7 @@ String _safeItemParseForSet(DartType item, FieldContext c) {
 
   // Primitivos / outros
   final base = displayNonNull(item);
-  String mismatchMsg(String expected) => "Esperado $expected.";
+  String mismatchMsg(String expected) => "Expected $expected.";
 
   switch (base) {
     case 'int':
@@ -1175,7 +1307,7 @@ String _safeItemParseForSet(DartType item, FieldContext c) {
         (() {
           final vv = entry.value;
           if (vv is num) return vv.toDouble();
-          onIssue?.call(EasyIssue(path: $pathWithIdx, code: 'type_mismatch', message: '${mismatchMsg('número')}'));
+          onIssue?.call(EasyIssue(path: $pathWithIdx, code: 'type_mismatch', message: '${mismatchMsg('number')}'));
           return null;
         })()
       """;

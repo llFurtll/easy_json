@@ -1,3 +1,4 @@
+import 'package:analyzer/dart/constant/value.dart';
 import 'package:analyzer/dart/element/element.dart';
 import 'package:analyzer/dart/element/type.dart';
 import 'package:build/build.dart';
@@ -10,6 +11,9 @@ import 'field_context.dart';
 import 'strategies.dart';
 
 const _issueImport = "package:dart_easy_json/src/easy_issue.dart";
+
+final _easyConvertChecker = const TypeChecker.typeNamed(EasyConvert);
+final _easyValidateChecker = const TypeChecker.typeNamed(EasyValidate);
 
 class EasyJsonGenerator extends Generator {
   final BuilderOptions options;
@@ -43,6 +47,18 @@ class EasyJsonGenerator extends Generator {
       // Coleta tipos referenciados nos campos
       final referenced = <ClassElement>{};
       for (final f in clazz.fields.where((f) => !f.isStatic)) {
+        // Adiciona imports de conversores e validadores customizados
+        final easyConvert = _easyConvertChecker.firstAnnotationOfExact(f);
+        if (easyConvert != null) {
+          _collectReferencedFunctions(easyConvert, ['fromJson', 'toJson', 'valueFromJson', 'valueToJson'], referenced);
+        }
+
+        final easyValidate = _easyValidateChecker.firstAnnotationOfExact(f);
+        if (easyValidate != null) {
+          _collectReferencedFunctions(easyValidate, ['custom'], referenced);
+        }
+
+        // Coleta imports dos tipos dos campos
         _collectReferencedClasses(f.type, referenced);
       }
 
@@ -278,6 +294,22 @@ class EasyJsonGenerator extends Generator {
       for (final t in type.typeArguments) {
         _collectReferencedClasses(t, out);
       }
+    }
+  }
+
+  void _collectReferencedFunctions(DartObject annotation, List<String> fieldNames, Set<ClassElement> out) {
+    for (final fieldName in fieldNames) {
+      final field = annotation.getField(fieldName);
+      if (field == null || field.isNull) continue;
+
+      final fn = field.toFunctionValue();
+      if (fn == null) continue;
+
+      final enclosing = fn.enclosingElement;
+      if (enclosing is ClassElement) {
+        out.add(enclosing);
+      }
+      // Se for uma função de nível superior, a biblioteca já será importada pelo tipo do campo.
     }
   }
 

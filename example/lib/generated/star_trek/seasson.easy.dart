@@ -62,7 +62,7 @@ List<EasyIssue> seasonValidate(Map<String, dynamic> json) {
       EasyIssue(
         path: 'uid',
         code: 'missing_required',
-        message: 'Campo obrigatório ausente.',
+        message: 'Missing required field.',
       ),
     );
   }
@@ -73,17 +73,17 @@ List<EasyIssue> seasonValidate(Map<String, dynamic> json) {
         EasyIssue(
           path: 'uid',
           code: 'type_mismatch',
-          message: 'Esperado String.',
+          message: 'Expected String.',
         ),
       );
-    }
+    } else if (v != null) {}
   }
   if (!json.containsKey('title')) {
     issues.add(
       EasyIssue(
         path: 'title',
         code: 'missing_required',
-        message: 'Campo obrigatório ausente.',
+        message: 'Missing required field.',
       ),
     );
   }
@@ -94,17 +94,17 @@ List<EasyIssue> seasonValidate(Map<String, dynamic> json) {
         EasyIssue(
           path: 'title',
           code: 'type_mismatch',
-          message: 'Esperado String.',
+          message: 'Expected String.',
         ),
       );
-    }
+    } else if (v != null) {}
   }
   if (!json.containsKey('series')) {
     issues.add(
       EasyIssue(
         path: 'series',
         code: 'missing_required',
-        message: 'Campo obrigatório ausente.',
+        message: 'Missing required field.',
       ),
     );
   }
@@ -115,7 +115,7 @@ List<EasyIssue> seasonValidate(Map<String, dynamic> json) {
         EasyIssue(
           path: 'series',
           code: 'type_mismatch',
-          message: 'Esperado Map para Series.',
+          message: 'Expected Map for Series.',
         ),
       );
     } else if (v is Map) {
@@ -137,7 +137,7 @@ List<EasyIssue> seasonValidate(Map<String, dynamic> json) {
       EasyIssue(
         path: 'seasonNumber',
         code: 'missing_required',
-        message: 'Campo obrigatório ausente.',
+        message: 'Missing required field.',
       ),
     );
   }
@@ -148,17 +148,17 @@ List<EasyIssue> seasonValidate(Map<String, dynamic> json) {
         EasyIssue(
           path: 'seasonNumber',
           code: 'type_mismatch',
-          message: 'Esperado int.',
+          message: 'Expected int.',
         ),
       );
-    }
+    } else if (v != null) {}
   }
   if (!json.containsKey('numberOfEpisodes')) {
     issues.add(
       EasyIssue(
         path: 'numberOfEpisodes',
         code: 'missing_required',
-        message: 'Campo obrigatório ausente.',
+        message: 'Missing required field.',
       ),
     );
   }
@@ -169,17 +169,17 @@ List<EasyIssue> seasonValidate(Map<String, dynamic> json) {
         EasyIssue(
           path: 'numberOfEpisodes',
           code: 'type_mismatch',
-          message: 'Esperado int.',
+          message: 'Expected int.',
         ),
       );
-    }
+    } else if (v != null) {}
   }
   if (!json.containsKey('episodes')) {
     issues.add(
       EasyIssue(
         path: 'episodes',
         code: 'missing_required',
-        message: 'Campo obrigatório ausente.',
+        message: 'Missing required field.',
       ),
     );
   }
@@ -190,7 +190,7 @@ List<EasyIssue> seasonValidate(Map<String, dynamic> json) {
         EasyIssue(
           path: 'episodes',
           code: 'type_mismatch',
-          message: 'Esperado List.',
+          message: 'Expected List.',
         ),
       );
     } else if (v is List) {
@@ -201,7 +201,7 @@ List<EasyIssue> seasonValidate(Map<String, dynamic> json) {
             EasyIssue(
               path: 'episodes[' + i.toString() + ']',
               code: 'null_not_allowed',
-              message: 'Valor nulo não permitido.',
+              message: 'Null value not allowed.',
             ),
           );
         } else {
@@ -210,7 +210,7 @@ List<EasyIssue> seasonValidate(Map<String, dynamic> json) {
               EasyIssue(
                 path: 'episodes[' + i.toString() + ']',
                 code: 'type_mismatch',
-                message: 'Esperado Map para Episode.',
+                message: 'Expected Map for Episode.',
               ),
             );
           } else {
@@ -339,13 +339,7 @@ Season seasonFromJsonSafe(
             const <String, dynamic>{},
             onIssue: (i) => onIssue?.call(
               EasyIssue(
-                path:
-                    'episodes' +
-                    '[' +
-                    entry.key.toString() +
-                    ']' +
-                    '.' +
-                    i.path,
+                path: "'episodes' + '[' + entry.key.toString() + ']'." + i.path,
                 code: i.code,
                 message: i.message,
               ),

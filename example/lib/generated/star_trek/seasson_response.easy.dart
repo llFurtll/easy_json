@@ -42,7 +42,7 @@ List<EasyIssue> seasonResponseValidate(Map<String, dynamic> json) {
       EasyIssue(
         path: 'season',
         code: 'missing_required',
-        message: 'Campo obrigatório ausente.',
+        message: 'Missing required field.',
       ),
     );
   }
@@ -53,7 +53,7 @@ List<EasyIssue> seasonResponseValidate(Map<String, dynamic> json) {
         EasyIssue(
           path: 'season',
           code: 'type_mismatch',
-          message: 'Esperado Map para Season.',
+          message: 'Expected Map for Season.',
         ),
       );
     } else if (v is Map) {

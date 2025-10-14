@@ -52,7 +52,7 @@ List<EasyIssue> dollarRateValidate(Map<String, dynamic> json) {
       EasyIssue(
         path: 'moneda',
         code: 'missing_required',
-        message: 'Campo obrigatório ausente.',
+        message: 'Missing required field.',
       ),
     );
   }
@@ -63,17 +63,17 @@ List<EasyIssue> dollarRateValidate(Map<String, dynamic> json) {
         EasyIssue(
           path: 'moneda',
           code: 'type_mismatch',
-          message: 'Esperado String.',
+          message: 'Expected String.',
         ),
       );
-    }
+    } else if (v != null) {}
   }
   if (!json.containsKey('casa')) {
     issues.add(
       EasyIssue(
         path: 'casa',
         code: 'missing_required',
-        message: 'Campo obrigatório ausente.',
+        message: 'Missing required field.',
       ),
     );
   }
@@ -84,17 +84,17 @@ List<EasyIssue> dollarRateValidate(Map<String, dynamic> json) {
         EasyIssue(
           path: 'casa',
           code: 'type_mismatch',
-          message: 'Esperado String.',
+          message: 'Expected String.',
         ),
       );
-    }
+    } else if (v != null) {}
   }
   if (!json.containsKey('nombre')) {
     issues.add(
       EasyIssue(
         path: 'nombre',
         code: 'missing_required',
-        message: 'Campo obrigatório ausente.',
+        message: 'Missing required field.',
       ),
     );
   }
@@ -105,17 +105,17 @@ List<EasyIssue> dollarRateValidate(Map<String, dynamic> json) {
         EasyIssue(
           path: 'nombre',
           code: 'type_mismatch',
-          message: 'Esperado String.',
+          message: 'Expected String.',
         ),
       );
-    }
+    } else if (v != null) {}
   }
   if (!json.containsKey('compra')) {
     issues.add(
       EasyIssue(
         path: 'compra',
         code: 'missing_required',
-        message: 'Campo obrigatório ausente.',
+        message: 'Missing required field.',
       ),
     );
   }
@@ -126,7 +126,7 @@ List<EasyIssue> dollarRateValidate(Map<String, dynamic> json) {
         EasyIssue(
           path: 'compra',
           code: 'type_mismatch',
-          message: 'Esperado número (int/double).',
+          message: 'Expected number (int/double).',
         ),
       );
     }
@@ -136,7 +136,7 @@ List<EasyIssue> dollarRateValidate(Map<String, dynamic> json) {
       EasyIssue(
         path: 'venta',
         code: 'missing_required',
-        message: 'Campo obrigatório ausente.',
+        message: 'Missing required field.',
       ),
     );
   }
@@ -147,7 +147,7 @@ List<EasyIssue> dollarRateValidate(Map<String, dynamic> json) {
         EasyIssue(
           path: 'venta',
           code: 'type_mismatch',
-          message: 'Esperado número (int/double).',
+          message: 'Expected number (int/double).',
         ),
       );
     }
@@ -157,7 +157,7 @@ List<EasyIssue> dollarRateValidate(Map<String, dynamic> json) {
       EasyIssue(
         path: 'fechaActualizacion',
         code: 'missing_required',
-        message: 'Campo obrigatório ausente.',
+        message: 'Missing required field.',
       ),
     );
   }
@@ -168,21 +168,20 @@ List<EasyIssue> dollarRateValidate(Map<String, dynamic> json) {
         EasyIssue(
           path: 'fechaActualizacion',
           code: 'type_mismatch',
-          message: 'Esperado String (ISO-8601) para DateTime.',
+          message: 'Expected String (ISO-8601) for DateTime.',
         ),
       );
     } else if (v != null) {
-      try {
-        DateTime.parse(v as String);
-      } catch (_) {
+      final dt = DateTime.tryParse(v as String);
+      if (dt == null) {
         issues.add(
           EasyIssue(
             path: 'fechaActualizacion',
             code: 'type_mismatch',
-            message: 'Formato inválido de DateTime.',
+            message: 'Invalid DateTime format.',
           ),
         );
-      }
+      } else {}
     }
   }
   return issues;
@@ -237,7 +236,7 @@ DollarRate dollarRateFromJsonSafe(
               message: 'Formato inválido de DateTime.',
             ),
           );
-          return DateTime.fromMillisecondsSinceEpoch(0);
+          return DateTime.fromMillisecondsSinceEpoch(0); // TODO: message
         }
       }
       onIssue?.call(
