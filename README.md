@@ -48,8 +48,8 @@ Create a `build.yaml` file in your project's root to configure the output locati
 targets:
   $default:
     builders:
-      # This should match the builder package name
-      dart_easy_json_builder:
+      # This key is composed of: <package_name>:<builder_name>
+      dart_easy_json:easy_json_builder:
         options:
           build_extensions:
             # Maps input (e.g., lib/models/user.dart)
@@ -76,14 +76,14 @@ analyzer:
 
 ### Step 1: Annotate Your Model
 
-Create your model class, annotate it with `@EasyJson`, add the `...Serializer` mixin, and include the `part` file that will be generated.
+Create your model class, annotate it with `@EasyJson`, add the `...Serializer` mixin, and **import** the file that will be generated.
 
 ```dart
 // lib/models/user.dart
 import 'package:dart_easy_json/easy_json.dart';
 
 // The path must match the output location from your build.yaml
-part 'package:my_project/generated/models/user.easy.dart';
+import 'package:my_project/generated/models/user.easy.dart'; // Adjust path as needed
 
 @EasyJson(caseStyle: CaseStyle.snake, includeIfNull: false)
 class User with UserSerializer {
@@ -99,7 +99,7 @@ class User with UserSerializer {
     this.email,
   });
 
-  // Factory constructors that delegate to the generated top-level functions.
+  // Factory constructors that delegate to the public, generated functions.
   factory User.fromJson(Map<String, dynamic> json) => userFromJson(json);
   factory User.fromJsonSafe(Map<String, dynamic> json, {void Function(EasyIssue)? onIssue})
     => userFromJsonSafe(json, onIssue: onIssue);

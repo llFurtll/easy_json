@@ -1,3 +1,7 @@
+## 0.4.1
+
+*   **DOCS**: Significantly improved and corrected the `README.md` file with clearer instructions, accurate configuration examples, and better explanations of all features.
+
 ## 0.4.0
 
 *   **FEAT**: Added `@EasyValidate` annotation for powerful, declarative validation.
