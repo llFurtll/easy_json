@@ -28,6 +28,7 @@ dependencies:
 dev_dependencies:
   # 2. For Development: The build_runner tool needs to find and execute the code
   #    generator, which is also included in this package.
+  dart_easy_json: ^0.4.0 # Must match the version in dependencies
   build_runner: ^2.4.0
 ```
 
@@ -189,7 +190,7 @@ Found 3 issues:
 
 ### Standalone Validation
 
-If you only need to validate a JSON payload without the overhead of creating an object, use the generated static `validate` method.
+If you only need to validate a JSON payload without the overhead of creating an object, use the static `validate` method from the generated companion class (`UserJson`).
 
 ```dart
 final problems = UserJson.validate(badJson);
