@@ -286,24 +286,24 @@ List<EasyIssue> episodeValidate(Map<String, dynamic> json) {
   }
   if (json.containsKey('stardateFrom')) {
     final v = json['stardateFrom'];
-    if (v != null && v is! num) {
+    if (v != null && v is! num && v is! String) {
       issues.add(
         EasyIssue(
           path: 'stardateFrom',
           code: 'type_mismatch',
-          message: 'Expected number (int/double).',
+          message: 'Expected number.',
         ),
       );
     }
   }
   if (json.containsKey('stardateTo')) {
     final v = json['stardateTo'];
-    if (v != null && v is! num) {
+    if (v != null && v is! num && v is! String) {
       issues.add(
         EasyIssue(
           path: 'stardateTo',
           code: 'type_mismatch',
-          message: 'Expected number (int/double).',
+          message: 'Expected number.',
         ),
       );
     }
@@ -334,25 +334,26 @@ List<EasyIssue> episodeValidate(Map<String, dynamic> json) {
   }
   if (json.containsKey('usAirDate')) {
     final v = json['usAirDate'];
-    if (v != null && v is! String) {
+    if (v != null && v is! String && v is! num && v is! DateTime) {
       issues.add(
         EasyIssue(
           path: 'usAirDate',
           code: 'type_mismatch',
-          message: 'Expected String (ISO-8601) for DateTime.',
+          message: 'Expected String (ISO), num or DateTime.',
         ),
       );
-    } else if (v != null) {
-      final dt = DateTime.tryParse(v as String);
-      if (dt == null) {
+    } else if (v is String) {
+      if (DateTime.tryParse(v) == null) {
         issues.add(
           EasyIssue(
             path: 'usAirDate',
             code: 'type_mismatch',
-            message: 'Invalid DateTime format.',
+            message: 'Invalid ISO format.',
           ),
         );
-      } else {}
+      } else {
+        final dt = DateTime.parse(v);
+      }
     }
   }
   if (json.containsKey('finalScriptDate')) {
@@ -482,11 +483,23 @@ Episode episodeFromJsonSafe(
     })(),
     seasonNumber: (() {
       final v = json['seasonNumber'];
-      return (v is int) ? v : 0;
+      if (v is int) return v;
+      if (v is num) return v.toInt();
+      if (v is String) {
+        final p = int.tryParse(v);
+        if (p != null) return p;
+      }
+      return 0;
     })(),
     episodeNumber: (() {
       final v = json['episodeNumber'];
-      return (v is int) ? v : 0;
+      if (v is int) return v;
+      if (v is num) return v.toInt();
+      if (v is String) {
+        final p = int.tryParse(v);
+        if (p != null) return p;
+      }
+      return 0;
     })(),
     productionSerialNumber: (() {
       final v = json['productionSerialNumber'];
@@ -498,19 +511,41 @@ Episode episodeFromJsonSafe(
     })(),
     stardateFrom: (() {
       final v = json['stardateFrom'];
-      return (v is num) ? v.toDouble() : 0.0;
+      if (v is num) return v.toDouble();
+      if (v is String) {
+        final p = double.tryParse(v);
+        if (p != null) return p;
+      }
+      return 0.0;
     })(),
     stardateTo: (() {
       final v = json['stardateTo'];
-      return (v is num) ? v.toDouble() : 0.0;
+      if (v is num) return v.toDouble();
+      if (v is String) {
+        final p = double.tryParse(v);
+        if (p != null) return p;
+      }
+      return 0.0;
     })(),
     yearFrom: (() {
       final v = json['yearFrom'];
-      return (v is int) ? v : 0;
+      if (v is int) return v;
+      if (v is num) return v.toInt();
+      if (v is String) {
+        final p = int.tryParse(v);
+        if (p != null) return p;
+      }
+      return 0;
     })(),
     yearTo: (() {
       final v = json['yearTo'];
-      return (v is int) ? v : 0;
+      if (v is int) return v;
+      if (v is num) return v.toInt();
+      if (v is String) {
+        final p = int.tryParse(v);
+        if (p != null) return p;
+      }
+      return 0;
     })(),
     usAirDate: (() {
       final v = json['usAirDate'];
@@ -529,7 +564,7 @@ Episode episodeFromJsonSafe(
               message: 'Formato inválido de DateTime.',
             ),
           );
-          return null; // TODO: message
+          return null;
         }
       }
       onIssue?.call(

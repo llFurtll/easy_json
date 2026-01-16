@@ -128,48 +128,50 @@ List<EasyIssue> seriesValidate(Map<String, dynamic> json) {
   }
   if (json.containsKey('originalRunStartDate')) {
     final v = json['originalRunStartDate'];
-    if (v != null && v is! String) {
+    if (v != null && v is! String && v is! num && v is! DateTime) {
       issues.add(
         EasyIssue(
           path: 'originalRunStartDate',
           code: 'type_mismatch',
-          message: 'Expected String (ISO-8601) for DateTime.',
+          message: 'Expected String (ISO), num or DateTime.',
         ),
       );
-    } else if (v != null) {
-      final dt = DateTime.tryParse(v as String);
-      if (dt == null) {
+    } else if (v is String) {
+      if (DateTime.tryParse(v) == null) {
         issues.add(
           EasyIssue(
             path: 'originalRunStartDate',
             code: 'type_mismatch',
-            message: 'Invalid DateTime format.',
+            message: 'Invalid ISO format.',
           ),
         );
-      } else {}
+      } else {
+        final dt = DateTime.parse(v);
+      }
     }
   }
   if (json.containsKey('originalRunEndDate')) {
     final v = json['originalRunEndDate'];
-    if (v != null && v is! String) {
+    if (v != null && v is! String && v is! num && v is! DateTime) {
       issues.add(
         EasyIssue(
           path: 'originalRunEndDate',
           code: 'type_mismatch',
-          message: 'Expected String (ISO-8601) for DateTime.',
+          message: 'Expected String (ISO), num or DateTime.',
         ),
       );
-    } else if (v != null) {
-      final dt = DateTime.tryParse(v as String);
-      if (dt == null) {
+    } else if (v is String) {
+      if (DateTime.tryParse(v) == null) {
         issues.add(
           EasyIssue(
             path: 'originalRunEndDate',
             code: 'type_mismatch',
-            message: 'Invalid DateTime format.',
+            message: 'Invalid ISO format.',
           ),
         );
-      } else {}
+      } else {
+        final dt = DateTime.parse(v);
+      }
     }
   }
   if (json.containsKey('productionStartYear')) {
@@ -324,7 +326,7 @@ Series seriesFromJsonSafe(
               message: 'Formato inválido de DateTime.',
             ),
           );
-          return null; // TODO: message
+          return null;
         }
       }
       onIssue?.call(
@@ -353,7 +355,7 @@ Series seriesFromJsonSafe(
               message: 'Formato inválido de DateTime.',
             ),
           );
-          return null; // TODO: message
+          return null;
         }
       }
       onIssue?.call(
@@ -367,23 +369,53 @@ Series seriesFromJsonSafe(
     })(),
     productionStartYear: (() {
       final v = json['productionStartYear'];
-      return (v is int) ? v : 0;
+      if (v is int) return v;
+      if (v is num) return v.toInt();
+      if (v is String) {
+        final p = int.tryParse(v);
+        if (p != null) return p;
+      }
+      return 0;
     })(),
     productionEndYear: (() {
       final v = json['productionEndYear'];
-      return (v is int) ? v : 0;
+      if (v is int) return v;
+      if (v is num) return v.toInt();
+      if (v is String) {
+        final p = int.tryParse(v);
+        if (p != null) return p;
+      }
+      return 0;
     })(),
     seasonsCount: (() {
       final v = json['seasonsCount'];
-      return (v is int) ? v : 0;
+      if (v is int) return v;
+      if (v is num) return v.toInt();
+      if (v is String) {
+        final p = int.tryParse(v);
+        if (p != null) return p;
+      }
+      return 0;
     })(),
     episodesCount: (() {
       final v = json['episodesCount'];
-      return (v is int) ? v : 0;
+      if (v is int) return v;
+      if (v is num) return v.toInt();
+      if (v is String) {
+        final p = int.tryParse(v);
+        if (p != null) return p;
+      }
+      return 0;
     })(),
     featureLengthEpisodesCount: (() {
       final v = json['featureLengthEpisodesCount'];
-      return (v is int) ? v : 0;
+      if (v is int) return v;
+      if (v is num) return v.toInt();
+      if (v is String) {
+        final p = int.tryParse(v);
+        if (p != null) return p;
+      }
+      return 0;
     })(),
     productionCompany: (() {
       final _v = json['productionCompany'];

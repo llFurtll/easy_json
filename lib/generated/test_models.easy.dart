@@ -86,7 +86,13 @@ Address addressFromJsonSafe(
     })(),
     number: (() {
       final v = json['number'];
-      return (v is int) ? v : 0;
+      if (v is int) return v;
+      if (v is num) return v.toInt();
+      if (v is String) {
+        final p = int.tryParse(v);
+        if (p != null) return p;
+      }
+      return 0;
     })(),
   );
 }
@@ -167,12 +173,12 @@ List<EasyIssue> productValidate(Map<String, dynamic> json) {
   }
   if (json.containsKey('price')) {
     final v = json['price'];
-    if (v != null && v is! num) {
+    if (v != null && v is! num && v is! String) {
       issues.add(
         EasyIssue(
           path: 'price',
           code: 'type_mismatch',
-          message: 'Expected number (int/double).',
+          message: 'Expected number.',
         ),
       );
     }
@@ -215,11 +221,22 @@ Product productFromJsonSafe(
   return Product(
     id: (() {
       final v = json['id'];
-      return (v is int) ? v : 0;
+      if (v is int) return v;
+      if (v is num) return v.toInt();
+      if (v is String) {
+        final p = int.tryParse(v);
+        if (p != null) return p;
+      }
+      return 0;
     })(),
     price: (() {
       final v = json['price'];
-      return (v is num) ? v.toDouble() : 0.0;
+      if (v is num) return v.toDouble();
+      if (v is String) {
+        final p = double.tryParse(v);
+        if (p != null) return p;
+      }
+      return 0.0;
     })(),
     name: (() {
       final v = json['name'];
@@ -715,33 +732,42 @@ Order orderFromJsonSafe(
       return (v is String) ? v : '';
     })(),
     createdAt: (() {
-      final v = json['createdAt'];
-      if (v == null) return DateTime.fromMillisecondsSinceEpoch(0);
-      if (v is DateTime) return v;
-      if (v is int) return DateTime.fromMillisecondsSinceEpoch(v);
-      if (v is num) return DateTime.fromMillisecondsSinceEpoch(v.toInt());
-      if (v is String) {
-        try {
-          return DateTime.parse(v);
-        } catch (_) {
+      try {
+        // Tenta usar o conversor TmDateMs
+        return TmDateMs.fromJson(json['createdAt']);
+      } catch (e) {
+        // TmDateMs falhou (ex: veio String mas ele queria int).
+        // Em vez de falhar, tenta a lógica nativa robusta!
+        return (() {
+          final v = json['createdAt'];
+          if (v == null) return DateTime.fromMillisecondsSinceEpoch(0);
+          if (v is DateTime) return v;
+          if (v is int) return DateTime.fromMillisecondsSinceEpoch(v);
+          if (v is num) return DateTime.fromMillisecondsSinceEpoch(v.toInt());
+          if (v is String) {
+            try {
+              return DateTime.parse(v);
+            } catch (_) {
+              onIssue?.call(
+                EasyIssue(
+                  path: 'createdAt',
+                  code: 'type_mismatch',
+                  message: 'Formato inválido de DateTime.',
+                ),
+              );
+              return DateTime.fromMillisecondsSinceEpoch(0);
+            }
+          }
           onIssue?.call(
             EasyIssue(
               path: 'createdAt',
               code: 'type_mismatch',
-              message: 'Formato inválido de DateTime.',
+              message: 'Esperado String/epoch/DateTime.',
             ),
           );
-          return DateTime.fromMillisecondsSinceEpoch(0); // TODO: message
-        }
+          return DateTime.fromMillisecondsSinceEpoch(0);
+        })();
       }
-      onIssue?.call(
-        EasyIssue(
-          path: 'createdAt',
-          code: 'type_mismatch',
-          message: 'Esperado String/epoch/DateTime.',
-        ),
-      );
-      return DateTime.fromMillisecondsSinceEpoch(0);
     })(),
     buyerRole: (() {
       final v = json['buyerRole'];
@@ -1099,25 +1125,26 @@ List<EasyIssue> userValidate(Map<String, dynamic> json) {
   }
   if (json.containsKey('created_at')) {
     final v = json['created_at'];
-    if (v != null && v is! String) {
+    if (v != null && v is! String && v is! num && v is! DateTime) {
       issues.add(
         EasyIssue(
           path: 'created_at',
           code: 'type_mismatch',
-          message: 'Expected String (ISO-8601) for DateTime.',
+          message: 'Expected String (ISO), num or DateTime.',
         ),
       );
-    } else if (v != null) {
-      final dt = DateTime.tryParse(v as String);
-      if (dt == null) {
+    } else if (v is String) {
+      if (DateTime.tryParse(v) == null) {
         issues.add(
           EasyIssue(
             path: 'created_at',
             code: 'type_mismatch',
-            message: 'Invalid DateTime format.',
+            message: 'Invalid ISO format.',
           ),
         );
-      } else {}
+      } else {
+        final dt = DateTime.parse(v);
+      }
     }
   }
   if (json.containsKey('e_mail')) {
@@ -1168,7 +1195,7 @@ User userFromJsonSafe(
               message: 'Formato inválido de DateTime.',
             ),
           );
-          return DateTime.fromMillisecondsSinceEpoch(0); // TODO: message
+          return DateTime.fromMillisecondsSinceEpoch(0);
         }
       }
       onIssue?.call(
@@ -1488,25 +1515,25 @@ List<EasyIssue> validationModelValidate(Map<String, dynamic> json) {
   }
   if (json.containsKey('dateOfBirth')) {
     final v = json['dateOfBirth'];
-    if (v != null && v is! String) {
+    if (v != null && v is! String && v is! num && v is! DateTime) {
       issues.add(
         EasyIssue(
           path: 'dateOfBirth',
           code: 'type_mismatch',
-          message: 'Expected String (ISO-8601) for DateTime.',
+          message: 'Expected String (ISO), num or DateTime.',
         ),
       );
-    } else if (v != null) {
-      final dt = DateTime.tryParse(v as String);
-      if (dt == null) {
+    } else if (v is String) {
+      if (DateTime.tryParse(v) == null) {
         issues.add(
           EasyIssue(
             path: 'dateOfBirth',
             code: 'type_mismatch',
-            message: 'Invalid DateTime format.',
+            message: 'Invalid ISO format.',
           ),
         );
       } else {
+        final dt = DateTime.parse(v);
         if (dt.isAfter(DateTime.now())) {
           issues.add(
             EasyIssue(
@@ -1521,25 +1548,25 @@ List<EasyIssue> validationModelValidate(Map<String, dynamic> json) {
   }
   if (json.containsKey('nextAppointment')) {
     final v = json['nextAppointment'];
-    if (v != null && v is! String) {
+    if (v != null && v is! String && v is! num && v is! DateTime) {
       issues.add(
         EasyIssue(
           path: 'nextAppointment',
           code: 'type_mismatch',
-          message: 'Expected String (ISO-8601) for DateTime.',
+          message: 'Expected String (ISO), num or DateTime.',
         ),
       );
-    } else if (v != null) {
-      final dt = DateTime.tryParse(v as String);
-      if (dt == null) {
+    } else if (v is String) {
+      if (DateTime.tryParse(v) == null) {
         issues.add(
           EasyIssue(
             path: 'nextAppointment',
             code: 'type_mismatch',
-            message: 'Invalid DateTime format.',
+            message: 'Invalid ISO format.',
           ),
         );
       } else {
+        final dt = DateTime.parse(v);
         if (dt.isBefore(DateTime.now())) {
           issues.add(
             EasyIssue(
@@ -1573,7 +1600,13 @@ ValidationModel validationModelFromJsonSafe(
     })(),
     age: (() {
       final v = json['age'];
-      return (v is int) ? v : 0;
+      if (v is int) return v;
+      if (v is num) return v.toInt();
+      if (v is String) {
+        final p = int.tryParse(v);
+        if (p != null) return p;
+      }
+      return 0;
     })(),
     email: (() {
       final v = json['email'];
@@ -1625,7 +1658,7 @@ ValidationModel validationModelFromJsonSafe(
               message: 'Formato inválido de DateTime.',
             ),
           );
-          return DateTime.fromMillisecondsSinceEpoch(0); // TODO: message
+          return DateTime.fromMillisecondsSinceEpoch(0);
         }
       }
       onIssue?.call(
@@ -1654,7 +1687,7 @@ ValidationModel validationModelFromJsonSafe(
               message: 'Formato inválido de DateTime.',
             ),
           );
-          return null; // TODO: message
+          return null;
         }
       }
       onIssue?.call(

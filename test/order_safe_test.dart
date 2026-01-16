@@ -15,7 +15,7 @@ void main() {
         "buyerRole": "superuser",         // inválido -> enumFallback guest
         "shipping": {
           "street": "Main",
-          "number": "12",                 // inválido -> fallback 0
+          "number": "12.15",                 // inválido -> fallback 0
         },
         "items": {
           "1": {"id": 1, "price": "9.9", "name": "T-shirt"}, // price string -> fallback 0.0

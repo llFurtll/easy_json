@@ -294,11 +294,23 @@ Season seasonFromJsonSafe(
     })(),
     seasonNumber: (() {
       final v = json['seasonNumber'];
-      return (v is int) ? v : 0;
+      if (v is int) return v;
+      if (v is num) return v.toInt();
+      if (v is String) {
+        final p = int.tryParse(v);
+        if (p != null) return p;
+      }
+      return 0;
     })(),
     numberOfEpisodes: (() {
       final v = json['numberOfEpisodes'];
-      return (v is int) ? v : 0;
+      if (v is int) return v;
+      if (v is num) return v.toInt();
+      if (v is String) {
+        final p = int.tryParse(v);
+        if (p != null) return p;
+      }
+      return 0;
     })(),
     episodes: (() {
       final _v = json['episodes'];

@@ -120,6 +120,9 @@ String _fallbackFor(DartType t, {required bool nullable, Object? custom}) {
     return custom.toString();
   }
   final base = displayNonNull(t);
+  if (base == 'DateTime') {
+    return nullable ? 'null' : 'DateTime.fromMillisecondsSinceEpoch(0)';
+  }
   switch (base) {
     case 'int':
       return '0';
@@ -166,17 +169,16 @@ String _coerceMapKeySafe(String rawKeyExpr, EasyMapKeyType type) {
 class PrimitiveStrategy implements TypeStrategy {
   @override
   String fromJson(FieldContext c) {
-    // 1) conversor de campo tem precedência
+    // 1) Conversor de campo tem precedência no fromJson simples (sem try/catch extra)
     if (c.convertFromJson != null) {
       return "${c.convertFromJson!}(${c.jsonAccessor})";
     }
 
-    // 2) fallback padrão
+    // 2) Lógica padrão
     final t = displayNonNull(c.type);
     final isN = c.isNullable;
 
     if (isExactlyDateTime(c.type)) {
-      // aceita String ISO, int/num (epoch), já com fallback para não-nulo
       return isN
           ? "ej.parseDateTimeOrNull(${c.jsonAccessor})"
           : "ej.parseDateTime(${c.jsonAccessor})";
@@ -211,18 +213,22 @@ class PrimitiveStrategy implements TypeStrategy {
 
   @override
   String fromJsonSafe(FieldContext c) {
-    final t = displayNonNull(c.type);
+    // 1. Prepara o Fallback (valor padrão caso tudo falhe)
     final fb = _fallbackFor(
       c.type,
       nullable: c.isNullable,
       custom: c.fieldFallback,
     );
+
+    // 2. Constrói a Lógica NATIVA Robusta (Standard Logic)
+    //    Esta lógica sabe converter String->DateTime, int->DateTime, etc.
+    //    Vamos guardá-la numa string para usar em dois lugares.
+    String standardLogic;
+
     if (isExactlyDateTime(c.type)) {
-      final nfb = c.isNullable
-          ? 'null'
-          : 'DateTime.fromMillisecondsSinceEpoch(0)';
-      // aceita String ISO, int/num epoch (ms), DateTime direto; em qualquer falha, emite issue
-      return """
+      final nfb = c.isNullable ? 'null' : 'DateTime.fromMillisecondsSinceEpoch(0)';
+      // Lógica nativa poderosa para DateTime
+      standardLogic = """
         (() {
           final v = ${c.jsonAccessor};
           if (v == null) return $nfb;
@@ -232,32 +238,61 @@ class PrimitiveStrategy implements TypeStrategy {
           if (v is String) {
             try { return DateTime.parse(v); } catch (_) {
               onIssue?.call(EasyIssue(path: ${c.pathExpr}, code: 'type_mismatch', message: 'Formato inválido de DateTime.'));
-              return $nfb; // TODO: message
+              return $nfb; 
             }
           }
           onIssue?.call(EasyIssue(path: ${c.pathExpr}, code: 'type_mismatch', message: 'Esperado String/epoch/DateTime.'));
           return $nfb;
         })()
       """;
+    } else {
+      // Lógica nativa para primitivos
+      final t = displayNonNull(c.type);
+      switch (t) {
+        case 'int':
+          standardLogic = "((){ final v=${c.jsonAccessor}; if (v is int) return v; if (v is num) return v.toInt(); if (v is String) { final p = int.tryParse(v); if(p!=null) return p;} return $fb; })()";
+          break;
+        case 'double':
+          standardLogic = "((){ final v=${c.jsonAccessor}; if (v is num) return v.toDouble(); if (v is String) { final p = double.tryParse(v); if(p!=null) return p;} return $fb; })()";
+          break;
+        case 'bool':
+          standardLogic = "((){ final v=${c.jsonAccessor}; return (v is bool)?v:$fb; })()";
+          break;
+        case 'String':
+          standardLogic = c.isNullable
+              ? "((){ final v=${c.jsonAccessor}; return (v is String) ? v : null; })()"
+              : "((){ final v=${c.jsonAccessor}; return (v is String) ? v : ''; })()";
+          break;
+        default:
+          standardLogic = "${c.jsonAccessor} as ${displayWithNull(c.type)}";
+      }
     }
-    switch (t) {
-      case 'int':
-        return "((){ final v=${c.jsonAccessor}; return (v is int)?v:$fb; })()";
-      case 'double':
-        return "((){ final v=${c.jsonAccessor}; return (v is num)?v.toDouble():$fb; })()";
-      case 'bool':
-        return "((){ final v=${c.jsonAccessor}; return (v is bool)?v:$fb; })()";
-      case 'String':
-        return c.isNullable
-            ? "((){ final v=${c.jsonAccessor}; return (v is String) ? v : null; })()"
-            : "((){ final v=${c.jsonAccessor}; return (v is String) ? v : ''; })()";
-      default:
-        return "${c.jsonAccessor} as ${displayWithNull(c.type)}";
+
+    // 3. Verifica se existe Conversor Customizado
+    if (c.convertFromJson != null) {
+      // AQUI ESTÁ A MÁGICA:
+      // Tenta o Custom -> Catch -> Tenta o Nativo (standardLogic) -> Fallback
+      return """
+        (() {
+          try {
+            // Tenta usar o conversor TmDateMs
+            return ${c.convertFromJson!}(${c.jsonAccessor});
+          } catch (e) {
+            // TmDateMs falhou (ex: veio String mas ele queria int).
+            // Em vez de falhar, tenta a lógica nativa robusta!
+            return $standardLogic;
+          }
+        })()
+      """;
     }
+
+    // 4. Se não tem conversor, usa direto a lógica nativa
+    return standardLogic;
   }
 
   @override
   void validate(FieldContext c, StringBuffer out) {
+    // Validação padrão
     final t = displayNonNull(c.type);
     final hasCtorDefault =
         c.enclosingClass.unnamedConstructor?.formalParameters
@@ -272,27 +307,27 @@ class PrimitiveStrategy implements TypeStrategy {
       );
     }
 
-    // Se há conversor custom, não impomos formato da entrada
+    // Se tem conversor, pulamos validação de tipo de entrada (o converter cuida)
     if (c.convertFromJson != null) return;
 
     String check;
     if (isExactlyDateTime(c.type)) {
       check = """
-        if (v != null && v is! String) {
-          issues.add(EasyIssue(path: '${c.jsonKey}', code: 'type_mismatch', message: 'Expected String (ISO-8601) for DateTime.'));
-        } else if (v != null) {
-          final dt = DateTime.tryParse(v as String);
-          if (dt == null) {
-            issues.add(EasyIssue(path: '${c.jsonKey}', code: 'type_mismatch', message: 'Invalid DateTime format.'));
+        if (v != null && v is! String && v is! num && v is! DateTime) {
+          issues.add(EasyIssue(path: '${c.jsonKey}', code: 'type_mismatch', message: 'Expected String (ISO), num or DateTime.'));
+        } else if (v is String) {
+          if (DateTime.tryParse(v) == null) {
+             issues.add(EasyIssue(path: '${c.jsonKey}', code: 'type_mismatch', message: 'Invalid ISO format.'));
           } else {
-            ${_generateDateTimeValidationChecks(c, 'dt')}
+             final dt = DateTime.parse(v);
+             ${_generateDateTimeValidationChecks(c, 'dt')}
           }
         }
       """;
     } else if (t == 'double') {
       check =
-          "if (v != null && v is! num) { "
-          "  issues.add(EasyIssue(path: '${c.jsonKey}', code: 'type_mismatch', message: 'Expected number (int/double).')); "
+          "if (v != null && v is! num && v is! String) { "
+          "  issues.add(EasyIssue(path: '${c.jsonKey}', code: 'type_mismatch', message: 'Expected number.')); "
           "}";
     } else {
       final sb = StringBuffer(
@@ -310,7 +345,6 @@ class PrimitiveStrategy implements TypeStrategy {
 
   @override
   String toJson(FieldContext c) {
-    // 1) conversor de campo tem precedência
     if (c.convertToJson != null) {
       final call = "${c.convertToJson!}(${c.instanceAccess})";
       return c.isNullable
@@ -318,18 +352,15 @@ class PrimitiveStrategy implements TypeStrategy {
           : call;
     }
 
-    // 2) DateTime -> ISO-8601 string
     if (isExactlyDateTime(c.type)) {
       return c.isNullable
           ? "${c.instanceAccess}?.toIso8601String()"
           : "${c.instanceAccess}.toIso8601String()";
     }
 
-    // 3) demais tipos: já está ok
     return c.instanceAccess;
   }
 }
-
 // ===== Enum =====
 class EnumStrategy implements TypeStrategy {
   @override

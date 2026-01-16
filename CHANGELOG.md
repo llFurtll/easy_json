@@ -1,3 +1,9 @@
+## 0.4.2
+
+* **FIX**: Enhanced `fromJsonSafe` generation strategy for fields using `@EasyConvert`.
+    * Now implements a smart fallback mechanism: if the custom converter throws an exception (e.g., strict type mismatch), the generator attempts to use the library's native robust parsing logic (supporting ISO-8601 for DateTime, numeric coercion, etc.) before reverting to the default fallback value.
+    * This ensures that valid data (like an ISO String) is not discarded even if the custom converter (e.g., `TmDateMs`) strictly expects an `int`.
+
 ## 0.4.1
 
 *   **DOCS**: Significantly improved and corrected the `README.md` file with clearer instructions, accurate configuration examples, and better explanations of all features.

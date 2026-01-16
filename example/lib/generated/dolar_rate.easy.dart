@@ -121,12 +121,12 @@ List<EasyIssue> dollarRateValidate(Map<String, dynamic> json) {
   }
   if (json.containsKey('compra')) {
     final v = json['compra'];
-    if (v != null && v is! num) {
+    if (v != null && v is! num && v is! String) {
       issues.add(
         EasyIssue(
           path: 'compra',
           code: 'type_mismatch',
-          message: 'Expected number (int/double).',
+          message: 'Expected number.',
         ),
       );
     }
@@ -142,12 +142,12 @@ List<EasyIssue> dollarRateValidate(Map<String, dynamic> json) {
   }
   if (json.containsKey('venta')) {
     final v = json['venta'];
-    if (v != null && v is! num) {
+    if (v != null && v is! num && v is! String) {
       issues.add(
         EasyIssue(
           path: 'venta',
           code: 'type_mismatch',
-          message: 'Expected number (int/double).',
+          message: 'Expected number.',
         ),
       );
     }
@@ -163,25 +163,26 @@ List<EasyIssue> dollarRateValidate(Map<String, dynamic> json) {
   }
   if (json.containsKey('fechaActualizacion')) {
     final v = json['fechaActualizacion'];
-    if (v != null && v is! String) {
+    if (v != null && v is! String && v is! num && v is! DateTime) {
       issues.add(
         EasyIssue(
           path: 'fechaActualizacion',
           code: 'type_mismatch',
-          message: 'Expected String (ISO-8601) for DateTime.',
+          message: 'Expected String (ISO), num or DateTime.',
         ),
       );
-    } else if (v != null) {
-      final dt = DateTime.tryParse(v as String);
-      if (dt == null) {
+    } else if (v is String) {
+      if (DateTime.tryParse(v) == null) {
         issues.add(
           EasyIssue(
             path: 'fechaActualizacion',
             code: 'type_mismatch',
-            message: 'Invalid DateTime format.',
+            message: 'Invalid ISO format.',
           ),
         );
-      } else {}
+      } else {
+        final dt = DateTime.parse(v);
+      }
     }
   }
   return issues;
@@ -213,11 +214,21 @@ DollarRate dollarRateFromJsonSafe(
     })(),
     buy: (() {
       final v = json['compra'];
-      return (v is num) ? v.toDouble() : 0.0;
+      if (v is num) return v.toDouble();
+      if (v is String) {
+        final p = double.tryParse(v);
+        if (p != null) return p;
+      }
+      return 0.0;
     })(),
     sell: (() {
       final v = json['venta'];
-      return (v is num) ? v.toDouble() : 0.0;
+      if (v is num) return v.toDouble();
+      if (v is String) {
+        final p = double.tryParse(v);
+        if (p != null) return p;
+      }
+      return 0.0;
     })(),
     updatedAt: (() {
       final v = json['fechaActualizacion'];
@@ -236,7 +247,7 @@ DollarRate dollarRateFromJsonSafe(
               message: 'Formato inválido de DateTime.',
             ),
           );
-          return DateTime.fromMillisecondsSinceEpoch(0); // TODO: message
+          return DateTime.fromMillisecondsSinceEpoch(0);
         }
       }
       onIssue?.call(
