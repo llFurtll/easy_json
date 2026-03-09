@@ -123,7 +123,7 @@ List<EasyIssue> seasonValidate(Map<String, dynamic> json) {
       for (final ci in child) {
         issues.add(
           EasyIssue(
-            path: 'series.' + ci.path,
+            path: 'series' + '.' + ci.path,
             code: ci.code,
             message: ci.message,
           ),
@@ -131,7 +131,6 @@ List<EasyIssue> seasonValidate(Map<String, dynamic> json) {
       }
     }
   }
-
   if (!json.containsKey('seasonNumber')) {
     issues.add(
       EasyIssue(
@@ -199,7 +198,7 @@ List<EasyIssue> seasonValidate(Map<String, dynamic> json) {
         if (e == null) {
           issues.add(
             EasyIssue(
-              path: 'episodes[' + i.toString() + ']',
+              path: 'episodes' + '[' + i.toString() + ']',
               code: 'null_not_allowed',
               message: 'Null value not allowed.',
             ),
@@ -208,7 +207,7 @@ List<EasyIssue> seasonValidate(Map<String, dynamic> json) {
           if (e is! Map) {
             issues.add(
               EasyIssue(
-                path: 'episodes[' + i.toString() + ']',
+                path: 'episodes' + '[' + i.toString() + ']',
                 code: 'type_mismatch',
                 message: 'Expected Map for Episode.',
               ),
@@ -218,7 +217,7 @@ List<EasyIssue> seasonValidate(Map<String, dynamic> json) {
             for (final ci in child) {
               issues.add(
                 EasyIssue(
-                  path: 'episodes[' + i.toString() + '].' + ci.path,
+                  path: 'episodes' + '[' + i.toString() + '].' + ci.path,
                   code: ci.code,
                   message: ci.message,
                 ),
@@ -229,7 +228,6 @@ List<EasyIssue> seasonValidate(Map<String, dynamic> json) {
       }
     }
   }
-
   return issues;
 }
 

@@ -164,3 +164,33 @@ class ValidationModel with ValidationModelSerializer {
   factory ValidationModel.fromJson(Map<String, dynamic> json) =>
       validationModelFromJson(json);
 }
+
+@EasyJson()
+class IgnoreModel with IgnoreModelSerializer {
+  final String visible;
+
+  @EasyIgnore()
+  final String secret;
+
+  IgnoreModel({
+    required this.visible,
+    this.secret = 'default_secret',
+  });
+
+  factory IgnoreModel.fromJson(Map<String, dynamic> json) => ignoreModelFromJson(json);
+  factory IgnoreModel.fromJsonSafe(Map<String, dynamic> json, {void Function(EasyIssue)? onIssue}) => ignoreModelFromJsonSafe(json, onIssue: onIssue);
+}
+
+@EasyJson()
+class PathModel with PathModelSerializer {
+  @EasyPath('meta.count')
+  final int count;
+
+  @EasyPath('meta.info.user_name')
+  final String userName;
+
+  PathModel({required this.count, required this.userName});
+
+  factory PathModel.fromJson(Map<String, dynamic> json) => pathModelFromJson(json);
+  factory PathModel.fromJsonSafe(Map<String, dynamic> json, {void Function(EasyIssue)? onIssue}) => pathModelFromJsonSafe(json, onIssue: onIssue);
+}

@@ -142,7 +142,7 @@ class EasyJsonGenerator extends Generator {
           classIncludeIfNull: classIncludeIfNull,
           classCaseStyle: classCaseStyle,
         ),
-    ];
+    ].where((c) => !c.isIgnored).toList();
 
     // === Render fromJson / toJson / validate / fromJsonSafe ===
     final fromJsonBody = contexts

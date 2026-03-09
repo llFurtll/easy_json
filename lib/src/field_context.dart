@@ -9,6 +9,8 @@ final _easyJsonChecker = const TypeChecker.typeNamed(EasyJson);
 final _easyConvertChecker = const TypeChecker.typeNamed(EasyConvert);
 final _easyMapKeyChecker = const TypeChecker.typeNamed(EasyMapKey);
 final _easyValidateChecker = const TypeChecker.typeNamed(EasyValidate);
+final _easyIgnoreChecker = const TypeChecker.typeNamed(EasyIgnore);
+final _easyPathChecker = const TypeChecker.typeNamed(EasyPath);
 
 class FieldContext {
   FieldContext({
@@ -19,6 +21,8 @@ class FieldContext {
   }) : name = element.displayName,
        type = element.type,
        isNullable = _isNullableType(element.type),
+       isIgnored = _easyIgnoreChecker.hasAnnotationOf(element),
+       easyPath = _easyPathChecker.firstAnnotationOfExact(element)?.getField('path')?.toStringValue(),
        jsonKey =
            _jsonKeyFor(element) ??
            _applyCaseStyle(element.displayName, classCaseStyle),
@@ -56,6 +60,8 @@ class FieldContext {
   final String name;
   final DartType type;
   final bool isNullable;
+  final bool isIgnored;
+  final String? easyPath;
 
   final String jsonKey;
   final bool classIncludeIfNull;
@@ -104,8 +110,21 @@ class FieldContext {
   bool get emitNulls => (includeIfNull ?? classIncludeIfNull) == true;
 
   String get instanceAccess => 'instance.$name';
-  String get jsonAccessor => "json['$jsonKey']";
-  String get pathExpr => "'$jsonKey'";
+  
+  String get jsonAccessor {
+    if (easyPath != null) {
+      final parts = easyPath!.split('.');
+      var access = "json['${parts[0]}']";
+      for (var i = 1; i < parts.length; i++) {
+        // Cast seguro para Map? antes de acessar o próximo nível
+        access = "($access as Map?)?['${parts[i]}']";
+      }
+      return access;
+    }
+    return "json['$jsonKey']";
+  }
+
+  String get pathExpr => easyPath != null ? "'$easyPath'" : "'$jsonKey'";
 
   // helpers
   static bool _isNullableType(DartType t) => t.getDisplayString().endsWith('?');

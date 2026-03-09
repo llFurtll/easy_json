@@ -13,6 +13,31 @@ abstract class TypeStrategy {
   String toJson(FieldContext c);
 }
 
+/// Helper para gerar a estrutura de validação (check de required + extração de valor).
+void _validateField(FieldContext c, StringBuffer out, String checkBody) {
+  final hasCtorDefault = c.enclosingClass.unnamedConstructor?.formalParameters
+          .firstWhereOrNull((p) => p.name == c.name)
+          ?.defaultValueCode !=
+      null;
+
+  if (c.easyPath != null) {
+    // Com EasyPath, não usamos containsKey na raiz. Verificamos se o valor extraído é nulo.
+    out.writeln("{");
+    out.writeln("final v = ${c.jsonAccessor};");
+    if (!c.isNullable && !hasCtorDefault) {
+      out.writeln("if (v == null) { issues.add(EasyIssue(path: ${c.pathExpr}, code: 'missing_required', message: 'Missing required field.')); }");
+    }
+    out.writeln(checkBody);
+    out.writeln("}");
+  } else {
+    // Padrão: verifica containsKey para ser preciso sobre "missing field".
+    if (!c.isNullable && !hasCtorDefault) {
+      out.writeln("if (!json.containsKey('${c.jsonKey}')) { issues.add(EasyIssue(path: ${c.pathExpr}, code: 'missing_required', message: 'Missing required field.')); }");
+    }
+    out.writeln("if (json.containsKey('${c.jsonKey}')) { final v = ${c.jsonAccessor}; $checkBody }");
+  }
+}
+
 void _generateValidationChecks(FieldContext c, StringBuffer out) {
   final validator = c.validator;
   if (validator == null) return;
@@ -27,7 +52,7 @@ void _generateValidationChecks(FieldContext c, StringBuffer out) {
   if (minLength != null && (isString || isCollection)) {
     final accessor = 'v.length'; // .length works for String, List, Set, Map
     out.writeln(
-      "if ($accessor < $minLength) { issues.add(EasyIssue(path: '${c.jsonKey}', code: 'min_length', message: 'Must have at least $minLength ${isString ? 'characters' : 'elements'}.')); }",
+      "if ($accessor < $minLength) { issues.add(EasyIssue(path: ${c.pathExpr}, code: 'min_length', message: 'Must have at least $minLength ${isString ? 'characters' : 'elements'}.')); }",
     );
   }
 
@@ -36,7 +61,7 @@ void _generateValidationChecks(FieldContext c, StringBuffer out) {
   if (maxLength != null && (isString || isCollection)) {
     final accessor = 'v.length';
     out.writeln(
-      "if ($accessor > $maxLength) { issues.add(EasyIssue(path: '${c.jsonKey}', code: 'max_length', message: 'Must have at most $maxLength ${isString ? 'characters' : 'elements'}.')); }",
+      "if ($accessor > $maxLength) { issues.add(EasyIssue(path: ${c.pathExpr}, code: 'max_length', message: 'Must have at most $maxLength ${isString ? 'characters' : 'elements'}.')); }",
     );
   }
 
@@ -46,7 +71,7 @@ void _generateValidationChecks(FieldContext c, StringBuffer out) {
     // Escapa a string para ser usada dentro de uma string literal em Dart
     final escapedRegex = regex.replaceAll("'", r"\'");
     out.writeln(
-      "if (!RegExp(r'$escapedRegex').hasMatch(v as String)) { issues.add(EasyIssue(path: '${c.jsonKey}', code: 'regex_mismatch', message: 'Invalid format.')); }",
+      "if (!RegExp(r'$escapedRegex').hasMatch(v as String)) { issues.add(EasyIssue(path: ${c.pathExpr}, code: 'regex_mismatch', message: 'Invalid format.')); }",
     );
   }
 
@@ -77,7 +102,7 @@ void _generateValidationChecks(FieldContext c, StringBuffer out) {
     }
     if (regex != null) {
       final escapedRegex = regex.replaceAll("'", r"\'");
-      out.writeln("if (!RegExp(r'$escapedRegex').hasMatch(v as String)) { issues.add(EasyIssue(path: '${c.jsonKey}', code: '$code', message: '$message')); }");
+      out.writeln("if (!RegExp(r'$escapedRegex').hasMatch(v as String)) { issues.add(EasyIssue(path: ${c.pathExpr}, code: '$code', message: '$message')); }");
     }
   }
 
@@ -86,7 +111,7 @@ void _generateValidationChecks(FieldContext c, StringBuffer out) {
   if (minReader != null && isNum) {
     final min = minReader.literalValue as num;
     out.writeln(
-      "if ((v as num) < $min) { issues.add(EasyIssue(path: '${c.jsonKey}', code: 'min_value', message: 'The minimum value is $min.')); }",
+      "if ((v as num) < $min) { issues.add(EasyIssue(path: ${c.pathExpr}, code: 'min_value', message: 'The minimum value is $min.')); }",
     );
   }
 
@@ -95,7 +120,7 @@ void _generateValidationChecks(FieldContext c, StringBuffer out) {
   if (maxReader != null && isNum) {
     final max = maxReader.literalValue as num;
     out.writeln(
-      "if ((v as num) > $max) { issues.add(EasyIssue(path: '${c.jsonKey}', code: 'max_value', message: 'The maximum value is $max.')); }",
+      "if ((v as num) > $max) { issues.add(EasyIssue(path: ${c.pathExpr}, code: 'max_value', message: 'The maximum value is $max.')); }",
     );
   }
 
@@ -103,7 +128,7 @@ void _generateValidationChecks(FieldContext c, StringBuffer out) {
   if (c.customValidatorFn != null) {
     final fieldType = displayNonNull(c.type);
     out.writeln(
-      "if (!(${c.customValidatorFn!}(v as $fieldType))) { issues.add(EasyIssue(path: '${c.jsonKey}', code: 'custom_validation_failed', message: 'Custom validation failed.')); }",
+      "if (!(${c.customValidatorFn!}(v as $fieldType))) { issues.add(EasyIssue(path: ${c.pathExpr}, code: 'custom_validation_failed', message: 'Custom validation failed.')); }",
     );
   }
 }
@@ -294,18 +319,6 @@ class PrimitiveStrategy implements TypeStrategy {
   void validate(FieldContext c, StringBuffer out) {
     // Validação padrão
     final t = displayNonNull(c.type);
-    final hasCtorDefault =
-        c.enclosingClass.unnamedConstructor?.formalParameters
-            .firstWhereOrNull((p) => p.name == c.name)
-            ?.defaultValueCode !=
-        null;
-
-    if (!c.isNullable && !hasCtorDefault) {
-      out.writeln(
-        "if (!json.containsKey('${c.jsonKey}')) "
-        "{ issues.add(EasyIssue(path: '${c.jsonKey}', code: 'missing_required', message: 'Missing required field.')); }",
-      );
-    }
 
     // Se tem conversor, pulamos validação de tipo de entrada (o converter cuida)
     if (c.convertFromJson != null) return;
@@ -314,10 +327,10 @@ class PrimitiveStrategy implements TypeStrategy {
     if (isExactlyDateTime(c.type)) {
       check = """
         if (v != null && v is! String && v is! num && v is! DateTime) {
-          issues.add(EasyIssue(path: '${c.jsonKey}', code: 'type_mismatch', message: 'Expected String (ISO), num or DateTime.'));
+          issues.add(EasyIssue(path: ${c.pathExpr}, code: 'type_mismatch', message: 'Expected String (ISO), num or DateTime.'));
         } else if (v is String) {
           if (DateTime.tryParse(v) == null) {
-             issues.add(EasyIssue(path: '${c.jsonKey}', code: 'type_mismatch', message: 'Invalid ISO format.'));
+             issues.add(EasyIssue(path: ${c.pathExpr}, code: 'type_mismatch', message: 'Invalid ISO format.'));
           } else {
              final dt = DateTime.parse(v);
              ${_generateDateTimeValidationChecks(c, 'dt')}
@@ -327,20 +340,18 @@ class PrimitiveStrategy implements TypeStrategy {
     } else if (t == 'double') {
       check =
           "if (v != null && v is! num && v is! String) { "
-          "  issues.add(EasyIssue(path: '${c.jsonKey}', code: 'type_mismatch', message: 'Expected number.')); "
+          "  issues.add(EasyIssue(path: ${c.pathExpr}, code: 'type_mismatch', message: 'Expected number.')); "
           "}";
     } else {
       final sb = StringBuffer(
           "if (v != null && v is! $t) { "
-          "  issues.add(EasyIssue(path: '${c.jsonKey}', code: 'type_mismatch', message: 'Expected $t.')); "
+          "  issues.add(EasyIssue(path: ${c.pathExpr}, code: 'type_mismatch', message: 'Expected $t.')); "
           "} else if (v != null) {");
       _generateValidationChecks(c, sb);
       sb.write('}');
       check = sb.toString();
     }
-    out.writeln(
-      "if (json.containsKey('${c.jsonKey}')) { final v = ${c.jsonAccessor}; $check }",
-    );
+    _validateField(c, out, check);
   }
 
   @override
@@ -421,32 +432,18 @@ class EnumStrategy implements TypeStrategy {
   @override
   void validate(FieldContext c, StringBuffer out) {
     final en = displayNonNull(c.type);
-    final hasCtorDefault =
-        c.enclosingClass.unnamedConstructor?.formalParameters
-            .firstWhereOrNull((p) => p.name == c.name)
-            ?.defaultValueCode !=
-        null;
 
-    if (!c.isNullable && !hasCtorDefault) {
-      out.writeln(
-        "if (!json.containsKey('${c.jsonKey}')) "
-        "{ issues.add(EasyIssue(path: '${c.jsonKey}', code: 'missing_required', message: 'Missing required field.')); }",
-      );
-    }
-
-    out.writeln("""
-      if (json.containsKey('${c.jsonKey}')) {
-        final v = ${c.jsonAccessor};
+    final check = """
         if (v != null && v is! String) {
-          issues.add(EasyIssue(path: '${c.jsonKey}', code: 'type_mismatch', message: 'Expected String with the enum name.'));
+          issues.add(EasyIssue(path: ${c.pathExpr}, code: 'type_mismatch', message: 'Expected String with the enum name.'));
         } else if (v != null) {
           final ok = $en.values.any((e) => e.name == v);
           if (!ok) {
-            issues.add(EasyIssue(path: '${c.jsonKey}', code: 'invalid_enum', message: "Value '\$v' does not match $en."));
+            issues.add(EasyIssue(path: ${c.pathExpr}, code: 'invalid_enum', message: "Value '\$v' does not match $en."));
           }
         }
-      }
-    """);
+    """;
+    _validateField(c, out, check);
   }
 
   @override
@@ -503,31 +500,17 @@ class ObjectStrategy implements TypeStrategy {
     final cn = displayNonNull(c.type);
     final vn = _lcFirst(cn);
 
-    final hasCtorDefault =
-        c.enclosingClass.unnamedConstructor?.formalParameters
-            .firstWhereOrNull((p) => p.name == c.name)
-            ?.defaultValueCode !=
-        null;
-    if (!c.isNullable && !hasCtorDefault) {
-      out.writeln(
-        "if (!json.containsKey('${c.jsonKey}')) "
-        "{ issues.add(EasyIssue(path: '${c.jsonKey}', code: 'missing_required', message: 'Missing required field.')); }",
-      );
-    }
-
-    out.writeln("""
-      if (json.containsKey('${c.jsonKey}')) {
-        final v = ${c.jsonAccessor};
+    final check = """
         if (v != null && v is! Map) {
-          issues.add(EasyIssue(path: '${c.jsonKey}', code: 'type_mismatch', message: 'Expected Map for $cn.'));
+          issues.add(EasyIssue(path: ${c.pathExpr}, code: 'type_mismatch', message: 'Expected Map for $cn.'));
         } else if (v is Map) {
           final child = ${vn}Validate(Map<String,dynamic>.from(v));
           for (final ci in child) {
-            issues.add(EasyIssue(path: '${c.jsonKey}.' + ci.path, code: ci.code, message: ci.message));
+            issues.add(EasyIssue(path: ${c.pathExpr} + '.' + ci.path, code: ci.code, message: ci.message));
           }
         }
-      }
-    """);
+    """;
+    _validateField(c, out, check);
   }
 
   @override
@@ -568,77 +551,63 @@ class ListStrategy implements TypeStrategy {
 
   @override
   void validate(FieldContext c, StringBuffer out) {
-    final hasCtorDefault =
-        c.enclosingClass.unnamedConstructor?.formalParameters
-            .firstWhereOrNull((p) => p.name == c.name)
-            ?.defaultValueCode !=
-        null;
-    if (!c.isNullable && !hasCtorDefault) {
-      out.writeln(
-        "if (!json.containsKey('${c.jsonKey}')) "
-        "{ issues.add(EasyIssue(path: '${c.jsonKey}', code: 'missing_required', message: 'Missing required field.')); }",
-      );
-    }
-
     final item = c.listItemType!;
     final itemBase = displayNonNull(item);
     final itemIsNullable = displayWithNull(item).endsWith('?');
 
-    out.writeln("""
-    if (json.containsKey('${c.jsonKey}')) {
-      final v = ${c.jsonAccessor};
+    final sb = StringBuffer("""
       if (v != null && v is! List) {
-        issues.add(EasyIssue(path: '${c.jsonKey}', code: 'type_mismatch', message: 'Expected List.'));
+        issues.add(EasyIssue(path: ${c.pathExpr}, code: 'type_mismatch', message: 'Expected List.'));
       } else if (v is List) {
 """);
-    _generateValidationChecks(c, out);
-    out.writeln("""
+    _generateValidationChecks(c, sb);
+    sb.writeln("""
         for (var i = 0; i < v.length; i++) {
           final e = v[i];
           if (e == null) {
-            ${itemIsNullable ? '' : "issues.add(EasyIssue(path: '${c.jsonKey}[' + i.toString() + ']', code: 'null_not_allowed', message: 'Null value not allowed.'));"} 
+            ${itemIsNullable ? '' : "issues.add(EasyIssue(path: ${c.pathExpr} + '[' + i.toString() + ']', code: 'null_not_allowed', message: 'Null value not allowed.'));"} 
           } else {
   """);
 
     if (isEasyJsonClass(item)) {
       final cn = displayNonNull(item);
       final vn = _lcFirst(cn);
-      out.writeln("""
+      sb.writeln("""
             if (e is! Map) {
-              issues.add(EasyIssue(path: '${c.jsonKey}[' + i.toString() + ']', code: 'type_mismatch', message: 'Expected Map for $cn.'));
+              issues.add(EasyIssue(path: ${c.pathExpr} + '[' + i.toString() + ']', code: 'type_mismatch', message: 'Expected Map for $cn.'));
             } else {
               final child = ${vn}Validate(Map<String,dynamic>.from(e as Map));
               for (final ci in child) {
-                issues.add(EasyIssue(path: '${c.jsonKey}[' + i.toString() + '].' + ci.path, code: ci.code, message: ci.message));
+                issues.add(EasyIssue(path: ${c.pathExpr} + '[' + i.toString() + '].' + ci.path, code: ci.code, message: ci.message));
               }
             }
     """);
     } else if (isEnumType(item)) {
       final en = displayNonNull(item);
-      out.writeln("""
+      sb.writeln("""
             if (e is! String) {
-              issues.add(EasyIssue(path: '${c.jsonKey}[' + i.toString() + ']', code: 'type_mismatch', message: 'Expected String with enum name.'));
+              issues.add(EasyIssue(path: ${c.pathExpr} + '[' + i.toString() + ']', code: 'type_mismatch', message: 'Expected String with enum name.'));
             } else {
               final ok = $en.values.any((x) => x.name == e);
               if (!ok) {
-                issues.add(EasyIssue(path: '${c.jsonKey}[' + i.toString() + ']', code: 'invalid_enum', message: "Value '\$e' does not match $en."));
+                issues.add(EasyIssue(path: ${c.pathExpr} + '[' + i.toString() + ']', code: 'invalid_enum', message: "Value '\$e' does not match $en."));
               }
             }
     """);
     } else {
-      out.writeln("""
+      sb.writeln("""
             if (e is! $itemBase) {
-              issues.add(EasyIssue(path: '${c.jsonKey}[' + i.toString() + ']', code: 'type_mismatch', message: 'Expected $itemBase.'));
+              issues.add(EasyIssue(path: ${c.pathExpr} + '[' + i.toString() + ']', code: 'type_mismatch', message: 'Expected $itemBase.'));
             }
     """);
     }
 
-    out.writeln("""
+    sb.writeln("""
           }
         }
       }
-    }
   """);
+    _validateField(c, out, sb.toString());
   }
 
   @override
@@ -701,77 +670,63 @@ class SetStrategy implements TypeStrategy {
 
   @override
   void validate(FieldContext c, StringBuffer out) {
-    final hasCtorDefault =
-        c.enclosingClass.unnamedConstructor?.formalParameters
-            .firstWhereOrNull((p) => p.name == c.name)
-            ?.defaultValueCode !=
-        null;
-    if (!c.isNullable && !hasCtorDefault) {
-      out.writeln(
-        "if (!json.containsKey('${c.jsonKey}')) "
-        "{ issues.add(EasyIssue(path: '${c.jsonKey}', code: 'missing_required', message: 'Missing required field.')); }",
-      );
-    }
-
     final item = c.setItemType!;
     final itemBase = displayNonNull(item);
     final itemIsNullable = displayWithNull(item).endsWith('?');
 
-    out.writeln("""
-    if (json.containsKey('${c.jsonKey}')) {
-      final v = ${c.jsonAccessor};
+    final sb = StringBuffer("""
       if (v != null && v is! List) {
-        issues.add(EasyIssue(path: '${c.jsonKey}', code: 'type_mismatch', message: 'Expected List for Set.'));
+        issues.add(EasyIssue(path: ${c.pathExpr}, code: 'type_mismatch', message: 'Expected List for Set.'));
       } else if (v is List) {
 """);
-    _generateValidationChecks(c, out);
-    out.writeln("""
+    _generateValidationChecks(c, sb);
+    sb.writeln("""
         for (var i = 0; i < v.length; i++) {
           final e = v[i];
           if (e == null) {
-            ${itemIsNullable ? '' : "issues.add(EasyIssue(path: '${c.jsonKey}[' + i.toString() + ']', code: 'null_not_allowed', message: 'Null value not allowed.'));"} 
+            ${itemIsNullable ? '' : "issues.add(EasyIssue(path: ${c.pathExpr} + '[' + i.toString() + ']', code: 'null_not_allowed', message: 'Null value not allowed.'));"} 
           } else {
   """);
 
     if (isEasyJsonClass(item)) {
       final cn = displayNonNull(item);
       final vn = _lcFirst(cn);
-      out.writeln("""
+      sb.writeln("""
             if (e is! Map) {
-              issues.add(EasyIssue(path: '${c.jsonKey}[' + i.toString() + ']', code: 'type_mismatch', message: 'Expected Map for $cn.'));
+              issues.add(EasyIssue(path: ${c.pathExpr} + '[' + i.toString() + ']', code: 'type_mismatch', message: 'Expected Map for $cn.'));
             } else {
               final child = ${vn}Validate(Map<String,dynamic>.from(e as Map));
               for (final ci in child) {
-                issues.add(EasyIssue(path: '${c.jsonKey}[' + i.toString() + '].' + ci.path, code: ci.code, message: ci.message));
+                issues.add(EasyIssue(path: ${c.pathExpr} + '[' + i.toString() + '].' + ci.path, code: ci.code, message: ci.message));
               }
             }
     """);
     } else if (isEnumType(item)) {
       final en = displayNonNull(item);
-      out.writeln("""
+      sb.writeln("""
             if (e is! String) {
-              issues.add(EasyIssue(path: '${c.jsonKey}[' + i.toString() + ']', code: 'type_mismatch', message: 'Expected String with enum name.'));
+              issues.add(EasyIssue(path: ${c.pathExpr} + '[' + i.toString() + ']', code: 'type_mismatch', message: 'Expected String with enum name.'));
             } else {
               final ok = $en.values.any((x) => x.name == e);
               if (!ok) {
-                issues.add(EasyIssue(path: '${c.jsonKey}[' + i.toString() + ']', code: 'invalid_enum', message: "Value '\$e' does not match $en."));
+                issues.add(EasyIssue(path: ${c.pathExpr} + '[' + i.toString() + ']', code: 'invalid_enum', message: "Value '\$e' does not match $en."));
               }
             }
     """);
     } else {
-      out.writeln("""
+      sb.writeln("""
             if (e is! $itemBase) {
-              issues.add(EasyIssue(path: '${c.jsonKey}[' + i.toString() + ']', code: 'type_mismatch', message: 'Expected $itemBase.'));
+              issues.add(EasyIssue(path: ${c.pathExpr} + '[' + i.toString() + ']', code: 'type_mismatch', message: 'Expected $itemBase.'));
             }
     """);
     }
 
-    out.writeln("""
+    sb.writeln("""
           }
         }
       }
-    }
   """);
+    _validateField(c, out, sb.toString());
   }
 
   @override
@@ -863,39 +818,25 @@ class MapStrategy implements TypeStrategy {
 
   @override
   void validate(FieldContext c, StringBuffer out) {
-    final hasCtorDefault =
-        c.enclosingClass.unnamedConstructor?.formalParameters
-            .firstWhereOrNull((p) => p.name == c.name)
-            ?.defaultValueCode !=
-        null;
-    if (!c.isNullable && !hasCtorDefault) {
-      out.writeln(
-        "if (!json.containsKey('${c.jsonKey}')) "
-        "{ issues.add(EasyIssue(path: '${c.jsonKey}', code: 'missing_required', message: 'Missing required field.')); }",
-      );
-    }
-
     final kv = asMapKV(c.type);
     final V = kv.value!;
     final mk = c.mapKeyCoercion;
 
-    out.writeln("""
-      if (json.containsKey('${c.jsonKey}')) {
-        final v = ${c.jsonAccessor};
+    final sb = StringBuffer("""
         if (v != null && v is! Map) {
-          issues.add(EasyIssue(path: '${c.jsonKey}', code: 'type_mismatch', message: 'Expected Map.'));
+          issues.add(EasyIssue(path: ${c.pathExpr}, code: 'type_mismatch', message: 'Expected Map.'));
         } else if (v is Map) {
     """);
-    _generateValidationChecks(c, out);
+    _generateValidationChecks(c, sb);
 
     // Key check (quando EasyMapKeyType.int)
     if (mk == EasyMapKeyType.int) {
-      out.writeln("""
+      sb.writeln("""
           for (final e in v.entries) {
             final k = e.key;
             final ok = (k is int) || (k is num) || (k is String && num.tryParse(k) != null);
             if (!ok) {
-              issues.add(EasyIssue(path: '${c.jsonKey}.' + k.toString(), code: 'key_type_mismatch', message: 'Incompatible key type for map.'));
+              issues.add(EasyIssue(path: ${c.pathExpr} + '.' + k.toString(), code: 'key_type_mismatch', message: 'Incompatible key type for map.'));
             }
           }
       """);
@@ -906,51 +847,51 @@ class MapStrategy implements TypeStrategy {
       if (isEasyJsonClass(V)) {
         final cn = displayNonNull(V);
         final vn = _lcFirst(cn);
-        out.writeln("""
+        sb.writeln("""
           for (final e in v.entries) {
             final val = e.value;
             if (val != null && val is! Map) {
-              issues.add(EasyIssue(path: '${c.jsonKey}.' + e.key.toString(), code: 'type_mismatch', message: 'Expected Map for $cn.'));
+              issues.add(EasyIssue(path: ${c.pathExpr} + '.' + e.key.toString(), code: 'type_mismatch', message: 'Expected Map for $cn.'));
             } else if (val is Map) {
               final child = ${vn}Validate(Map<String,dynamic>.from(val as Map));
               for (final ci in child) {
-                issues.add(EasyIssue(path: '${c.jsonKey}.' + e.key.toString() + '.' + ci.path, code: ci.code, message: ci.message));
+                issues.add(EasyIssue(path: ${c.pathExpr} + '.' + e.key.toString() + '.' + ci.path, code: ci.code, message: ci.message));
               }
             }
           }
         """);
       } else if (isEnumType(V)) {
         final en = displayNonNull(V);
-        out.writeln("""
+        sb.writeln("""
           for (final e in v.entries) {
             final val = e.value;
             if (val != null && val is! String) {
-              issues.add(EasyIssue(path: '${c.jsonKey}.' + e.key.toString(), code: 'type_mismatch', message: 'Expected String with enum name.'));
+              issues.add(EasyIssue(path: ${c.pathExpr} + '.' + e.key.toString(), code: 'type_mismatch', message: 'Expected String with enum name.'));
             } else if (val != null) {
               final ok = $en.values.any((x) => x.name == val);
               if (!ok) {
-                issues.add(EasyIssue(path: '${c.jsonKey}.' + e.key.toString(), code: 'invalid_enum', message: "Value '\$val' does not match $en."));
+                issues.add(EasyIssue(path: ${c.pathExpr} + '.' + e.key.toString(), code: 'invalid_enum', message: "Value '\$val' does not match $en."));
               }
             }
           }
         """);
       } else {
         final vBase = displayNonNull(V);
-        out.writeln("""
+        sb.writeln("""
           for (final e in v.entries) {
             final val = e.value;
             if (val != null && val is! $vBase) {
-              issues.add(EasyIssue(path: '${c.jsonKey}.' + e.key.toString(), code: 'type_mismatch', message: 'Expected $vBase.'));
+              issues.add(EasyIssue(path: ${c.pathExpr} + '.' + e.key.toString(), code: 'type_mismatch', message: 'Expected $vBase.'));
             }
           }
         """);
       }
     }
 
-    out.writeln("""
+    sb.writeln("""
         }
-      }
     """);
+    _validateField(c, out, sb.toString());
   }
 
   @override
@@ -1237,7 +1178,7 @@ String _generateDateTimeValidationChecks(FieldContext c, String varName) {
   final isPast = validator.peek('past')?.boolValue;
   if (isPast == true) {
     out.writeln(
-      "if ($varName.isAfter(DateTime.now())) { issues.add(EasyIssue(path: '${c.jsonKey}', code: 'must_be_past', message: 'The date must be in the past.')); }",
+      "if ($varName.isAfter(DateTime.now())) { issues.add(EasyIssue(path: ${c.pathExpr}, code: 'must_be_past', message: 'The date must be in the past.')); }",
     );
   }
 
@@ -1245,7 +1186,7 @@ String _generateDateTimeValidationChecks(FieldContext c, String varName) {
   final isFuture = validator.peek('future')?.boolValue;
   if (isFuture == true) {
     out.writeln(
-      "if ($varName.isBefore(DateTime.now())) { issues.add(EasyIssue(path: '${c.jsonKey}', code: 'must_be_future', message: 'The date must be in the future.')); }",
+      "if ($varName.isBefore(DateTime.now())) { issues.add(EasyIssue(path: ${c.pathExpr}, code: 'must_be_future', message: 'The date must be in the future.')); }",
     );
   }
   return out.toString();

@@ -61,7 +61,7 @@ List<EasyIssue> seasonResponseValidate(Map<String, dynamic> json) {
       for (final ci in child) {
         issues.add(
           EasyIssue(
-            path: 'season.' + ci.path,
+            path: 'season' + '.' + ci.path,
             code: ci.code,
             message: ci.message,
           ),
@@ -69,7 +69,6 @@ List<EasyIssue> seasonResponseValidate(Map<String, dynamic> json) {
       }
     }
   }
-
   return issues;
 }
 

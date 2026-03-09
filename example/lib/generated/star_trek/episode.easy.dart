@@ -176,7 +176,7 @@ List<EasyIssue> episodeValidate(Map<String, dynamic> json) {
       for (final ci in child) {
         issues.add(
           EasyIssue(
-            path: 'series.' + ci.path,
+            path: 'series' + '.' + ci.path,
             code: ci.code,
             message: ci.message,
           ),
@@ -184,7 +184,6 @@ List<EasyIssue> episodeValidate(Map<String, dynamic> json) {
       }
     }
   }
-
   if (!json.containsKey('season')) {
     issues.add(
       EasyIssue(
@@ -209,7 +208,7 @@ List<EasyIssue> episodeValidate(Map<String, dynamic> json) {
       for (final ci in child) {
         issues.add(
           EasyIssue(
-            path: 'season.' + ci.path,
+            path: 'season' + '.' + ci.path,
             code: ci.code,
             message: ci.message,
           ),
@@ -217,7 +216,6 @@ List<EasyIssue> episodeValidate(Map<String, dynamic> json) {
       }
     }
   }
-
   if (!json.containsKey('seasonNumber')) {
     issues.add(
       EasyIssue(

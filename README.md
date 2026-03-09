@@ -258,6 +258,37 @@ Use `@EasyKey` to control field-specific behavior:
 *   `itemFallback`: Provides a fallback for items in a collection (`List`, `Set`, `Map`).
 *   `enumFallback`: The `name` of the enum value to use as a fallback.
 
+### `@EasyIgnore` Annotation
+
+Use `@EasyIgnore` to exclude a field from both serialization (`toJson`) and deserialization (`fromJson`).
+
+```dart
+@EasyJson()
+class User {
+  final String username;
+
+  @EasyIgnore()
+  final String internalSecret; // Will not be read from or written to JSON
+
+  User({required this.username, this.internalSecret = ''});
+}
+```
+
+### `@EasyPath` Annotation
+
+Use `@EasyPath` to map a field directly to a nested value in the JSON structure using dot notation. This is useful for flattening complex JSON responses without creating intermediate classes.
+
+```dart
+@EasyJson()
+class Product {
+  // Maps to json['meta']['stock']['count']
+  @EasyPath('meta.stock.count')
+  final int stockCount;
+
+  Product({required this.stockCount});
+}
+```
+
 ### `@EasyConvert` Annotation
 
 For complex types or custom formats, use `@EasyConvert` to provide your own `fromJson` and `toJson` functions.

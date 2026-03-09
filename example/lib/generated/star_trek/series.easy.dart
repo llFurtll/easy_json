@@ -249,7 +249,7 @@ List<EasyIssue> seriesValidate(Map<String, dynamic> json) {
       for (final ci in child) {
         issues.add(
           EasyIssue(
-            path: 'productionCompany.' + ci.path,
+            path: 'productionCompany' + '.' + ci.path,
             code: ci.code,
             message: ci.message,
           ),
@@ -257,7 +257,6 @@ List<EasyIssue> seriesValidate(Map<String, dynamic> json) {
       }
     }
   }
-
   if (json.containsKey('originalBroadcaster')) {
     final v = json['originalBroadcaster'];
     if (v != null && v is! Map) {
@@ -273,7 +272,7 @@ List<EasyIssue> seriesValidate(Map<String, dynamic> json) {
       for (final ci in child) {
         issues.add(
           EasyIssue(
-            path: 'originalBroadcaster.' + ci.path,
+            path: 'originalBroadcaster' + '.' + ci.path,
             code: ci.code,
             message: ci.message,
           ),
@@ -281,7 +280,6 @@ List<EasyIssue> seriesValidate(Map<String, dynamic> json) {
       }
     }
   }
-
   return issues;
 }
 

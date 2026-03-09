@@ -1,3 +1,9 @@
+## 0.5.0
+
+*   **FEAT**: Added `@EasyIgnore` annotation to exclude specific fields from serialization and deserialization.
+*   **FEAT**: Added `@EasyPath` annotation to map fields directly to nested JSON keys (e.g., `client.address.city`), eliminating the need for intermediate classes.
+*   **FIX**: Updated `fromJsonSafe` validation logic to correctly report errors for missing or invalid fields located at nested paths defined by `@EasyPath`.
+
 ## 0.4.2
 
 * **FIX**: Enhanced `fromJsonSafe` generation strategy for fields using `@EasyConvert`.

@@ -138,3 +138,15 @@ class EasyValidate {
     this.custom,
   });
 }
+
+/// Marca o campo para ser ignorado na geração de fromJson/toJson.
+class EasyIgnore {
+  const EasyIgnore();
+}
+
+/// Define um caminho aninhado para ler o valor do JSON.
+/// Ex.: @EasyPath('client.address.city') fará a leitura em json['client']['address']['city'].
+class EasyPath {
+  final String path;
+  const EasyPath(this.path);
+}

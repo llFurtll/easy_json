@@ -381,15 +381,6 @@ List<EasyIssue> orderValidate(Map<String, dynamic> json) {
       );
     } else if (v != null) {}
   }
-  if (!json.containsKey('createdAt')) {
-    issues.add(
-      EasyIssue(
-        path: 'createdAt',
-        code: 'missing_required',
-        message: 'Missing required field.',
-      ),
-    );
-  }
   if (!json.containsKey('buyerRole')) {
     issues.add(
       EasyIssue(
@@ -422,7 +413,6 @@ List<EasyIssue> orderValidate(Map<String, dynamic> json) {
       }
     }
   }
-
   if (!json.containsKey('shipping')) {
     issues.add(
       EasyIssue(
@@ -447,7 +437,7 @@ List<EasyIssue> orderValidate(Map<String, dynamic> json) {
       for (final ci in child) {
         issues.add(
           EasyIssue(
-            path: 'shipping.' + ci.path,
+            path: 'shipping' + '.' + ci.path,
             code: ci.code,
             message: ci.message,
           ),
@@ -455,7 +445,6 @@ List<EasyIssue> orderValidate(Map<String, dynamic> json) {
       }
     }
   }
-
   if (!json.containsKey('items')) {
     issues.add(
       EasyIssue(
@@ -485,7 +474,7 @@ List<EasyIssue> orderValidate(Map<String, dynamic> json) {
         if (!ok) {
           issues.add(
             EasyIssue(
-              path: 'items.' + k.toString(),
+              path: 'items' + '.' + k.toString(),
               code: 'key_type_mismatch',
               message: 'Incompatible key type for map.',
             ),
@@ -498,7 +487,7 @@ List<EasyIssue> orderValidate(Map<String, dynamic> json) {
         if (val != null && val is! Map) {
           issues.add(
             EasyIssue(
-              path: 'items.' + e.key.toString(),
+              path: 'items' + '.' + e.key.toString(),
               code: 'type_mismatch',
               message: 'Expected Map for Product.',
             ),
@@ -508,7 +497,7 @@ List<EasyIssue> orderValidate(Map<String, dynamic> json) {
           for (final ci in child) {
             issues.add(
               EasyIssue(
-                path: 'items.' + e.key.toString() + '.' + ci.path,
+                path: 'items' + '.' + e.key.toString() + '.' + ci.path,
                 code: ci.code,
                 message: ci.message,
               ),
@@ -518,7 +507,6 @@ List<EasyIssue> orderValidate(Map<String, dynamic> json) {
       }
     }
   }
-
   if (!json.containsKey('quantities')) {
     issues.add(
       EasyIssue(
@@ -544,7 +532,7 @@ List<EasyIssue> orderValidate(Map<String, dynamic> json) {
         if (val != null && val is! int) {
           issues.add(
             EasyIssue(
-              path: 'quantities.' + e.key.toString(),
+              path: 'quantities' + '.' + e.key.toString(),
               code: 'type_mismatch',
               message: 'Expected int.',
             ),
@@ -553,7 +541,6 @@ List<EasyIssue> orderValidate(Map<String, dynamic> json) {
       }
     }
   }
-
   if (!json.containsKey('notes')) {
     issues.add(
       EasyIssue(
@@ -579,7 +566,7 @@ List<EasyIssue> orderValidate(Map<String, dynamic> json) {
         if (e == null) {
           issues.add(
             EasyIssue(
-              path: 'notes[' + i.toString() + ']',
+              path: 'notes' + '[' + i.toString() + ']',
               code: 'null_not_allowed',
               message: 'Null value not allowed.',
             ),
@@ -588,7 +575,7 @@ List<EasyIssue> orderValidate(Map<String, dynamic> json) {
           if (e is! String) {
             issues.add(
               EasyIssue(
-                path: 'notes[' + i.toString() + ']',
+                path: 'notes' + '[' + i.toString() + ']',
                 code: 'type_mismatch',
                 message: 'Expected String.',
               ),
@@ -598,7 +585,6 @@ List<EasyIssue> orderValidate(Map<String, dynamic> json) {
       }
     }
   }
-
   if (!json.containsKey('tags')) {
     issues.add(
       EasyIssue(
@@ -624,7 +610,7 @@ List<EasyIssue> orderValidate(Map<String, dynamic> json) {
         if (e == null) {
           issues.add(
             EasyIssue(
-              path: 'tags[' + i.toString() + ']',
+              path: 'tags' + '[' + i.toString() + ']',
               code: 'null_not_allowed',
               message: 'Null value not allowed.',
             ),
@@ -633,7 +619,7 @@ List<EasyIssue> orderValidate(Map<String, dynamic> json) {
           if (e is! String) {
             issues.add(
               EasyIssue(
-                path: 'tags[' + i.toString() + ']',
+                path: 'tags' + '[' + i.toString() + ']',
                 code: 'type_mismatch',
                 message: 'Expected String.',
               ),
@@ -643,7 +629,6 @@ List<EasyIssue> orderValidate(Map<String, dynamic> json) {
       }
     }
   }
-
   if (!json.containsKey('statusHistory')) {
     issues.add(
       EasyIssue(
@@ -669,7 +654,7 @@ List<EasyIssue> orderValidate(Map<String, dynamic> json) {
         if (val != null && val is! String) {
           issues.add(
             EasyIssue(
-              path: 'statusHistory.' + e.key.toString(),
+              path: 'statusHistory' + '.' + e.key.toString(),
               code: 'type_mismatch',
               message: 'Expected String with enum name.',
             ),
@@ -679,7 +664,7 @@ List<EasyIssue> orderValidate(Map<String, dynamic> json) {
           if (!ok) {
             issues.add(
               EasyIssue(
-                path: 'statusHistory.' + e.key.toString(),
+                path: 'statusHistory' + '.' + e.key.toString(),
                 code: 'invalid_enum',
                 message: "Value '$val' does not match TmStatus.",
               ),
@@ -689,7 +674,6 @@ List<EasyIssue> orderValidate(Map<String, dynamic> json) {
       }
     }
   }
-
   if (!json.containsKey('scores')) {
     issues.add(
       EasyIssue(
@@ -711,7 +695,6 @@ List<EasyIssue> orderValidate(Map<String, dynamic> json) {
       );
     } else if (v is Map) {}
   }
-
   return issues;
 }
 
@@ -1427,7 +1410,7 @@ List<EasyIssue> validationModelValidate(Map<String, dynamic> json) {
         if (e == null) {
           issues.add(
             EasyIssue(
-              path: 'tags[' + i.toString() + ']',
+              path: 'tags' + '[' + i.toString() + ']',
               code: 'null_not_allowed',
               message: 'Null value not allowed.',
             ),
@@ -1436,7 +1419,7 @@ List<EasyIssue> validationModelValidate(Map<String, dynamic> json) {
           if (e is! String) {
             issues.add(
               EasyIssue(
-                path: 'tags[' + i.toString() + ']',
+                path: 'tags' + '[' + i.toString() + ']',
                 code: 'type_mismatch',
                 message: 'Expected String.',
               ),
@@ -1446,7 +1429,6 @@ List<EasyIssue> validationModelValidate(Map<String, dynamic> json) {
       }
     }
   }
-
   if (json.containsKey('websiteUrl')) {
     final v = json['websiteUrl'];
     if (v != null && v is! String) {
@@ -1723,5 +1705,210 @@ class ValidationModelJson {
 
   static List<EasyIssue> validate(Map<String, dynamic> json) {
     return validationModelValidate(json);
+  }
+}
+
+IgnoreModel ignoreModelFromJson(Map<String, dynamic> json) {
+  return IgnoreModel(visible: (json['visible'] as String?) ?? '');
+}
+
+Map<String, dynamic> ignoreModelToJson(IgnoreModel instance) {
+  return <String, dynamic>{'visible': instance.visible};
+}
+
+mixin IgnoreModelSerializer {
+  Map<String, dynamic> toJson() {
+    return ignoreModelToJson(this as IgnoreModel);
+  }
+}
+
+List<EasyIssue> ignoreModelValidate(Map<String, dynamic> json) {
+  final issues = <EasyIssue>[];
+  if (!json.containsKey('visible')) {
+    issues.add(
+      EasyIssue(
+        path: 'visible',
+        code: 'missing_required',
+        message: 'Missing required field.',
+      ),
+    );
+  }
+  if (json.containsKey('visible')) {
+    final v = json['visible'];
+    if (v != null && v is! String) {
+      issues.add(
+        EasyIssue(
+          path: 'visible',
+          code: 'type_mismatch',
+          message: 'Expected String.',
+        ),
+      );
+    } else if (v != null) {}
+  }
+  return issues;
+}
+
+IgnoreModel ignoreModelFromJsonSafe(
+  Map<String, dynamic> json, {
+  void Function(EasyIssue)? onIssue,
+  bool runValidate = true,
+}) {
+  if (runValidate) {
+    final _issues = ignoreModelValidate(json);
+    if (onIssue != null) {
+      for (final i in _issues) onIssue(i);
+    }
+  }
+  return IgnoreModel(
+    visible: (() {
+      final v = json['visible'];
+      return (v is String) ? v : '';
+    })(),
+  );
+}
+
+class IgnoreModelJson {
+  const IgnoreModelJson();
+
+  static IgnoreModel fromJson(Map<String, dynamic> json) {
+    return ignoreModelFromJson(json);
+  }
+
+  static IgnoreModel fromJsonSafe(
+    Map<String, dynamic> json, {
+    void Function(EasyIssue)? onIssue,
+    bool runValidate = true,
+  }) {
+    return ignoreModelFromJsonSafe(
+      json,
+      onIssue: onIssue,
+      runValidate: runValidate,
+    );
+  }
+
+  static List<EasyIssue> validate(Map<String, dynamic> json) {
+    return ignoreModelValidate(json);
+  }
+}
+
+PathModel pathModelFromJson(Map<String, dynamic> json) {
+  return PathModel(
+    count: ((json['meta'] as Map?)?['count'] as int?) ?? 0,
+    userName:
+        (((json['meta'] as Map?)?['info'] as Map?)?['user_name'] as String?) ??
+        '',
+  );
+}
+
+Map<String, dynamic> pathModelToJson(PathModel instance) {
+  return <String, dynamic>{
+    'count': instance.count,
+    'userName': instance.userName,
+  };
+}
+
+mixin PathModelSerializer {
+  Map<String, dynamic> toJson() {
+    return pathModelToJson(this as PathModel);
+  }
+}
+
+List<EasyIssue> pathModelValidate(Map<String, dynamic> json) {
+  final issues = <EasyIssue>[];
+  {
+    final v = (json['meta'] as Map?)?['count'];
+    if (v == null) {
+      issues.add(
+        EasyIssue(
+          path: 'meta.count',
+          code: 'missing_required',
+          message: 'Missing required field.',
+        ),
+      );
+    }
+    if (v != null && v is! int) {
+      issues.add(
+        EasyIssue(
+          path: 'meta.count',
+          code: 'type_mismatch',
+          message: 'Expected int.',
+        ),
+      );
+    } else if (v != null) {}
+  }
+  {
+    final v = ((json['meta'] as Map?)?['info'] as Map?)?['user_name'];
+    if (v == null) {
+      issues.add(
+        EasyIssue(
+          path: 'meta.info.user_name',
+          code: 'missing_required',
+          message: 'Missing required field.',
+        ),
+      );
+    }
+    if (v != null && v is! String) {
+      issues.add(
+        EasyIssue(
+          path: 'meta.info.user_name',
+          code: 'type_mismatch',
+          message: 'Expected String.',
+        ),
+      );
+    } else if (v != null) {}
+  }
+  return issues;
+}
+
+PathModel pathModelFromJsonSafe(
+  Map<String, dynamic> json, {
+  void Function(EasyIssue)? onIssue,
+  bool runValidate = true,
+}) {
+  if (runValidate) {
+    final _issues = pathModelValidate(json);
+    if (onIssue != null) {
+      for (final i in _issues) onIssue(i);
+    }
+  }
+  return PathModel(
+    count: (() {
+      final v = (json['meta'] as Map?)?['count'];
+      if (v is int) return v;
+      if (v is num) return v.toInt();
+      if (v is String) {
+        final p = int.tryParse(v);
+        if (p != null) return p;
+      }
+      return 0;
+    })(),
+    userName: (() {
+      final v = ((json['meta'] as Map?)?['info'] as Map?)?['user_name'];
+      return (v is String) ? v : '';
+    })(),
+  );
+}
+
+class PathModelJson {
+  const PathModelJson();
+
+  static PathModel fromJson(Map<String, dynamic> json) {
+    return pathModelFromJson(json);
+  }
+
+  static PathModel fromJsonSafe(
+    Map<String, dynamic> json, {
+    void Function(EasyIssue)? onIssue,
+    bool runValidate = true,
+  }) {
+    return pathModelFromJsonSafe(
+      json,
+      onIssue: onIssue,
+      runValidate: runValidate,
+    );
+  }
+
+  static List<EasyIssue> validate(Map<String, dynamic> json) {
+    return pathModelValidate(json);
   }
 }
