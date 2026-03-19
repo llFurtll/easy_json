@@ -46,7 +46,7 @@ class EasyJsonGenerator extends Generator {
 
       // Coleta tipos referenciados nos campos
       final referenced = <ClassElement>{};
-      for (final f in clazz.fields.where((f) => !f.isStatic)) {
+      for (final f in _getAllFields(clazz)) {
         // Adiciona imports de conversores e validadores customizados
         final easyConvert = _easyConvertChecker.firstAnnotationOfExact(f);
         if (easyConvert != null) {
@@ -133,7 +133,7 @@ class EasyJsonGenerator extends Generator {
     final classCaseStyle = _readClassCaseStyle(annotation);
 
     // === Cria FieldContexts ===
-    final fields = clazz.fields.where((f) => !f.isStatic).toList();
+    final fields = _getAllFields(clazz).toList();
     final contexts = [
       for (final f in fields)
         FieldContext(
@@ -311,6 +311,26 @@ class EasyJsonGenerator extends Generator {
       }
       // Se for uma função de nível superior, a biblioteca já será importada pelo tipo do campo.
     }
+  }
+
+  Iterable<FieldElement> _getAllFields(ClassElement clazz) {
+    final fieldsMap = <String, FieldElement>{};
+
+    // 1. Adiciona campos das superclasses (ignorando Object), do topo para a base.
+    // Usamos o .reversed para que as classes mais altas na hierarquia sejam processadas primeiro.
+    for (final supertype in clazz.allSupertypes.reversed) {
+      if (supertype.isDartCoreObject) continue;
+      for (final f in supertype.element.fields.where((f) => !f.isStatic)) {
+        fieldsMap[f.name!] = f;
+      }
+    }
+
+    // 2. Adiciona campos da classe atual (sobrescrevendo atributos pai, caso haja um override)
+    for (final f in clazz.fields.where((f) => !f.isStatic)) {
+      fieldsMap[f.name!] = f;
+    }
+
+    return fieldsMap.values;
   }
 
   String _lcFirst(String s) =>

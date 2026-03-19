@@ -194,3 +194,32 @@ class PathModel with PathModelSerializer {
   factory PathModel.fromJson(Map<String, dynamic> json) => pathModelFromJson(json);
   factory PathModel.fromJsonSafe(Map<String, dynamic> json, {void Function(EasyIssue)? onIssue}) => pathModelFromJsonSafe(json, onIssue: onIssue);
 }
+
+class BaseEntity {
+  final String baseId;
+  final String baseName;
+
+  const BaseEntity({
+    required this.baseId,
+    required this.baseName,
+  });
+}
+
+@EasyJson(caseStyle: CaseStyle.snake)
+class InheritedModel extends BaseEntity with InheritedModelSerializer {
+  @override
+  @EasyKey(name: 'custom_base_name')
+  // ignore: overridden_fields
+  final String baseName;
+
+  final int childValue;
+
+  InheritedModel({
+    required super.baseId,
+    required this.baseName,
+    required this.childValue,
+  }) : super(baseName: baseName);
+
+  factory InheritedModel.fromJson(Map<String, dynamic> json) => inheritedModelFromJson(json);
+  factory InheritedModel.fromJsonSafe(Map<String, dynamic> json, {void Function(EasyIssue)? onIssue}) => inheritedModelFromJsonSafe(json, onIssue: onIssue);
+}

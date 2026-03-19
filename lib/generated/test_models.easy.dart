@@ -1912,3 +1912,150 @@ class PathModelJson {
     return pathModelValidate(json);
   }
 }
+
+InheritedModel inheritedModelFromJson(Map<String, dynamic> json) {
+  return InheritedModel(
+    baseId: (json['base_id'] as String?) ?? '',
+    baseName: (json['custom_base_name'] as String?) ?? '',
+    childValue: (json['child_value'] as int?) ?? 0,
+  );
+}
+
+Map<String, dynamic> inheritedModelToJson(InheritedModel instance) {
+  return <String, dynamic>{
+    'base_id': instance.baseId,
+    'custom_base_name': instance.baseName,
+    'child_value': instance.childValue,
+  };
+}
+
+mixin InheritedModelSerializer {
+  Map<String, dynamic> toJson() {
+    return inheritedModelToJson(this as InheritedModel);
+  }
+}
+
+List<EasyIssue> inheritedModelValidate(Map<String, dynamic> json) {
+  final issues = <EasyIssue>[];
+  if (!json.containsKey('base_id')) {
+    issues.add(
+      EasyIssue(
+        path: 'base_id',
+        code: 'missing_required',
+        message: 'Missing required field.',
+      ),
+    );
+  }
+  if (json.containsKey('base_id')) {
+    final v = json['base_id'];
+    if (v != null && v is! String) {
+      issues.add(
+        EasyIssue(
+          path: 'base_id',
+          code: 'type_mismatch',
+          message: 'Expected String.',
+        ),
+      );
+    } else if (v != null) {}
+  }
+  if (!json.containsKey('custom_base_name')) {
+    issues.add(
+      EasyIssue(
+        path: 'custom_base_name',
+        code: 'missing_required',
+        message: 'Missing required field.',
+      ),
+    );
+  }
+  if (json.containsKey('custom_base_name')) {
+    final v = json['custom_base_name'];
+    if (v != null && v is! String) {
+      issues.add(
+        EasyIssue(
+          path: 'custom_base_name',
+          code: 'type_mismatch',
+          message: 'Expected String.',
+        ),
+      );
+    } else if (v != null) {}
+  }
+  if (!json.containsKey('child_value')) {
+    issues.add(
+      EasyIssue(
+        path: 'child_value',
+        code: 'missing_required',
+        message: 'Missing required field.',
+      ),
+    );
+  }
+  if (json.containsKey('child_value')) {
+    final v = json['child_value'];
+    if (v != null && v is! int) {
+      issues.add(
+        EasyIssue(
+          path: 'child_value',
+          code: 'type_mismatch',
+          message: 'Expected int.',
+        ),
+      );
+    } else if (v != null) {}
+  }
+  return issues;
+}
+
+InheritedModel inheritedModelFromJsonSafe(
+  Map<String, dynamic> json, {
+  void Function(EasyIssue)? onIssue,
+  bool runValidate = true,
+}) {
+  if (runValidate) {
+    final _issues = inheritedModelValidate(json);
+    if (onIssue != null) {
+      for (final i in _issues) onIssue(i);
+    }
+  }
+  return InheritedModel(
+    baseId: (() {
+      final v = json['base_id'];
+      return (v is String) ? v : '';
+    })(),
+    baseName: (() {
+      final v = json['custom_base_name'];
+      return (v is String) ? v : '';
+    })(),
+    childValue: (() {
+      final v = json['child_value'];
+      if (v is int) return v;
+      if (v is num) return v.toInt();
+      if (v is String) {
+        final p = int.tryParse(v);
+        if (p != null) return p;
+      }
+      return 0;
+    })(),
+  );
+}
+
+class InheritedModelJson {
+  const InheritedModelJson();
+
+  static InheritedModel fromJson(Map<String, dynamic> json) {
+    return inheritedModelFromJson(json);
+  }
+
+  static InheritedModel fromJsonSafe(
+    Map<String, dynamic> json, {
+    void Function(EasyIssue)? onIssue,
+    bool runValidate = true,
+  }) {
+    return inheritedModelFromJsonSafe(
+      json,
+      onIssue: onIssue,
+      runValidate: runValidate,
+    );
+  }
+
+  static List<EasyIssue> validate(Map<String, dynamic> json) {
+    return inheritedModelValidate(json);
+  }
+}

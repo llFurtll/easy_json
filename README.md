@@ -247,7 +247,49 @@ class MyValidators {
 *   **For any type**:
     *   `custom`: A `bool Function(T value)` that returns `true` if the value is valid.
 
-## 6. Advanced Customization
+## 6. Class Inheritance (Clean Architecture / DDD)
+
+`easy_json` seamlessly supports class inheritance. If you use an architecture where you have base Entities and need to create a Model to process the API JSON, the inherited attributes from the parent class will be read and mapped automatically.
+
+```dart
+class UserEntity {
+  final String emailAddress;
+  UserEntity({required this.emailAddress});
+}
+
+@EasyJson(caseStyle: CaseStyle.snake)
+class UserModel extends UserEntity with UserModelSerializer {
+  // The emailAddress field will be automatically serialized as "email_address" 
+  // due to the caseStyle declared in the child class's @EasyJson annotation.
+  
+  UserModel({
+    required super.emailAddress,
+  });
+
+  factory UserModel.fromJson(Map<String, dynamic> json) => userModelFromJson(json);
+}
+```
+
+### Applying Annotations to Inherited Fields
+
+If the global behavior (like `caseStyle`) is not enough and you need to apply a specific annotation to an inherited attribute (e.g., a custom key name or field validation), simply `@override` this field in the child class and annotate it there:
+
+```dart
+@EasyJson()
+class UserModel extends UserEntity with UserModelSerializer {
+  @override
+  @EasyKey(name: 'custom_email_address')
+  final String emailAddress;
+
+  UserModel({
+    required this.emailAddress,
+  }) : super(emailAddress: emailAddress);
+
+  factory UserModel.fromJson(Map<String, dynamic> json) => userModelFromJson(json);
+}
+```
+
+## 7. Advanced Customization
 
 ### `@EasyKey` Annotation
 

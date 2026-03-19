@@ -1,3 +1,8 @@
+## 0.6.0
+
+*   **FEAT**: Added support for class inheritance. The `EasyJson` generator now navigates through superclasses to automatically detect and include inherited fields in the serialization methods.
+*   **FEAT**: Added support for the `@override` pattern on parent variables, allowing custom annotations like `@EasyKey` or `@EasyValidate` to be applied to inherited fields.
+
 ## 0.5.0
 
 *   **FEAT**: Added `@EasyIgnore` annotation to exclude specific fields from serialization and deserialization.
