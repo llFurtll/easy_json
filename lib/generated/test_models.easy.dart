@@ -16,6 +16,8 @@ import 'package:dart_easy_json/generated/test_models.easy.dart';
 import 'package:dart_easy_json/src/easy_issue.dart';
 import 'package:dart_easy_json/test_models.dart';
 import 'package:dart_easy_json/types.dart';
+import 'dart:convert';
+import 'dart:typed_data';
 import 'package:dart_easy_json/src/runtime.dart' as ej;
 import 'package:dart_easy_json/src/messages.dart';
 
@@ -735,7 +737,7 @@ Order orderFromJsonSafe(
                 EasyIssue(
                   path: 'createdAt',
                   code: 'type_mismatch',
-                  message: 'Formato inválido de DateTime.',
+                  message: 'Invalid DateTime format.',
                 ),
               );
               return DateTime.fromMillisecondsSinceEpoch(0);
@@ -745,7 +747,7 @@ Order orderFromJsonSafe(
             EasyIssue(
               path: 'createdAt',
               code: 'type_mismatch',
-              message: 'Esperado String/epoch/DateTime.',
+              message: 'Expected String/epoch/DateTime.',
             ),
           );
           return DateTime.fromMillisecondsSinceEpoch(0);
@@ -867,7 +869,7 @@ Order orderFromJsonSafe(
             EasyIssue(
               path: 'items' + '.' + entry.key.toString(),
               code: 'key_type_mismatch',
-              message: 'Chave incompatível com o tipo do mapa.',
+              message: 'Incompatible key type for map.',
             ),
           );
           continue;
@@ -915,7 +917,7 @@ Order orderFromJsonSafe(
             EasyIssue(
               path: 'quantities' + '.' + entry.key.toString(),
               code: 'key_type_mismatch',
-              message: 'Chave incompatível com o tipo do mapa.',
+              message: 'Incompatible key type for map.',
             ),
           );
           continue;
@@ -986,7 +988,7 @@ Order orderFromJsonSafe(
             EasyIssue(
               path: 'statusHistory' + '.' + entry.key.toString(),
               code: 'key_type_mismatch',
-              message: 'Chave incompatível com o tipo do mapa.',
+              message: 'Incompatible key type for map.',
             ),
           );
           continue;
@@ -1013,7 +1015,7 @@ Order orderFromJsonSafe(
             EasyIssue(
               path: 'scores' + '.' + entry.key.toString(),
               code: 'key_type_mismatch',
-              message: 'Chave incompatível com o tipo do mapa.',
+              message: 'Incompatible key type for map.',
             ),
           );
           continue;
@@ -1175,7 +1177,7 @@ User userFromJsonSafe(
             EasyIssue(
               path: 'created_at',
               code: 'type_mismatch',
-              message: 'Formato inválido de DateTime.',
+              message: 'Invalid DateTime format.',
             ),
           );
           return DateTime.fromMillisecondsSinceEpoch(0);
@@ -1185,7 +1187,7 @@ User userFromJsonSafe(
         EasyIssue(
           path: 'created_at',
           code: 'type_mismatch',
-          message: 'Esperado String/epoch/DateTime.',
+          message: 'Expected String/epoch/DateTime.',
         ),
       );
       return DateTime.fromMillisecondsSinceEpoch(0);
@@ -1637,7 +1639,7 @@ ValidationModel validationModelFromJsonSafe(
             EasyIssue(
               path: 'dateOfBirth',
               code: 'type_mismatch',
-              message: 'Formato inválido de DateTime.',
+              message: 'Invalid DateTime format.',
             ),
           );
           return DateTime.fromMillisecondsSinceEpoch(0);
@@ -1647,7 +1649,7 @@ ValidationModel validationModelFromJsonSafe(
         EasyIssue(
           path: 'dateOfBirth',
           code: 'type_mismatch',
-          message: 'Esperado String/epoch/DateTime.',
+          message: 'Expected String/epoch/DateTime.',
         ),
       );
       return DateTime.fromMillisecondsSinceEpoch(0);
@@ -1666,7 +1668,7 @@ ValidationModel validationModelFromJsonSafe(
             EasyIssue(
               path: 'nextAppointment',
               code: 'type_mismatch',
-              message: 'Formato inválido de DateTime.',
+              message: 'Invalid DateTime format.',
             ),
           );
           return null;
@@ -1676,7 +1678,7 @@ ValidationModel validationModelFromJsonSafe(
         EasyIssue(
           path: 'nextAppointment',
           code: 'type_mismatch',
-          message: 'Esperado String/epoch/DateTime.',
+          message: 'Expected String/epoch/DateTime.',
         ),
       );
       return null;
@@ -2057,5 +2059,296 @@ class InheritedModelJson {
 
   static List<EasyIssue> validate(Map<String, dynamic> json) {
     return inheritedModelValidate(json);
+  }
+}
+
+ReadOnlyModel readOnlyModelFromJson(Map<String, dynamic> json) {
+  return ReadOnlyModel(
+    id: (json['id'] as int?) ?? 0,
+    name: (json['name'] as String?) ?? '',
+  );
+}
+
+List<EasyIssue> readOnlyModelValidate(Map<String, dynamic> json) {
+  final issues = <EasyIssue>[];
+  if (!json.containsKey('id')) {
+    issues.add(
+      EasyIssue(
+        path: 'id',
+        code: 'missing_required',
+        message: 'Missing required field.',
+      ),
+    );
+  }
+  if (json.containsKey('id')) {
+    final v = json['id'];
+    if (v != null && v is! int) {
+      issues.add(
+        EasyIssue(path: 'id', code: 'type_mismatch', message: 'Expected int.'),
+      );
+    } else if (v != null) {}
+  }
+  if (!json.containsKey('name')) {
+    issues.add(
+      EasyIssue(
+        path: 'name',
+        code: 'missing_required',
+        message: 'Missing required field.',
+      ),
+    );
+  }
+  if (json.containsKey('name')) {
+    final v = json['name'];
+    if (v != null && v is! String) {
+      issues.add(
+        EasyIssue(
+          path: 'name',
+          code: 'type_mismatch',
+          message: 'Expected String.',
+        ),
+      );
+    } else if (v != null) {}
+  }
+  return issues;
+}
+
+ReadOnlyModel readOnlyModelFromJsonSafe(
+  Map<String, dynamic> json, {
+  void Function(EasyIssue)? onIssue,
+  bool runValidate = true,
+}) {
+  if (runValidate) {
+    final _issues = readOnlyModelValidate(json);
+    if (onIssue != null) {
+      for (final i in _issues) onIssue(i);
+    }
+  }
+  return ReadOnlyModel(
+    id: (() {
+      final v = json['id'];
+      if (v is int) return v;
+      if (v is num) return v.toInt();
+      if (v is String) {
+        final p = int.tryParse(v);
+        if (p != null) return p;
+      }
+      return 0;
+    })(),
+    name: (() {
+      final v = json['name'];
+      return (v is String) ? v : '';
+    })(),
+  );
+}
+
+class ReadOnlyModelJson {
+  const ReadOnlyModelJson();
+
+  static ReadOnlyModel fromJson(Map<String, dynamic> json) {
+    return readOnlyModelFromJson(json);
+  }
+
+  static ReadOnlyModel fromJsonSafe(
+    Map<String, dynamic> json, {
+    void Function(EasyIssue)? onIssue,
+    bool runValidate = true,
+  }) {
+    return readOnlyModelFromJsonSafe(
+      json,
+      onIssue: onIssue,
+      runValidate: runValidate,
+    );
+  }
+
+  static List<EasyIssue> validate(Map<String, dynamic> json) {
+    return readOnlyModelValidate(json);
+  }
+}
+
+Map<String, dynamic> writeOnlyModelToJson(WriteOnlyModel instance) {
+  return <String, dynamic>{'id': instance.id, 'name': instance.name};
+}
+
+mixin WriteOnlyModelSerializer {
+  Map<String, dynamic> toJson() {
+    return writeOnlyModelToJson(this as WriteOnlyModel);
+  }
+}
+
+DocumentModel documentModelFromJson(Map<String, dynamic> json) {
+  return DocumentModel(
+    fileData: base64Decode(json['fileData'] as String),
+    optionalData: (json['optionalData'] as String?) != null
+        ? base64Decode(json['optionalData'] as String)
+        : null,
+  );
+}
+
+Map<String, dynamic> documentModelToJson(DocumentModel instance) {
+  return <String, dynamic>{
+    'fileData': base64Encode(instance.fileData),
+    if (instance.optionalData != null)
+      'optionalData': (instance.optionalData != null
+          ? base64Encode(instance.optionalData!)
+          : null),
+  };
+}
+
+mixin DocumentModelSerializer {
+  Map<String, dynamic> toJson() {
+    return documentModelToJson(this as DocumentModel);
+  }
+}
+
+List<EasyIssue> documentModelValidate(Map<String, dynamic> json) {
+  final issues = <EasyIssue>[];
+  if (!json.containsKey('fileData')) {
+    issues.add(
+      EasyIssue(
+        path: 'fileData',
+        code: 'missing_required',
+        message: 'Missing required field.',
+      ),
+    );
+  }
+  if (json.containsKey('fileData')) {
+    final v = json['fileData'];
+    if (v is! String) {
+      issues.add(
+        EasyIssue(
+          path: 'fileData',
+          code: 'type_mismatch',
+          message: 'Expected String (Base64).',
+        ),
+      );
+    } else {
+      try {
+        base64Decode(v);
+      } catch (_) {
+        issues.add(
+          EasyIssue(
+            path: 'fileData',
+            code: 'invalid_base64',
+            message: 'Invalid Base64 string.',
+          ),
+        );
+      }
+    }
+  }
+  if (json.containsKey('optionalData')) {
+    final v = json['optionalData'];
+    if (v is! String) {
+      issues.add(
+        EasyIssue(
+          path: 'optionalData',
+          code: 'type_mismatch',
+          message: 'Expected String (Base64).',
+        ),
+      );
+    } else {
+      try {
+        base64Decode(v);
+      } catch (_) {
+        issues.add(
+          EasyIssue(
+            path: 'optionalData',
+            code: 'invalid_base64',
+            message: 'Invalid Base64 string.',
+          ),
+        );
+      }
+    }
+  }
+  return issues;
+}
+
+DocumentModel documentModelFromJsonSafe(
+  Map<String, dynamic> json, {
+  void Function(EasyIssue)? onIssue,
+  bool runValidate = true,
+}) {
+  if (runValidate) {
+    final _issues = documentModelValidate(json);
+    if (onIssue != null) {
+      for (final i in _issues) onIssue(i);
+    }
+  }
+  return DocumentModel(
+    fileData: (() {
+      final v = json['fileData'];
+      if (v == null) return Uint8List(0);
+      if (v is String) {
+        try {
+          return base64Decode(v);
+        } catch (_) {
+          onIssue?.call(
+            EasyIssue(
+              path: 'fileData',
+              code: 'invalid_base64',
+              message: 'Invalid Base64 string.',
+            ),
+          );
+          return Uint8List(0);
+        }
+      }
+      onIssue?.call(
+        EasyIssue(
+          path: 'fileData',
+          code: 'type_mismatch',
+          message: 'Expected String (Base64).',
+        ),
+      );
+      return Uint8List(0);
+    })(),
+    optionalData: (() {
+      final v = json['optionalData'];
+      if (v == null) return null;
+      if (v is String) {
+        try {
+          return base64Decode(v);
+        } catch (_) {
+          onIssue?.call(
+            EasyIssue(
+              path: 'optionalData',
+              code: 'invalid_base64',
+              message: 'Invalid Base64 string.',
+            ),
+          );
+          return null;
+        }
+      }
+      onIssue?.call(
+        EasyIssue(
+          path: 'optionalData',
+          code: 'type_mismatch',
+          message: 'Expected String (Base64).',
+        ),
+      );
+      return null;
+    })(),
+  );
+}
+
+class DocumentModelJson {
+  const DocumentModelJson();
+
+  static DocumentModel fromJson(Map<String, dynamic> json) {
+    return documentModelFromJson(json);
+  }
+
+  static DocumentModel fromJsonSafe(
+    Map<String, dynamic> json, {
+    void Function(EasyIssue)? onIssue,
+    bool runValidate = true,
+  }) {
+    return documentModelFromJsonSafe(
+      json,
+      onIssue: onIssue,
+      runValidate: runValidate,
+    );
+  }
+
+  static List<EasyIssue> validate(Map<String, dynamic> json) {
+    return documentModelValidate(json);
   }
 }

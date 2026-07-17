@@ -1,6 +1,6 @@
 // test/validate_test.dart
-import 'package:flutter_test/flutter_test.dart';
 import 'package:dart_easy_json/generated/test_models.easy.dart';
+import 'package:test/test.dart';
 
 void main() {
   group('ValidationModel validations', () {
@@ -15,7 +15,9 @@ void main() {
       };
       final issues = validationModelValidate(json);
       expect(
-          issues.any((i) => i.path == 'username' && i.code == 'min_length'), isTrue);
+        issues.any((i) => i.path == 'username' && i.code == 'min_length'),
+        isTrue,
+      );
     });
 
     test('username should fail if too long', () {
@@ -28,7 +30,9 @@ void main() {
       };
       final issues = validationModelValidate(json);
       expect(
-          issues.any((i) => i.path == 'username' && i.code == 'max_length'), isTrue);
+        issues.any((i) => i.path == 'username' && i.code == 'max_length'),
+        isTrue,
+      );
     });
 
     test('username should pass if within length limits', () {
@@ -53,7 +57,10 @@ void main() {
         'dateOfBirth': '2000-01-01T00:00:00.000Z',
       };
       final issues = validationModelValidate(json);
-      expect(issues.any((i) => i.path == 'age' && i.code == 'min_value'), isTrue);
+      expect(
+        issues.any((i) => i.path == 'age' && i.code == 'min_value'),
+        isTrue,
+      );
     });
 
     test('age should fail if above maximum', () {
@@ -65,7 +72,10 @@ void main() {
         'dateOfBirth': '2000-01-01T00:00:00.000Z',
       };
       final issues = validationModelValidate(json);
-      expect(issues.any((i) => i.path == 'age' && i.code == 'max_value'), isTrue);
+      expect(
+        issues.any((i) => i.path == 'age' && i.code == 'max_value'),
+        isTrue,
+      );
     });
 
     test('age should pass if within range', () {
@@ -92,8 +102,9 @@ void main() {
       };
       final issues = validationModelValidate(json);
       expect(
-          issues.any((i) => i.path == 'email' && i.code == 'regex_mismatch'),
-          isTrue);
+        issues.any((i) => i.path == 'email' && i.code == 'regex_mismatch'),
+        isTrue,
+      );
     });
 
     test('email should pass if regex matches', () {
@@ -131,7 +142,10 @@ void main() {
         'dateOfBirth': '2000-01-01T00:00:00.000Z',
       };
       final issues = validationModelValidate(json);
-      expect(issues.any((i) => i.path == 'tags' && i.code == 'min_length'), isTrue);
+      expect(
+        issues.any((i) => i.path == 'tags' && i.code == 'min_length'),
+        isTrue,
+      );
     });
 
     test('tags list should fail if too long', () {
@@ -143,7 +157,10 @@ void main() {
         'dateOfBirth': '2000-01-01T00:00:00.000Z',
       };
       final issues = validationModelValidate(json);
-      expect(issues.any((i) => i.path == 'tags' && i.code == 'max_length'), isTrue);
+      expect(
+        issues.any((i) => i.path == 'tags' && i.code == 'max_length'),
+        isTrue,
+      );
     });
 
     test('tags list should pass if within size limits', () {
@@ -170,7 +187,10 @@ void main() {
           'dateOfBirth': '2000-01-01T00:00:00.000Z',
         };
         final issues = validationModelValidate(json);
-        expect(issues.any((i) => i.path == 'websiteUrl' && i.code == 'invalid_url'), isTrue);
+        expect(
+          issues.any((i) => i.path == 'websiteUrl' && i.code == 'invalid_url'),
+          isTrue,
+        );
       });
 
       test('websiteUrl should pass for valid URL', () {
@@ -195,7 +215,10 @@ void main() {
           'dateOfBirth': '2000-01-01T00:00:00.000Z',
         };
         final issues = validationModelValidate(json);
-        expect(issues.any((i) => i.path == 'uniqueId' && i.code == 'invalid_uuid'), isTrue);
+        expect(
+          issues.any((i) => i.path == 'uniqueId' && i.code == 'invalid_uuid'),
+          isTrue,
+        );
       });
 
       test('uniqueId should pass for valid UUID', () {
@@ -214,7 +237,9 @@ void main() {
     // Testes para 'past' e 'future' (DateTime)
     group('DateTime validation', () {
       test('dateOfBirth should fail if in the future', () {
-        final futureDate = DateTime.now().add(const Duration(days: 1)).toIso8601String();
+        final futureDate = DateTime.now()
+            .add(const Duration(days: 1))
+            .toIso8601String();
         final json = {
           'username': 'test',
           'age': 30,
@@ -223,11 +248,18 @@ void main() {
           'dateOfBirth': futureDate,
         };
         final issues = validationModelValidate(json);
-        expect(issues.any((i) => i.path == 'dateOfBirth' && i.code == 'must_be_past'), isTrue);
+        expect(
+          issues.any(
+            (i) => i.path == 'dateOfBirth' && i.code == 'must_be_past',
+          ),
+          isTrue,
+        );
       });
 
       test('dateOfBirth should pass if in the past', () {
-        final pastDate = DateTime.now().subtract(const Duration(days: 1)).toIso8601String();
+        final pastDate = DateTime.now()
+            .subtract(const Duration(days: 1))
+            .toIso8601String();
         final json = {
           'username': 'test',
           'age': 30,
@@ -240,7 +272,9 @@ void main() {
       });
 
       test('nextAppointment should fail if in the past', () {
-        final pastDate = DateTime.now().subtract(const Duration(days: 1)).toIso8601String();
+        final pastDate = DateTime.now()
+            .subtract(const Duration(days: 1))
+            .toIso8601String();
         final json = {
           'username': 'test',
           'age': 30,
@@ -250,11 +284,18 @@ void main() {
           'nextAppointment': pastDate,
         };
         final issues = validationModelValidate(json);
-        expect(issues.any((i) => i.path == 'nextAppointment' && i.code == 'must_be_future'), isTrue);
+        expect(
+          issues.any(
+            (i) => i.path == 'nextAppointment' && i.code == 'must_be_future',
+          ),
+          isTrue,
+        );
       });
 
       test('nextAppointment should pass if in the future', () {
-        final futureDate = DateTime.now().add(const Duration(days: 1)).toIso8601String();
+        final futureDate = DateTime.now()
+            .add(const Duration(days: 1))
+            .toIso8601String();
         final json = {
           'username': 'test',
           'age': 30,
@@ -280,9 +321,11 @@ void main() {
         };
         final issues = validationModelValidate(json);
         expect(
-            issues.any((i) =>
-                i.path == 'age' && i.code == 'custom_validation_failed'),
-            isTrue);
+          issues.any(
+            (i) => i.path == 'age' && i.code == 'custom_validation_failed',
+          ),
+          isTrue,
+        );
       });
 
       test('age should pass custom validation if positive', () {
@@ -296,8 +339,11 @@ void main() {
         final issues = validationModelValidate(json);
         // Verifica que NENHUMA issue de validação customizada foi gerada para 'age'
         expect(
-            issues.any((i) => i.path == 'age' && i.code == 'custom_validation_failed'),
-            isFalse);
+          issues.any(
+            (i) => i.path == 'age' && i.code == 'custom_validation_failed',
+          ),
+          isFalse,
+        );
       });
     });
   });

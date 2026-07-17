@@ -1,8 +1,8 @@
 import 'package:dart_easy_json/types.dart';
-import 'package:flutter_test/flutter_test.dart';
 
 import 'package:dart_easy_json/generated/test_models.easy.dart';
 import 'package:dart_easy_json/src/easy_issue.dart';
+import 'package:test/test.dart';
 
 void main() {
   group('Enum safe', () {
@@ -34,7 +34,10 @@ void main() {
       }, onIssue: issues.add);
 
       expect(o.buyerRole, isNotNull);
-      expect(issues.any((i) => i.path == 'buyerRole' && i.code == 'invalid_enum'), isTrue);
+      expect(
+        issues.any((i) => i.path == 'buyerRole' && i.code == 'invalid_enum'),
+        isTrue,
+      );
     });
 
     test('ausente -> missing_required', () {
@@ -49,15 +52,20 @@ void main() {
         'statusHistory': {},
       }, onIssue: issues.add);
 
-      expect(issues.any((i) => i.path == 'buyerRole' && i.code == 'missing_required'), isTrue);
+      expect(
+        issues.any(
+          (i) => i.path == 'buyerRole' && i.code == 'missing_required',
+        ),
+        isTrue,
+      );
     });
 
     test('Enum inválido -> fallback + issue', () {
       final issues = <EasyIssue>[];
       final o = orderFromJsonSafe({'buyerRole': 'edito'}, onIssue: issues.add);
       expect(o.buyerRole, TmRole.guest); // ou seu fallback configurado
-      expect(issues.map((e)=>e.path), contains('buyerRole'));
-      expect(issues.map((e)=>e.code), contains('invalid_enum'));
+      expect(issues.map((e) => e.path), contains('buyerRole'));
+      expect(issues.map((e) => e.code), contains('invalid_enum'));
     });
   });
 }

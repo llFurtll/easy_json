@@ -1,7 +1,7 @@
 import 'package:dart_easy_json/easy_json.dart';
-import 'package:flutter_test/flutter_test.dart';
 import 'package:dart_easy_json/test_models.dart';
 import 'package:dart_easy_json/generated/test_models.easy.dart';
+import 'package:test/test.dart';
 
 void main() {
   group('User + caseStyle(snake) e @EasyKey(name)', () {
@@ -19,7 +19,10 @@ void main() {
       expect(j.containsKey('created_at'), isTrue);
 
       // override manual
-      expect(j.containsKey('e_mail'), isFalse); // email == null e includeIfNull=false
+      expect(
+        j.containsKey('e_mail'),
+        isFalse,
+      ); // email == null e includeIfNull=false
 
       // tipos plausíveis
       expect(j['user_name'], 'Alice');
@@ -45,8 +48,9 @@ void main() {
 
       final json = {
         // faltando 'user_name' (required) => issue
-        'created_at': 1712345678901, // epoch ms -> deve ser aceito/coagido no safe
-        'e_mail': 123,               // type mismatch => vira null + issue
+        'created_at':
+            1712345678901, // epoch ms -> deve ser aceito/coagido no safe
+        'e_mail': 123, // type mismatch => vira null + issue
       };
 
       final u = User.fromJsonSafe(json, onIssue: issues.add);
@@ -60,7 +64,7 @@ void main() {
       expect(issues, isNotEmpty);
       final paths = issues.map((e) => e.path).toList();
       expect(paths, contains('user_name')); // faltou
-      expect(paths, contains('e_mail'));    // type mismatch
+      expect(paths, contains('e_mail')); // type mismatch
     });
   });
 }

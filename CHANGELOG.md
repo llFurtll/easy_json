@@ -1,3 +1,11 @@
+## 0.7.0
+
+*   **FEAT**: Added native support for `Uint8List` (Binary Data). `easy_json` now automatically serializes/deserializes `Uint8List` fields to/from Base64 strings.
+*   **FEAT**: Added `fromJson` and `toJson` flags to the `@EasyJson` annotation to support read-only (API responses) and write-only (API requests) models, avoiding dead code generation.
+*   **REFACTOR**: Removed the `flutter` SDK dependency. The package is now a pure Dart package, enabling usage in CLI, server-side, and other non-Flutter Dart environments.
+*   **I18N**: Standardized all fallback and hardcoded error messages to English.
+*   **CHORE**: Fixed `analyzer` experimental member use warnings in the code generator.
+
 ## 0.6.0
 
 *   **FEAT**: Added support for class inheritance. The `EasyJson` generator now navigates through superclasses to automatically detect and include inherited fields in the serialization methods.

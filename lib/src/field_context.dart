@@ -1,3 +1,4 @@
+// ignore_for_file: experimental_member_use
 import 'package:analyzer/dart/element/element.dart';
 import 'package:analyzer/dart/element/type.dart';
 import 'package:source_gen/source_gen.dart';
@@ -106,6 +107,8 @@ class FieldContext {
       type is InterfaceType && (type as InterfaceType).element.name == 'Set';
   bool get isMap =>
       type is InterfaceType && (type as InterfaceType).element.name == 'Map';
+  bool get isUint8List =>
+      type is InterfaceType && (type as InterfaceType).element.name == 'Uint8List';
 
   bool get emitNulls => (includeIfNull ?? classIncludeIfNull) == true;
 

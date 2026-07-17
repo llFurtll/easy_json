@@ -135,11 +135,22 @@ void main() {
 
   // Deserialization (uses the factory constructor)
   final userFromJson = User.fromJson(jsonMap);
-  print(userFromJson.userName); // Output: John Doe
+  print(userFromJson.userName);
 }
 ```
 
-## 4. Safe Deserialization and Validation
+## 4. Supported Types
+
+`easy_json` natively handles a wide variety of types without requiring custom converters:
+
+*   **Primitives**: `int`, `double`, `bool`, `String`, `num`
+*   **Enums**: Automatically serialized/deserialized by their name.
+*   **Collections**: `List<T>`, `Set<T>`, `Map<K, V>` (where `K` is usually a String or an enum, and `V` can be any supported type, including nested collections).
+*   **DateTime**: Serialized to ISO-8601 strings, but can gracefully read from integers (milliseconds since epoch) or strings.
+*   **Uint8List (Binary Data)**: Automatically serialized to and deserialized from **Base64** strings. Extremely useful for dealing with file uploads or image blobs directly in JSON.
+*   **Nested Models**: Any other class annotated with `@EasyJson`.
+
+## 5. Safe Deserialization and Validation
 
 A core strength of `easy_json` is its robust error handling.
 
@@ -290,6 +301,30 @@ class UserModel extends UserEntity with UserModelSerializer {
 ```
 
 ## 7. Advanced Customization
+
+### Read-Only and Write-Only Models (`fromJson`, `toJson`)
+
+You can optimize the generated code by omitting serialization or deserialization methods for models that only go in one direction.
+
+*   `@EasyJson(toJson: false)`: Generates only `fromJson`, `fromJsonSafe`, and `validate`. Ideal for API response models (read-only) to avoid generating dead code.
+*   `@EasyJson(fromJson: false)`: Generates only `toJson`. Ideal for API request payloads (write-only).
+
+```dart
+// Read-only model: will not generate a toJson() method or Serializer mixin.
+@EasyJson(toJson: false)
+class ApiResponse {
+  final int id;
+  // ...
+}
+
+// Write-only model: will not generate fromJson(), fromJsonSafe(), or validate().
+@EasyJson(fromJson: false)
+class CreateUserPayload with CreateUserPayloadSerializer {
+  final String email;
+  final String password;
+  // ...
+}
+```
 
 ### `@EasyKey` Annotation
 

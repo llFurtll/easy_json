@@ -1,8 +1,8 @@
 // test/roundtrip_test.dart
 import 'package:dart_easy_json/types.dart';
-import 'package:flutter_test/flutter_test.dart';
 import 'package:dart_easy_json/test_models.dart';
 import 'package:dart_easy_json/generated/test_models.easy.dart';
+import 'package:test/test.dart';
 
 void main() {
   test('toJson e roundtrip básico', () {
@@ -11,9 +11,7 @@ void main() {
       createdAt: DateTime.fromMillisecondsSinceEpoch(1000),
       buyerRole: TmRole.admin,
       shipping: const Address(street: 'S', number: 1),
-      items: {
-        1: const Product(id: 1, price: 9.9, name: 'T'),
-      },
+      items: {1: const Product(id: 1, price: 9.9, name: 'T')},
       quantities: {'1': 2},
       notes: ['a', 'b'],
       tags: {'x', 'y'},

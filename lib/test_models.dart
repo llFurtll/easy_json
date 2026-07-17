@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:dart_easy_json/easy_json.dart';
 import 'package:dart_easy_json/generated/test_models.easy.dart';
 import 'package:dart_easy_json/types.dart';
@@ -222,4 +224,34 @@ class InheritedModel extends BaseEntity with InheritedModelSerializer {
 
   factory InheritedModel.fromJson(Map<String, dynamic> json) => inheritedModelFromJson(json);
   factory InheritedModel.fromJsonSafe(Map<String, dynamic> json, {void Function(EasyIssue)? onIssue}) => inheritedModelFromJsonSafe(json, onIssue: onIssue);
+}
+
+@EasyJson(toJson: false)
+class ReadOnlyModel {
+  final int id;
+  final String name;
+
+  ReadOnlyModel({required this.id, required this.name});
+
+  factory ReadOnlyModel.fromJson(Map<String, dynamic> json) => readOnlyModelFromJson(json);
+  factory ReadOnlyModel.fromJsonSafe(Map<String, dynamic> json, {void Function(EasyIssue)? onIssue}) => readOnlyModelFromJsonSafe(json, onIssue: onIssue);
+}
+
+@EasyJson(fromJson: false)
+class WriteOnlyModel with WriteOnlyModelSerializer {
+  final int id;
+  final String name;
+
+  WriteOnlyModel({required this.id, required this.name});
+}
+
+@EasyJson()
+class DocumentModel with DocumentModelSerializer {
+  final Uint8List fileData;
+  final Uint8List? optionalData;
+
+  DocumentModel({required this.fileData, this.optionalData});
+
+  factory DocumentModel.fromJson(Map<String, dynamic> json) => documentModelFromJson(json);
+  factory DocumentModel.fromJsonSafe(Map<String, dynamic> json, {void Function(EasyIssue)? onIssue}) => documentModelFromJsonSafe(json, onIssue: onIssue);
 }

@@ -7,12 +7,20 @@ class EasyJson {
   /// Pode ser sobreposto por `@EasyKey(includeIfNull: ...)`.
   final bool includeIfNull;
 
-   /// Estilo de chave para campos sem `name` explícito.
+  /// Estilo de chave para campos sem `name` explícito.
   final CaseStyle? caseStyle;
+
+  /// Se `false`, os métodos de desserialização (fromJson, fromJsonSafe, validate) não serão gerados.
+  final bool fromJson;
+
+  /// Se `false`, os métodos de serialização (toJson) e o mixin não serão gerados.
+  final bool toJson;
 
   const EasyJson({
     this.includeIfNull = false,
     this.caseStyle,
+    this.fromJson = true,
+    this.toJson = true,
   });
 }
 

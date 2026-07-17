@@ -1,6 +1,5 @@
-import 'package:flutter_test/flutter_test.dart';
-
-import 'package:dart_easy_json/generated/test_models.easy.dart'; // Order etc.
+import 'package:dart_easy_json/generated/test_models.easy.dart';
+import 'package:test/test.dart';
 
 void main() {
   group('DateTime safe', () {

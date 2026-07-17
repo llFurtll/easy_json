@@ -1,3 +1,4 @@
+// ignore_for_file: experimental_member_use
 import 'package:analyzer/dart/element/element.dart';
 import 'package:analyzer/dart/element/type.dart';
 import 'package:collection/collection.dart';
@@ -15,7 +16,8 @@ abstract class TypeStrategy {
 
 /// Helper para gerar a estrutura de validação (check de required + extração de valor).
 void _validateField(FieldContext c, StringBuffer out, String checkBody) {
-  final hasCtorDefault = c.enclosingClass.unnamedConstructor?.formalParameters
+  final hasCtorDefault =
+      c.enclosingClass.unnamedConstructor?.formalParameters
           .firstWhereOrNull((p) => p.name == c.name)
           ?.defaultValueCode !=
       null;
@@ -25,16 +27,22 @@ void _validateField(FieldContext c, StringBuffer out, String checkBody) {
     out.writeln("{");
     out.writeln("final v = ${c.jsonAccessor};");
     if (!c.isNullable && !hasCtorDefault) {
-      out.writeln("if (v == null) { issues.add(EasyIssue(path: ${c.pathExpr}, code: 'missing_required', message: 'Missing required field.')); }");
+      out.writeln(
+        "if (v == null) { issues.add(EasyIssue(path: ${c.pathExpr}, code: 'missing_required', message: 'Missing required field.')); }",
+      );
     }
     out.writeln(checkBody);
     out.writeln("}");
   } else {
     // Padrão: verifica containsKey para ser preciso sobre "missing field".
     if (!c.isNullable && !hasCtorDefault) {
-      out.writeln("if (!json.containsKey('${c.jsonKey}')) { issues.add(EasyIssue(path: ${c.pathExpr}, code: 'missing_required', message: 'Missing required field.')); }");
+      out.writeln(
+        "if (!json.containsKey('${c.jsonKey}')) { issues.add(EasyIssue(path: ${c.pathExpr}, code: 'missing_required', message: 'Missing required field.')); }",
+      );
     }
-    out.writeln("if (json.containsKey('${c.jsonKey}')) { final v = ${c.jsonAccessor}; $checkBody }");
+    out.writeln(
+      "if (json.containsKey('${c.jsonKey}')) { final v = ${c.jsonAccessor}; $checkBody }",
+    );
   }
 }
 
@@ -44,7 +52,8 @@ void _generateValidationChecks(FieldContext c, StringBuffer out) {
 
   final type = c.type;
   final isString = displayNonNull(type) == 'String';
-  final isNum = type.isDartCoreNum || type.isDartCoreInt || type.isDartCoreDouble;
+  final isNum =
+      type.isDartCoreNum || type.isDartCoreInt || type.isDartCoreDouble;
   final isCollection = c.isList || c.isSet || c.isMap;
 
   // minLength
@@ -85,24 +94,29 @@ void _generateValidationChecks(FieldContext c, StringBuffer out) {
 
     switch (formatName) {
       case 'email':
-        regex = r"^[a-zA-Z0-9.a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,253}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,253}[a-zA-Z0-9])?)*$";
+        regex =
+            r"^[a-zA-Z0-9.a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,253}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,253}[a-zA-Z0-9])?)*$";
         code = 'invalid_email';
         message = 'Invalid email.';
         break;
       case 'url':
-        regex = r'^(https|http)://[-a-zA-Z0-9@:%._+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_+.~#?&//=]*)$';
+        regex =
+            r'^(https|http)://[-a-zA-Z0-9@:%._+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_+.~#?&//=]*)$';
         code = 'invalid_url';
         message = 'Invalid URL.';
         break;
       case 'uuid':
-        regex = r'^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$';
+        regex =
+            r'^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$';
         code = 'invalid_uuid';
         message = 'Invalid UUID.';
         break;
     }
     if (regex != null) {
       final escapedRegex = regex.replaceAll("'", r"\'");
-      out.writeln("if (!RegExp(r'$escapedRegex').hasMatch(v as String)) { issues.add(EasyIssue(path: ${c.pathExpr}, code: '$code', message: '$message')); }");
+      out.writeln(
+        "if (!RegExp(r'$escapedRegex').hasMatch(v as String)) { issues.add(EasyIssue(path: ${c.pathExpr}, code: '$code', message: '$message')); }",
+      );
     }
   }
 
@@ -251,9 +265,12 @@ class PrimitiveStrategy implements TypeStrategy {
     String standardLogic;
 
     if (isExactlyDateTime(c.type)) {
-      final nfb = c.isNullable ? 'null' : 'DateTime.fromMillisecondsSinceEpoch(0)';
+      final nfb = c.isNullable
+          ? 'null'
+          : 'DateTime.fromMillisecondsSinceEpoch(0)';
       // Lógica nativa poderosa para DateTime
-      standardLogic = """
+      standardLogic =
+          """
         (() {
           final v = ${c.jsonAccessor};
           if (v == null) return $nfb;
@@ -262,11 +279,11 @@ class PrimitiveStrategy implements TypeStrategy {
           if (v is num) return DateTime.fromMillisecondsSinceEpoch(v.toInt());
           if (v is String) {
             try { return DateTime.parse(v); } catch (_) {
-              onIssue?.call(EasyIssue(path: ${c.pathExpr}, code: 'type_mismatch', message: 'Formato inválido de DateTime.'));
+              onIssue?.call(EasyIssue(path: ${c.pathExpr}, code: 'type_mismatch', message: 'Invalid DateTime format.'));
               return $nfb; 
             }
           }
-          onIssue?.call(EasyIssue(path: ${c.pathExpr}, code: 'type_mismatch', message: 'Esperado String/epoch/DateTime.'));
+          onIssue?.call(EasyIssue(path: ${c.pathExpr}, code: 'type_mismatch', message: 'Expected String/epoch/DateTime.'));
           return $nfb;
         })()
       """;
@@ -275,13 +292,16 @@ class PrimitiveStrategy implements TypeStrategy {
       final t = displayNonNull(c.type);
       switch (t) {
         case 'int':
-          standardLogic = "((){ final v=${c.jsonAccessor}; if (v is int) return v; if (v is num) return v.toInt(); if (v is String) { final p = int.tryParse(v); if(p!=null) return p;} return $fb; })()";
+          standardLogic =
+              "((){ final v=${c.jsonAccessor}; if (v is int) return v; if (v is num) return v.toInt(); if (v is String) { final p = int.tryParse(v); if(p!=null) return p;} return $fb; })()";
           break;
         case 'double':
-          standardLogic = "((){ final v=${c.jsonAccessor}; if (v is num) return v.toDouble(); if (v is String) { final p = double.tryParse(v); if(p!=null) return p;} return $fb; })()";
+          standardLogic =
+              "((){ final v=${c.jsonAccessor}; if (v is num) return v.toDouble(); if (v is String) { final p = double.tryParse(v); if(p!=null) return p;} return $fb; })()";
           break;
         case 'bool':
-          standardLogic = "((){ final v=${c.jsonAccessor}; return (v is bool)?v:$fb; })()";
+          standardLogic =
+              "((){ final v=${c.jsonAccessor}; return (v is bool)?v:$fb; })()";
           break;
         case 'String':
           standardLogic = c.isNullable
@@ -325,7 +345,8 @@ class PrimitiveStrategy implements TypeStrategy {
 
     String check;
     if (isExactlyDateTime(c.type)) {
-      check = """
+      check =
+          """
         if (v != null && v is! String && v is! num && v is! DateTime) {
           issues.add(EasyIssue(path: ${c.pathExpr}, code: 'type_mismatch', message: 'Expected String (ISO), num or DateTime.'));
         } else if (v is String) {
@@ -344,9 +365,10 @@ class PrimitiveStrategy implements TypeStrategy {
           "}";
     } else {
       final sb = StringBuffer(
-          "if (v != null && v is! $t) { "
-          "  issues.add(EasyIssue(path: ${c.pathExpr}, code: 'type_mismatch', message: 'Expected $t.')); "
-          "} else if (v != null) {");
+        "if (v != null && v is! $t) { "
+        "  issues.add(EasyIssue(path: ${c.pathExpr}, code: 'type_mismatch', message: 'Expected $t.')); "
+        "} else if (v != null) {",
+      );
       _generateValidationChecks(c, sb);
       sb.write('}');
       check = sb.toString();
@@ -372,6 +394,71 @@ class PrimitiveStrategy implements TypeStrategy {
     return c.instanceAccess;
   }
 }
+
+class Uint8ListStrategy implements TypeStrategy {
+  @override
+  String fromJson(FieldContext c) {
+    if (c.convertFromJson != null)
+      return "${c.convertFromJson!}(${c.jsonAccessor})";
+    final isN = c.isNullable;
+
+    // O fromJson normal lança exceção se estiver quebrado (exceto se for nullable e não vier)
+    if (isN) {
+      return "(${c.jsonAccessor} as String?) != null ? base64Decode(${c.jsonAccessor} as String) : null";
+    }
+    return "base64Decode(${c.jsonAccessor} as String)";
+  }
+
+  @override
+  String fromJsonSafe(FieldContext c) {
+    final nfb = c.isNullable ? 'null' : 'Uint8List(0)';
+    final code =
+        """
+      (() {
+        final v = ${c.jsonAccessor};
+        if (v == null) return $nfb;
+        if (v is String) {
+          try {
+            return base64Decode(v);
+          } catch (_) {
+            onIssue?.call(EasyIssue(path: ${c.pathExpr}, code: 'invalid_base64', message: 'Invalid Base64 string.'));
+            return $nfb;
+          }
+        }
+        onIssue?.call(EasyIssue(path: ${c.pathExpr}, code: 'type_mismatch', message: 'Expected String (Base64).'));
+        return $nfb;
+      })()
+    """;
+    return code;
+  }
+
+  @override
+  void validate(FieldContext c, StringBuffer out) {
+    _validateField(c, out, """
+      if (v is! String) {
+        issues.add(EasyIssue(path: ${c.pathExpr}, code: 'type_mismatch', message: 'Expected String (Base64).'));
+      } else {
+        try {
+          base64Decode(v);
+        } catch (_) {
+          issues.add(EasyIssue(path: ${c.pathExpr}, code: 'invalid_base64', message: 'Invalid Base64 string.'));
+        }
+      }
+    """);
+    _generateValidationChecks(c, out);
+  }
+
+  @override
+  String toJson(FieldContext c) {
+    if (c.convertToJson != null)
+      return "${c.convertToJson!}(${c.instanceAccess})";
+    if (c.isNullable) {
+      return "(${c.instanceAccess} != null ? base64Encode(${c.instanceAccess}!) : null)";
+    }
+    return "base64Encode(${c.instanceAccess})";
+  }
+}
+
 // ===== Enum =====
 class EnumStrategy implements TypeStrategy {
   @override
@@ -433,7 +520,8 @@ class EnumStrategy implements TypeStrategy {
   void validate(FieldContext c, StringBuffer out) {
     final en = displayNonNull(c.type);
 
-    final check = """
+    final check =
+        """
         if (v != null && v is! String) {
           issues.add(EasyIssue(path: ${c.pathExpr}, code: 'type_mismatch', message: 'Expected String with the enum name.'));
         } else if (v != null) {
@@ -500,7 +588,8 @@ class ObjectStrategy implements TypeStrategy {
     final cn = displayNonNull(c.type);
     final vn = _lcFirst(cn);
 
-    final check = """
+    final check =
+        """
         if (v != null && v is! Map) {
           issues.add(EasyIssue(path: ${c.pathExpr}, code: 'type_mismatch', message: 'Expected Map for $cn.'));
         } else if (v is Map) {
@@ -803,7 +892,7 @@ class MapStrategy implements TypeStrategy {
     final valParse = _safeValueParse(V, c, keyPath: true);
 
     final onIssue =
-        "onIssue?.call(EasyIssue(path: ${c.pathExpr} + '.' + entry.key.toString(), code: 'key_type_mismatch', message: 'Chave incompatível com o tipo do mapa.'))";
+        "onIssue?.call(EasyIssue(path: ${c.pathExpr} + '.' + entry.key.toString(), code: 'key_type_mismatch', message: 'Incompatible key type for map.'))";
 
     final code = kMapSafeTpl
         .replaceAll('{VALUE}', c.jsonAccessor)
@@ -990,7 +1079,7 @@ String _safeItemParse(DartType item, FieldContext c, {bool indexPath = false}) {
   onIssue?.call(EasyIssue(
     path: $pathPrefix,
     code: 'type_mismatch',
-    message: 'Esperado Map para $cn.'
+    message: 'Expected Map for $cn.'
   ));
   ${isNullableItem ? 'return null;' : '''return ${vn}FromJsonSafe(
             const <String,dynamic>{},

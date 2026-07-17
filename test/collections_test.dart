@@ -1,7 +1,6 @@
-import 'package:flutter_test/flutter_test.dart';
-
 import 'package:dart_easy_json/generated/test_models.easy.dart';
 import 'package:dart_easy_json/src/easy_issue.dart';
+import 'package:test/test.dart';
 
 void main() {
   group('Coleções (List/Set/Map) - safe', () {
@@ -40,25 +39,33 @@ void main() {
       expect(issues.map((e) => e.path), contains('tags[2]'));
     });
 
-    test('Map<int, Product> coage chave string numérica e marca chave inválida', () {
-      final issues = <EasyIssue>[];
-      final o = orderFromJsonSafe({
-        'orderId': 'A',
-        'createdAt': '2024-01-01T00:00:00Z',
-        'buyerRole': 'viewer',
-        'items': {
-          '1': {'id': 'p1'},
-          'x': {'id': 'p2'}, // chave inválida
-        },
-        'quantities': {},
-        'notes': [],
-        'tags': [],
-        'statusHistory': {},
-      }, onIssue: issues.add);
+    test(
+      'Map<int, Product> coage chave string numérica e marca chave inválida',
+      () {
+        final issues = <EasyIssue>[];
+        final o = orderFromJsonSafe({
+          'orderId': 'A',
+          'createdAt': '2024-01-01T00:00:00Z',
+          'buyerRole': 'viewer',
+          'items': {
+            '1': {'id': 'p1'},
+            'x': {'id': 'p2'}, // chave inválida
+          },
+          'quantities': {},
+          'notes': [],
+          'tags': [],
+          'statusHistory': {},
+        }, onIssue: issues.add);
 
-      expect(o.items.containsKey(1), isTrue);
-      expect(issues.any((i) => i.path == 'items.x' && i.code == 'key_type_mismatch'), isTrue);
-    });
+        expect(o.items.containsKey(1), isTrue);
+        expect(
+          issues.any(
+            (i) => i.path == 'items.x' && i.code == 'key_type_mismatch',
+          ),
+          isTrue,
+        );
+      },
+    );
 
     test('Map<String, int> marca valor inválido por chave', () {
       final issues = <EasyIssue>[];
@@ -74,7 +81,12 @@ void main() {
       }, onIssue: issues.add);
 
       expect(o.quantities['ok'], 1);
-      expect(issues.any((i) => i.path == 'quantities.bad' && i.code == 'type_mismatch'), isTrue);
+      expect(
+        issues.any(
+          (i) => i.path == 'quantities.bad' && i.code == 'type_mismatch',
+        ),
+        isTrue,
+      );
     });
   });
 }

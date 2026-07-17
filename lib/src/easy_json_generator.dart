@@ -1,3 +1,5 @@
+// ignore_for_file: experimental_member_use
+import 'dart:async';
 import 'package:analyzer/dart/constant/value.dart';
 import 'package:analyzer/dart/element/element.dart';
 import 'package:analyzer/dart/element/type.dart';
@@ -94,6 +96,8 @@ class EasyJsonGenerator extends Generator {
     // --- 3. Monta o arquivo final ---
     final orderedImports = allImports.toList()..sort();
     final extraImports = <String>[
+      "import 'dart:convert';",
+      "import 'dart:typed_data';",
       "import 'package:dart_easy_json/src/runtime.dart' as ej;",
       "import 'package:dart_easy_json/src/messages.dart';",
     ];
@@ -131,6 +135,8 @@ class EasyJsonGenerator extends Generator {
     final classIncludeIfNull =
         (annotation.peek('includeIfNull')?.literalValue as bool?) ?? false;
     final classCaseStyle = _readClassCaseStyle(annotation);
+    final generateFromJson = (annotation.peek('fromJson')?.literalValue as bool?) ?? true;
+    final generateToJson = (annotation.peek('toJson')?.literalValue as bool?) ?? true;
 
     // === Cria FieldContexts ===
     final fields = _getAllFields(clazz).toList();
@@ -266,12 +272,12 @@ class EasyJsonGenerator extends Generator {
 
     final src =
         '''
-        ${mFromJson().accept(emitter)}
-        ${mToJson().accept(emitter)}
-        ${mixin.build().accept(emitter)}\n
-        ${mValidate().accept(emitter)}
-        ${mFromJsonSafe().accept(emitter)}
-        ${companion.accept(emitter)}
+        ${generateFromJson ? mFromJson().accept(emitter) : ''}
+        ${generateToJson ? mToJson().accept(emitter) : ''}
+        ${generateToJson ? mixin.build().accept(emitter) : ''}\n
+        ${generateFromJson ? mValidate().accept(emitter) : ''}
+        ${generateFromJson ? mFromJsonSafe().accept(emitter) : ''}
+        ${generateFromJson ? companion.accept(emitter) : ''}
     ''';
 
     return src;
@@ -284,6 +290,7 @@ class EasyJsonGenerator extends Generator {
     if (c.isList) return ListStrategy();
     if (c.isSet) return SetStrategy();
     if (c.isMap) return MapStrategy();
+    if (c.isUint8List) return Uint8ListStrategy();
     return PrimitiveStrategy();
   }
 
