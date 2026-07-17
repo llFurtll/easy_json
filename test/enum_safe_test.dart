@@ -1,6 +1,6 @@
 import 'package:dart_easy_json/types.dart';
 
-import 'package:dart_easy_json/generated/test_models.easy.dart';
+import 'models/test_models.easy.dart';
 import 'package:dart_easy_json/src/easy_issue.dart';
 import 'package:test/test.dart';
 

@@ -11,11 +11,12 @@
 // EasyJsonGenerator
 // **************************************************************************
 
-// ignore_for_file: type=lint
-import 'package:dart_easy_json/generated/test_models.easy.dart';
+// ignore_for_file: type=lint, unused_import, unnecessary_cast, unused_local_variable, duplicate_import
+import 'test_models.dart';
 import 'package:dart_easy_json/src/easy_issue.dart';
-import 'package:dart_easy_json/test_models.dart';
 import 'package:dart_easy_json/types.dart';
+import 'test_models.dart';
+import 'test_models.easy.dart';
 import 'dart:convert';
 import 'dart:typed_data';
 import 'package:dart_easy_json/src/runtime.dart' as ej;
@@ -2350,5 +2351,541 @@ class DocumentModelJson {
 
   static List<EasyIssue> validate(Map<String, dynamic> json) {
     return documentModelValidate(json);
+  }
+}
+
+Post postFromJson(Map<String, dynamic> json) {
+  final d = json['type'];
+  switch (d) {
+    case 'text':
+      return TextPost.fromJson(json);
+    case 'video':
+      return VideoPost.fromJson(json);
+    default:
+      return UnknownPost.fromJson(json);
+  }
+}
+
+Map<String, dynamic> postToJson(Post instance) {
+  return (instance as dynamic).toJson() as Map<String, dynamic>;
+}
+
+mixin PostSerializer {
+  Map<String, dynamic> toJson() {
+    return postToJson(this as Post);
+  }
+}
+
+List<EasyIssue> postValidate(Map<String, dynamic> json) {
+  final d = json['type'];
+  switch (d) {
+    case 'text':
+      return textPostValidate(json);
+    case 'video':
+      return videoPostValidate(json);
+    default:
+      final issues = [
+        EasyIssue(
+          path: 'type',
+          code: 'unknown_union_type',
+          message: 'Unknown type: \$d',
+        ),
+      ];
+      issues.addAll(unknownPostValidate(json));
+      return issues;
+  }
+}
+
+Post postFromJsonSafe(
+  Map<String, dynamic> json, {
+  void Function(EasyIssue)? onIssue,
+  bool runValidate = true,
+}) {
+  if (runValidate) {
+    final _issues = postValidate(json);
+    if (onIssue != null) {
+      for (final i in _issues) onIssue(i);
+    }
+  }
+  final d = json['type'];
+  switch (d) {
+    case 'text':
+      return textPostFromJsonSafe(json, onIssue: onIssue, runValidate: false);
+    case 'video':
+      return videoPostFromJsonSafe(json, onIssue: onIssue, runValidate: false);
+    default:
+      return unknownPostFromJsonSafe(
+        json,
+        onIssue: onIssue,
+        runValidate: false,
+      );
+  }
+}
+
+class PostJson {
+  const PostJson();
+
+  static Post fromJson(Map<String, dynamic> json) {
+    return postFromJson(json);
+  }
+
+  static Post fromJsonSafe(
+    Map<String, dynamic> json, {
+    void Function(EasyIssue)? onIssue,
+    bool runValidate = true,
+  }) {
+    return postFromJsonSafe(json, onIssue: onIssue, runValidate: runValidate);
+  }
+
+  static List<EasyIssue> validate(Map<String, dynamic> json) {
+    return postValidate(json);
+  }
+}
+
+TextPost textPostFromJson(Map<String, dynamic> json) {
+  return TextPost(
+    author: (json['author'] as String?) ?? '',
+    content: (json['content'] as String?) ?? '',
+  );
+}
+
+Map<String, dynamic> textPostToJson(TextPost instance) {
+  return <String, dynamic>{
+    'author': instance.author,
+    'content': instance.content,
+  };
+}
+
+mixin TextPostSerializer {
+  Map<String, dynamic> toJson() {
+    return textPostToJson(this as TextPost);
+  }
+}
+
+List<EasyIssue> textPostValidate(Map<String, dynamic> json) {
+  final issues = <EasyIssue>[];
+  if (!json.containsKey('author')) {
+    issues.add(
+      EasyIssue(
+        path: 'author',
+        code: 'missing_required',
+        message: 'Missing required field.',
+      ),
+    );
+  }
+  if (json.containsKey('author')) {
+    final v = json['author'];
+    if (v != null && v is! String) {
+      issues.add(
+        EasyIssue(
+          path: 'author',
+          code: 'type_mismatch',
+          message: 'Expected String.',
+        ),
+      );
+    } else if (v != null) {}
+  }
+  if (!json.containsKey('content')) {
+    issues.add(
+      EasyIssue(
+        path: 'content',
+        code: 'missing_required',
+        message: 'Missing required field.',
+      ),
+    );
+  }
+  if (json.containsKey('content')) {
+    final v = json['content'];
+    if (v != null && v is! String) {
+      issues.add(
+        EasyIssue(
+          path: 'content',
+          code: 'type_mismatch',
+          message: 'Expected String.',
+        ),
+      );
+    } else if (v != null) {}
+  }
+  return issues;
+}
+
+TextPost textPostFromJsonSafe(
+  Map<String, dynamic> json, {
+  void Function(EasyIssue)? onIssue,
+  bool runValidate = true,
+}) {
+  if (runValidate) {
+    final _issues = textPostValidate(json);
+    if (onIssue != null) {
+      for (final i in _issues) onIssue(i);
+    }
+  }
+  return TextPost(
+    author: (() {
+      final v = json['author'];
+      return (v is String) ? v : '';
+    })(),
+    content: (() {
+      final v = json['content'];
+      return (v is String) ? v : '';
+    })(),
+  );
+}
+
+class TextPostJson {
+  const TextPostJson();
+
+  static TextPost fromJson(Map<String, dynamic> json) {
+    return textPostFromJson(json);
+  }
+
+  static TextPost fromJsonSafe(
+    Map<String, dynamic> json, {
+    void Function(EasyIssue)? onIssue,
+    bool runValidate = true,
+  }) {
+    return textPostFromJsonSafe(
+      json,
+      onIssue: onIssue,
+      runValidate: runValidate,
+    );
+  }
+
+  static List<EasyIssue> validate(Map<String, dynamic> json) {
+    return textPostValidate(json);
+  }
+}
+
+VideoPost videoPostFromJson(Map<String, dynamic> json) {
+  return VideoPost(
+    author: (json['author'] as String?) ?? '',
+    videoUrl: (json['videoUrl'] as String?) ?? '',
+  );
+}
+
+Map<String, dynamic> videoPostToJson(VideoPost instance) {
+  return <String, dynamic>{
+    'author': instance.author,
+    'videoUrl': instance.videoUrl,
+  };
+}
+
+mixin VideoPostSerializer {
+  Map<String, dynamic> toJson() {
+    return videoPostToJson(this as VideoPost);
+  }
+}
+
+List<EasyIssue> videoPostValidate(Map<String, dynamic> json) {
+  final issues = <EasyIssue>[];
+  if (!json.containsKey('author')) {
+    issues.add(
+      EasyIssue(
+        path: 'author',
+        code: 'missing_required',
+        message: 'Missing required field.',
+      ),
+    );
+  }
+  if (json.containsKey('author')) {
+    final v = json['author'];
+    if (v != null && v is! String) {
+      issues.add(
+        EasyIssue(
+          path: 'author',
+          code: 'type_mismatch',
+          message: 'Expected String.',
+        ),
+      );
+    } else if (v != null) {}
+  }
+  if (!json.containsKey('videoUrl')) {
+    issues.add(
+      EasyIssue(
+        path: 'videoUrl',
+        code: 'missing_required',
+        message: 'Missing required field.',
+      ),
+    );
+  }
+  if (json.containsKey('videoUrl')) {
+    final v = json['videoUrl'];
+    if (v != null && v is! String) {
+      issues.add(
+        EasyIssue(
+          path: 'videoUrl',
+          code: 'type_mismatch',
+          message: 'Expected String.',
+        ),
+      );
+    } else if (v != null) {}
+  }
+  return issues;
+}
+
+VideoPost videoPostFromJsonSafe(
+  Map<String, dynamic> json, {
+  void Function(EasyIssue)? onIssue,
+  bool runValidate = true,
+}) {
+  if (runValidate) {
+    final _issues = videoPostValidate(json);
+    if (onIssue != null) {
+      for (final i in _issues) onIssue(i);
+    }
+  }
+  return VideoPost(
+    author: (() {
+      final v = json['author'];
+      return (v is String) ? v : '';
+    })(),
+    videoUrl: (() {
+      final v = json['videoUrl'];
+      return (v is String) ? v : '';
+    })(),
+  );
+}
+
+class VideoPostJson {
+  const VideoPostJson();
+
+  static VideoPost fromJson(Map<String, dynamic> json) {
+    return videoPostFromJson(json);
+  }
+
+  static VideoPost fromJsonSafe(
+    Map<String, dynamic> json, {
+    void Function(EasyIssue)? onIssue,
+    bool runValidate = true,
+  }) {
+    return videoPostFromJsonSafe(
+      json,
+      onIssue: onIssue,
+      runValidate: runValidate,
+    );
+  }
+
+  static List<EasyIssue> validate(Map<String, dynamic> json) {
+    return videoPostValidate(json);
+  }
+}
+
+UnknownPost unknownPostFromJson(Map<String, dynamic> json) {
+  return UnknownPost();
+}
+
+Map<String, dynamic> unknownPostToJson(UnknownPost instance) {
+  return <String, dynamic>{};
+}
+
+mixin UnknownPostSerializer {
+  Map<String, dynamic> toJson() {
+    return unknownPostToJson(this as UnknownPost);
+  }
+}
+
+List<EasyIssue> unknownPostValidate(Map<String, dynamic> json) {
+  final issues = <EasyIssue>[];
+  return issues;
+}
+
+UnknownPost unknownPostFromJsonSafe(
+  Map<String, dynamic> json, {
+  void Function(EasyIssue)? onIssue,
+  bool runValidate = true,
+}) {
+  if (runValidate) {
+    final _issues = unknownPostValidate(json);
+    if (onIssue != null) {
+      for (final i in _issues) onIssue(i);
+    }
+  }
+  return UnknownPost();
+}
+
+class UnknownPostJson {
+  const UnknownPostJson();
+
+  static UnknownPost fromJson(Map<String, dynamic> json) {
+    return unknownPostFromJson(json);
+  }
+
+  static UnknownPost fromJsonSafe(
+    Map<String, dynamic> json, {
+    void Function(EasyIssue)? onIssue,
+    bool runValidate = true,
+  }) {
+    return unknownPostFromJsonSafe(
+      json,
+      onIssue: onIssue,
+      runValidate: runValidate,
+    );
+  }
+
+  static List<EasyIssue> validate(Map<String, dynamic> json) {
+    return unknownPostValidate(json);
+  }
+}
+
+Feed feedFromJson(Map<String, dynamic> json) {
+  return Feed(
+    posts:
+        ((json['posts'] as List?)?.asMap().entries.map<Post>((entry) {
+          final i = entry.key;
+          final e = entry.value;
+          return postFromJson(Map<String, dynamic>.from(e as Map));
+        }).toList()) ??
+        const <Post>[],
+  );
+}
+
+Map<String, dynamic> feedToJson(Feed instance) {
+  return <String, dynamic>{
+    'posts': instance.posts.map((e) => e.toJson()).toList(),
+  };
+}
+
+mixin FeedSerializer {
+  Map<String, dynamic> toJson() {
+    return feedToJson(this as Feed);
+  }
+}
+
+List<EasyIssue> feedValidate(Map<String, dynamic> json) {
+  final issues = <EasyIssue>[];
+  if (!json.containsKey('posts')) {
+    issues.add(
+      EasyIssue(
+        path: 'posts',
+        code: 'missing_required',
+        message: 'Missing required field.',
+      ),
+    );
+  }
+  if (json.containsKey('posts')) {
+    final v = json['posts'];
+    if (v != null && v is! List) {
+      issues.add(
+        EasyIssue(
+          path: 'posts',
+          code: 'type_mismatch',
+          message: 'Expected List.',
+        ),
+      );
+    } else if (v is List) {
+      for (var i = 0; i < v.length; i++) {
+        final e = v[i];
+        if (e == null) {
+          issues.add(
+            EasyIssue(
+              path: 'posts' + '[' + i.toString() + ']',
+              code: 'null_not_allowed',
+              message: 'Null value not allowed.',
+            ),
+          );
+        } else {
+          if (e is! Map) {
+            issues.add(
+              EasyIssue(
+                path: 'posts' + '[' + i.toString() + ']',
+                code: 'type_mismatch',
+                message: 'Expected Map for Post.',
+              ),
+            );
+          } else {
+            final child = postValidate(Map<String, dynamic>.from(e as Map));
+            for (final ci in child) {
+              issues.add(
+                EasyIssue(
+                  path: 'posts' + '[' + i.toString() + '].' + ci.path,
+                  code: ci.code,
+                  message: ci.message,
+                ),
+              );
+            }
+          }
+        }
+      }
+    }
+  }
+  return issues;
+}
+
+Feed feedFromJsonSafe(
+  Map<String, dynamic> json, {
+  void Function(EasyIssue)? onIssue,
+  bool runValidate = true,
+}) {
+  if (runValidate) {
+    final _issues = feedValidate(json);
+    if (onIssue != null) {
+      for (final i in _issues) onIssue(i);
+    }
+  }
+  return Feed(
+    posts: (() {
+      final _v = json['posts'];
+      if (_v is! List) return const <Post>[];
+      final _list = _v;
+      return _list.asMap().entries.map<Post>((entry) {
+        final idx = entry.key;
+        final elem = entry.value;
+        return (() {
+          final _v = entry.value;
+          if (_v is Map) {
+            return postFromJsonSafe(
+              Map<String, dynamic>.from(_v as Map),
+              onIssue: (i) => onIssue?.call(
+                EasyIssue(
+                  path:
+                      'posts' + '[' + entry.key.toString() + ']' + '.' + i.path,
+                  code: i.code,
+                  message: i.message,
+                ),
+              ),
+              runValidate: false,
+            );
+          }
+          onIssue?.call(
+            EasyIssue(
+              path: 'posts' + '[' + entry.key.toString() + ']',
+              code: 'type_mismatch',
+              message: 'Expected Map for Post.',
+            ),
+          );
+          return postFromJsonSafe(
+            const <String, dynamic>{},
+            onIssue: (i) => onIssue?.call(
+              EasyIssue(
+                path: "'posts' + '[' + entry.key.toString() + ']'." + i.path,
+                code: i.code,
+                message: i.message,
+              ),
+            ),
+            runValidate: false,
+          );
+        })();
+      }).toList();
+    })(),
+  );
+}
+
+class FeedJson {
+  const FeedJson();
+
+  static Feed fromJson(Map<String, dynamic> json) {
+    return feedFromJson(json);
+  }
+
+  static Feed fromJsonSafe(
+    Map<String, dynamic> json, {
+    void Function(EasyIssue)? onIssue,
+    bool runValidate = true,
+  }) {
+    return feedFromJsonSafe(json, onIssue: onIssue, runValidate: runValidate);
+  }
+
+  static List<EasyIssue> validate(Map<String, dynamic> json) {
+    return feedValidate(json);
   }
 }

@@ -1,7 +1,7 @@
 // test/roundtrip_test.dart
 import 'package:dart_easy_json/types.dart';
-import 'package:dart_easy_json/test_models.dart';
-import 'package:dart_easy_json/generated/test_models.easy.dart';
+import 'models/test_models.dart';
+import 'models/test_models.easy.dart';
 import 'package:test/test.dart';
 
 void main() {

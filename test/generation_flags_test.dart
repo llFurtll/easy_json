@@ -1,4 +1,4 @@
-import 'package:dart_easy_json/test_models.dart';
+import 'models/test_models.dart';
 import 'package:test/test.dart';
 
 void main() {

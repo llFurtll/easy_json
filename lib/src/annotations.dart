@@ -24,6 +24,26 @@ class EasyJson {
   });
 }
 
+/// Define que esta classe é polimórfica e atua como um roteador para subclasses.
+class EasyUnion {
+  /// O nome do campo no JSON que determina o tipo.
+  final String discriminator;
+
+  /// Mapa relacionando o valor da string no JSON para o Tipo Dart correspondente.
+  final Map<String, Type> mapping;
+
+  /// Tipo de fallback opcional. Se a chave não existir ou for desconhecida,
+  /// o gerador usará este tipo. Se for null, o comportamento padrão será falhar
+  /// no `fromJson` normal, e retornar `null` (se possível) no `fromJsonSafe`.
+  final Type? fallback;
+
+  const EasyUnion({
+    required this.discriminator,
+    required this.mapping,
+    this.fallback,
+  });
+}
+
 /// Anota um campo para configurar como ele será serializado.
 class EasyKey {
   /// O nome da chave que este campo terá no JSON.

@@ -1,3 +1,8 @@
+## 0.8.0
+
+*   **FEAT**: Added `@EasyUnion` annotation for Polymorphic JSON Serialization. Supports seamless serialization and deserialization of sealed classes/abstract interfaces based on a discriminator field.
+*   **FEAT**: Support for union type fallbacks. Unknown union types can optionally fallback to a default type without throwing exceptions during validation.
+
 ## 0.7.0
 
 *   **FEAT**: Added native support for `Uint8List` (Binary Data). `easy_json` now automatically serializes/deserializes `Uint8List` fields to/from Base64 strings.

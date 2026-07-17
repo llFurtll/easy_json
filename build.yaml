@@ -4,6 +4,7 @@ builders:
     builder_factories: ["easyJsonBuilder"]
     build_extensions:
       "^lib/{{}}.dart": ["lib/generated/{{}}.easy.dart"]
+      "^test/models/{{}}.dart": ["test/models/{{}}.easy.dart"]
     auto_apply: dependents
     build_to: source
 
@@ -14,3 +15,4 @@ targets:
         options:
           build_extensions:
             "^lib/{{}}.dart": "lib/generated/{{}}.easy.dart"
+            "^test/models/{{}}.dart": "test/models/{{}}.easy.dart"

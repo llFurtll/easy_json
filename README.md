@@ -366,6 +366,29 @@ class Product {
 }
 ```
 
+### `@EasyUnion` Annotation (Polymorphism)
+
+Use `@EasyUnion` to seamlessly serialize and deserialize polymorphic types (sealed classes or abstract classes). It uses a `discriminator` field in the JSON to route deserialization to the correct subclass.
+
+```dart
+@EasyJson()
+@EasyUnion(discriminator: 'type', mapping: {
+  'text': TextPost,
+  'video': VideoPost,
+}, fallback: UnknownPost)
+sealed class Post {
+  Map<String, dynamic> toJson();
+}
+
+@EasyJson()
+class TextPost extends Post with TextPostSerializer {
+  final String content;
+  TextPost({required this.content});
+}
+```
+
+With this, you can parse a `List<Post>` effortlessly, and `easy_json` will correctly dispatch JSON objects to `TextPost`, `VideoPost`, or your provided `fallback` class.
+
 ### `@EasyConvert` Annotation
 
 For complex types or custom formats, use `@EasyConvert` to provide your own `fromJson` and `toJson` functions.

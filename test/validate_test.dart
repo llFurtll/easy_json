@@ -1,5 +1,5 @@
 // test/validate_test.dart
-import 'package:dart_easy_json/generated/test_models.easy.dart';
+import 'models/test_models.easy.dart';
 import 'package:test/test.dart';
 
 void main() {

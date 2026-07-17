@@ -6,6 +6,7 @@ import 'package:analyzer/dart/element/type.dart';
 import 'package:build/build.dart';
 import 'package:code_builder/code_builder.dart';
 import 'package:dart_style/dart_style.dart';
+import 'package:path/path.dart' as p;
 import 'package:source_gen/source_gen.dart';
 
 import 'annotations.dart';
@@ -15,6 +16,7 @@ import 'strategies.dart';
 const _issueImport = "package:dart_easy_json/src/easy_issue.dart";
 
 final _easyConvertChecker = const TypeChecker.typeNamed(EasyConvert);
+final _easyUnionChecker = const TypeChecker.typeNamed(EasyUnion);
 final _easyValidateChecker = const TypeChecker.typeNamed(EasyValidate);
 
 class EasyJsonGenerator extends Generator {
@@ -94,7 +96,6 @@ class EasyJsonGenerator extends Generator {
     }
 
     // --- 3. Monta o arquivo final ---
-    final orderedImports = allImports.toList()..sort();
     final extraImports = <String>[
       "import 'dart:convert';",
       "import 'dart:typed_data';",
@@ -102,9 +103,22 @@ class EasyJsonGenerator extends Generator {
       "import 'package:dart_easy_json/src/messages.dart';",
     ];
 
+    String fixImport(String uriStr, String fromPath) {
+      if (uriStr.startsWith('asset:')) {
+        final targetPath = uriStr.split('/').skip(1).join('/'); // skip asset:dart_easy_json
+        return p.relative(targetPath, from: p.dirname(fromPath)).replaceAll(r'\', '/');
+      }
+      return uriStr;
+    }
+
+    final selfImport = fixImport(buildStep.inputId.uri.toString(), buildStep.inputId.path);
+    final extraImports2 = allImports.map((i) => "import '${fixImport(i, buildStep.inputId.path)}';").toSet().toList();
+    extraImports2.sort();
+
     final header = [
-      "// ignore_for_file: type=lint",
-      ...orderedImports.map((u) => "import '$u';"),
+      "// ignore_for_file: type=lint, unused_import, unnecessary_cast, unused_local_variable, duplicate_import",
+      "import '$selfImport';",
+      ...extraImports2,
       ...extraImports,
     ].join('\n');
 
@@ -130,6 +144,10 @@ class EasyJsonGenerator extends Generator {
   }
 
   String _generateForClass(ClassElement clazz, ConstantReader annotation) {
+    final unionAnn = _easyUnionChecker.firstAnnotationOfExact(clazz);
+    if (unionAnn != null) {
+      return _generateUnionClass(clazz, ConstantReader(unionAnn), annotation);
+    }
     final className = clazz.displayName;
     final varName = _lcFirst(className);
     final classIncludeIfNull =
@@ -275,6 +293,178 @@ class EasyJsonGenerator extends Generator {
         ${generateFromJson ? mFromJson().accept(emitter) : ''}
         ${generateToJson ? mToJson().accept(emitter) : ''}
         ${generateToJson ? mixin.build().accept(emitter) : ''}\n
+        ${generateFromJson ? mValidate().accept(emitter) : ''}
+        ${generateFromJson ? mFromJsonSafe().accept(emitter) : ''}
+        ${generateFromJson ? companion.accept(emitter) : ''}
+    ''';
+
+    return src;
+  }
+
+  String _generateUnionClass(ClassElement clazz, ConstantReader unionAnn, ConstantReader jsonAnn) {
+    final className = clazz.displayName;
+    final varName = _lcFirst(className);
+    final generateFromJson = (jsonAnn.peek('fromJson')?.literalValue as bool?) ?? true;
+    final generateToJson = (jsonAnn.peek('toJson')?.literalValue as bool?) ?? true;
+
+    final discriminator = unionAnn.peek('discriminator')!.stringValue;
+    
+    final mappingMap = unionAnn.peek('mapping')!.mapValue;
+    final mapping = <String, String>{};
+    for (final entry in mappingMap.entries) {
+      final k = entry.key!.toStringValue()!;
+      final v = entry.value!.toTypeValue()!.element!.displayName;
+      mapping[k] = v;
+    }
+
+    final fallbackType = unionAnn.peek('fallback')?.typeValue.element?.displayName;
+
+    final emitter = DartEmitter();
+
+    // fromJson
+    final fromJsonBuf = StringBuffer();
+    fromJsonBuf.writeln("final d = json['$discriminator'];");
+    fromJsonBuf.writeln("switch (d) {");
+    for (final entry in mapping.entries) {
+      fromJsonBuf.writeln("  case '${entry.key}': return ${entry.value}.fromJson(json);");
+    }
+    fromJsonBuf.writeln("  default:");
+    if (fallbackType != null) {
+      fromJsonBuf.writeln("    return $fallbackType.fromJson(json);");
+    } else {
+      fromJsonBuf.writeln("    throw Exception('Unknown union type: \\\$d');");
+    }
+    fromJsonBuf.writeln("}");
+
+    Method mFromJson() => Method(
+      (b) => b
+        ..name = '${varName}FromJson'
+        ..returns = refer(className)
+        ..requiredParameters.add(
+          Parameter(
+            (p) => p
+              ..name = 'json'
+              ..type = refer('Map<String, dynamic>'),
+          ),
+        )
+        ..body = Code(fromJsonBuf.toString()),
+    );
+
+    // validate
+    final validateBuf = StringBuffer();
+    validateBuf.writeln("final d = json['$discriminator'];");
+    validateBuf.writeln("switch (d) {");
+    for (final entry in mapping.entries) {
+      final childVarName = _lcFirst(entry.value);
+      validateBuf.writeln("  case '${entry.key}': return ${childVarName}Validate(json);");
+    }
+    validateBuf.writeln("  default:");
+    validateBuf.writeln("    final issues = [EasyIssue(path: '$discriminator', code: 'unknown_union_type', message: 'Unknown type: \\\$d')];");
+    if (fallbackType != null) {
+      final fbVarName = _lcFirst(fallbackType);
+      validateBuf.writeln("    issues.addAll(${fbVarName}Validate(json));");
+    }
+    validateBuf.writeln("    return issues;");
+    validateBuf.writeln("}");
+
+    Method mValidate() => Method(
+      (b) => b
+        ..name = '${varName}Validate'
+        ..returns = refer('List<EasyIssue>')
+        ..requiredParameters.add(
+          Parameter(
+            (p) => p
+              ..name = 'json'
+              ..type = refer('Map<String, dynamic>'),
+          ),
+        )
+        ..body = Code(validateBuf.toString()),
+    );
+
+    // fromJsonSafe
+    final fromJsonSafeBuf = StringBuffer();
+    fromJsonSafeBuf.writeln("if (runValidate) {");
+    fromJsonSafeBuf.writeln("  final _issues = ${varName}Validate(json);");
+    fromJsonSafeBuf.writeln("  if (onIssue != null) { for (final i in _issues) onIssue(i); }");
+    fromJsonSafeBuf.writeln("}");
+    fromJsonSafeBuf.writeln("final d = json['$discriminator'];");
+    fromJsonSafeBuf.writeln("switch (d) {");
+    for (final entry in mapping.entries) {
+      final childVarName = _lcFirst(entry.value);
+      fromJsonSafeBuf.writeln("  case '${entry.key}': return ${childVarName}FromJsonSafe(json, onIssue: onIssue, runValidate: false);");
+    }
+    fromJsonSafeBuf.writeln("  default:");
+    if (fallbackType != null) {
+      final fbVarName = _lcFirst(fallbackType);
+      fromJsonSafeBuf.writeln("    return ${fbVarName}FromJsonSafe(json, onIssue: onIssue, runValidate: false);");
+    } else {
+      fromJsonSafeBuf.writeln("    throw Exception('Unknown union type: \\\$d. Provide a fallback in @EasyUnion to avoid crashes on unknown types.');");
+    }
+    fromJsonSafeBuf.writeln("}");
+
+    Method mFromJsonSafe() => Method(
+      (b) => b
+        ..name = '${varName}FromJsonSafe'
+        ..returns = refer(className)
+        ..requiredParameters.add(
+          Parameter(
+            (p) => p
+              ..name = 'json'
+              ..type = refer('Map<String, dynamic>'),
+          ),
+        )
+        ..optionalParameters.addAll([
+          Parameter(
+            (p) => p
+              ..named = true
+              ..name = 'onIssue'
+              ..type = refer('void Function(EasyIssue)?'),
+          ),
+          Parameter(
+            (p) => p
+              ..named = true
+              ..name = 'runValidate'
+              ..type = refer('bool')
+              ..defaultTo = const Code('true'),
+          ),
+        ])
+        ..body = Code(fromJsonSafeBuf.toString()),
+    );
+
+    // toJson
+    Method mToJson() => Method(
+      (b) => b
+        ..name = '${varName}ToJson'
+        ..returns = refer('Map<String, dynamic>')
+        ..requiredParameters.add(
+          Parameter(
+            (p) => p
+              ..name = 'instance'
+              ..type = refer(className),
+          ),
+        )
+        ..body = const Code('return (instance as dynamic).toJson() as Map<String, dynamic>;'),
+    );
+
+    final mixin = MixinBuilder()
+      ..name = '${className}Serializer'
+      ..methods.add(
+        Method(
+          (b) => b
+            ..name = 'toJson'
+            ..returns = refer('Map<String, dynamic>')
+            ..body = Code('return ${varName}ToJson(this as $className);'),
+        ),
+      );
+
+    final companion = _companionClass(className, varName);
+
+    final src =
+        '''
+        ${generateFromJson ? mFromJson().accept(emitter) : ''}
+        ${generateToJson ? mToJson().accept(emitter) : ''}
+        ${generateToJson ? mixin.build().accept(emitter) : ''}
+        
         ${generateFromJson ? mValidate().accept(emitter) : ''}
         ${generateFromJson ? mFromJsonSafe().accept(emitter) : ''}
         ${generateFromJson ? companion.accept(emitter) : ''}
@@ -440,3 +630,5 @@ AssetId _expectedOutput(AssetId inputId, Map<String, String> buildExtensions) {
   });
   return AssetId(inputId.package, newPath);
 }
+
+

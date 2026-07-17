@@ -1,8 +1,8 @@
 import 'dart:typed_data';
 
 import 'package:dart_easy_json/easy_json.dart';
-import 'package:dart_easy_json/generated/test_models.easy.dart';
 import 'package:dart_easy_json/types.dart';
+import 'test_models.easy.dart';
 
 // ---- Converters p/ testes ----
 class TmDateMs {
@@ -254,4 +254,56 @@ class DocumentModel with DocumentModelSerializer {
 
   factory DocumentModel.fromJson(Map<String, dynamic> json) => documentModelFromJson(json);
   factory DocumentModel.fromJsonSafe(Map<String, dynamic> json, {void Function(EasyIssue)? onIssue}) => documentModelFromJsonSafe(json, onIssue: onIssue);
+}
+
+@EasyJson()
+@EasyUnion(discriminator: 'type', mapping: {
+  'text': TextPost,
+  'video': VideoPost,
+}, fallback: UnknownPost)
+sealed class Post {
+  Map<String, dynamic> toJson();
+}
+
+@EasyJson()
+class TextPost extends Post with TextPostSerializer {
+  final String author;
+  final String content;
+
+  TextPost({required this.author, required this.content});
+
+  factory TextPost.fromJson(Map<String, dynamic> json) => textPostFromJson(json);
+  factory TextPost.fromJsonSafe(Map<String, dynamic> json, {void Function(EasyIssue)? onIssue})
+    => textPostFromJsonSafe(json, onIssue: onIssue);
+}
+
+@EasyJson()
+class VideoPost extends Post with VideoPostSerializer {
+  final String author;
+  final String videoUrl;
+
+  VideoPost({required this.author, required this.videoUrl});
+
+  factory VideoPost.fromJson(Map<String, dynamic> json) => videoPostFromJson(json);
+  factory VideoPost.fromJsonSafe(Map<String, dynamic> json, {void Function(EasyIssue)? onIssue})
+    => videoPostFromJsonSafe(json, onIssue: onIssue);
+}
+
+@EasyJson()
+class UnknownPost extends Post with UnknownPostSerializer {
+  UnknownPost();
+
+  factory UnknownPost.fromJson(Map<String, dynamic> json) => unknownPostFromJson(json);
+  factory UnknownPost.fromJsonSafe(Map<String, dynamic> json, {void Function(EasyIssue)? onIssue})
+    => unknownPostFromJsonSafe(json, onIssue: onIssue);
+}
+
+@EasyJson()
+class Feed with FeedSerializer {
+  final List<Post> posts;
+  Feed({required this.posts});
+
+  factory Feed.fromJson(Map<String, dynamic> json) => feedFromJson(json);
+  factory Feed.fromJsonSafe(Map<String, dynamic> json, {void Function(EasyIssue)? onIssue})
+    => feedFromJsonSafe(json, onIssue: onIssue);
 }
