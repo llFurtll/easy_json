@@ -1,3 +1,9 @@
+## 0.8.1
+
+*   **FIX**: Fixed static analysis lint issues (`curly_braces_in_flow_control_structures`) in `uint8list_strategy.dart` to achieve full 50/50 on static analysis.
+*   **CHORE**: Updated `analyzer` dependency constraint from `^8.1.1` to `>=8.1.1 <15.0.0` to support the latest stable version and achieve full 40/40 on up-to-date dependencies.
+*   **GOAL**: Achieve 160/160 pub points on pub.dev.
+
 ## 0.8.0
 
 *   **FEAT**: Added `@EasyUnion` annotation for Polymorphic JSON Serialization. Supports seamless serialization and deserialization of sealed classes/abstract interfaces based on a discriminator field.

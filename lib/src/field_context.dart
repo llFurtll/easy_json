@@ -20,30 +20,30 @@ class FieldContext {
     required this.classIncludeIfNull,
     this.classCaseStyle,
   }) : name = element.displayName,
-       type = element.type,
-       isNullable = _isNullableType(element.type),
-       isIgnored = _easyIgnoreChecker.hasAnnotationOf(element),
-       easyPath = _easyPathChecker.firstAnnotationOfExact(element)?.getField('path')?.toStringValue(),
-       jsonKey =
-           _jsonKeyFor(element) ??
-           _applyCaseStyle(element.displayName, classCaseStyle),
-       includeIfNull = _includeIfNullFor(element),
-       enumFallbackName = _easyKey(element)?.peek('enumFallback')?.stringValue,
-       fieldFallback = _easyKey(element)?.peek('fallback')?.literalValue,
-       itemFallback = _easyKey(element)?.peek('itemFallback')?.literalValue,
-       mapKeyCoercion = _easyMapKey(element)
-           ?.peek('type')
-           ?.revive()
-           .accessor
-           .split('.')
-           .last
-           .let((s) => s == 'int' ? EasyMapKeyType.int : EasyMapKeyType.string),
-       convertFromJson = _fnRefOrNull(_easyConvert(element), 'fromJson'),
-       convertToJson = _fnRefOrNull(_easyConvert(element), 'toJson'),
-       valueFromJson = _fnRefOrNull(_easyConvert(element), 'valueFromJson'),
-       valueToJson = _fnRefOrNull(_easyConvert(element), 'valueToJson'),
-       customValidatorFn = _fnRefOrNull(_easyValidate(element), 'custom'),
-       validator = _easyValidate(element) {
+    type = element.type,
+    isNullable = _isNullableType(element.type),
+    isIgnored = _easyIgnoreChecker.hasAnnotationOf(element),
+    easyPath = _easyPathChecker.firstAnnotationOfExact(element)?.getField('path')?.toStringValue(),
+    jsonKey =
+      _jsonKeyFor(element) ??
+      _applyCaseStyle(element.displayName, classCaseStyle),
+    includeIfNull = _includeIfNullFor(element),
+    enumFallbackName = _easyKey(element)?.peek('enumFallback')?.stringValue,
+    fieldFallback = _easyKey(element)?.peek('fallback')?.literalValue,
+    itemFallback = _easyKey(element)?.peek('itemFallback')?.literalValue,
+    mapKeyCoercion = _easyMapKey(element)
+      ?.peek('type')
+      ?.revive()
+      .accessor
+      .split('.')
+      .last
+      .let((s) => s == 'int' ? EasyMapKeyType.int : EasyMapKeyType.string),
+    convertFromJson = _fnRefOrNull(_easyConvert(element), 'fromJson'),
+    convertToJson = _fnRefOrNull(_easyConvert(element), 'toJson'),
+    valueFromJson = _fnRefOrNull(_easyConvert(element), 'valueFromJson'),
+    valueToJson = _fnRefOrNull(_easyConvert(element), 'valueToJson'),
+    customValidatorFn = _fnRefOrNull(_easyValidate(element), 'custom'),
+    validator = _easyValidate(element) {
     final it = type;
     if (it is InterfaceType) {
       if (isList) listItemType = it.typeArguments.first;
@@ -96,11 +96,11 @@ class FieldContext {
   // Queries
   bool get isEnum => type.element is EnumElement;
   bool get isEasyJsonObject =>
-      type.element is ClassElement &&
-      _easyJsonChecker.hasAnnotationOf(
-        type.element as ClassElement,
-        throwOnUnresolved: false,
-      );
+    type.element is ClassElement &&
+    _easyJsonChecker.hasAnnotationOf(
+      type.element as ClassElement,
+      throwOnUnresolved: false,
+  );
   bool get isList =>
       type is InterfaceType && (type as InterfaceType).element.name == 'List';
   bool get isSet =>
@@ -153,9 +153,9 @@ class FieldContext {
   }
 
   static String? _jsonKeyFor(FieldElement f) =>
-      _easyKey(f)?.peek('name')?.stringValue;
+    _easyKey(f)?.peek('name')?.stringValue;
   static bool? _includeIfNullFor(FieldElement f) =>
-      _easyKey(f)?.peek('includeIfNull')?.literalValue as bool?;
+    _easyKey(f)?.peek('includeIfNull')?.literalValue as bool?;
 
   static String? _fnRefOrNull(ConstantReader? ann, String key) {
     final v = ann?.peek(key);
@@ -173,7 +173,7 @@ extension _Let<T> on T {
 
 // ===== Utils de tipos =====
 bool isExactlyDateTime(DartType t) =>
-    TypeChecker.typeNamed(DateTime).isExactlyType(t);
+  TypeChecker.typeNamed(DateTime).isExactlyType(t);
 
 String displayWithNull(DartType t) => t.getDisplayString();
 String displayNonNull(DartType t) {
@@ -182,18 +182,18 @@ String displayNonNull(DartType t) {
 }
 
 bool isEasyJsonClass(DartType t) =>
-    t.element is ClassElement &&
-    _easyJsonChecker.hasAnnotationOf(
-      t.element as ClassElement,
-      throwOnUnresolved: false,
-    );
+  t.element is ClassElement &&
+  _easyJsonChecker.hasAnnotationOf(
+    t.element as ClassElement,
+    throwOnUnresolved: false,
+);
 
 bool isEnumType(DartType t) => t.element is EnumElement;
 
 DartType? asSetItem(DartType t) {
   if (t is InterfaceType &&
-      t.element.name == 'Set' &&
-      t.typeArguments.length == 1) {
+    t.element.name == 'Set' &&
+    t.typeArguments.length == 1) {
     return t.typeArguments.first;
   }
   return null;
@@ -201,8 +201,8 @@ DartType? asSetItem(DartType t) {
 
 ({DartType? key, DartType? value}) asMapKV(DartType t) {
   if (t is InterfaceType &&
-      t.element.name == 'Map' &&
-      t.typeArguments.length == 2) {
+    t.element.name == 'Map' &&
+    t.typeArguments.length == 2) {
     return (key: t.typeArguments[0], value: t.typeArguments[1]);
   }
   return (key: null, value: null);
@@ -216,13 +216,13 @@ String _applyCaseStyle(String name, CaseStyle? style) {
     (m) => '${m.group(1)}_${m.group(2)}',
   );
   final parts = snakeish
-      .replaceAll('-', '_')
-      .split('_')
-      .where((p) => p.isNotEmpty)
-      .toList();
+    .replaceAll('-', '_')
+    .split('_')
+    .where((p) => p.isNotEmpty)
+    .toList();
 
   String cap(String s) =>
-      s.isEmpty ? s : (s[0].toUpperCase() + s.substring(1).toLowerCase());
+    s.isEmpty ? s : (s[0].toUpperCase() + s.substring(1).toLowerCase());
   String low(String s) => s.toLowerCase();
 
   switch (style) {
@@ -232,8 +232,8 @@ String _applyCaseStyle(String name, CaseStyle? style) {
       return parts.map(low).join('-');
     case CaseStyle.camel:
       return parts.isEmpty
-          ? name
-          : parts.first.toLowerCase() + parts.skip(1).map(cap).join();
+        ? name
+        : parts.first.toLowerCase() + parts.skip(1).map(cap).join();
     case CaseStyle.pascal:
       return parts.map(cap).join();
     case CaseStyle.none:

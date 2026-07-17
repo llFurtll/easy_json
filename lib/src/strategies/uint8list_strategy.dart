@@ -3,8 +3,9 @@ part of '../strategies.dart';
 class Uint8ListStrategy implements TypeStrategy {
   @override
   String fromJson(FieldContext c) {
-    if (c.convertFromJson != null)
+    if (c.convertFromJson != null) {
       return "${c.convertFromJson!}(${c.jsonAccessor})";
+    }
     final isN = c.isNullable;
 
     // O fromJson normal lança exceção se estiver quebrado (exceto se for nullable e não vier)
@@ -55,8 +56,9 @@ class Uint8ListStrategy implements TypeStrategy {
 
   @override
   String toJson(FieldContext c) {
-    if (c.convertToJson != null)
+    if (c.convertToJson != null) {
       return "${c.convertToJson!}(${c.instanceAccess})";
+    }
     if (c.isNullable) {
       return "(${c.instanceAccess} != null ? base64Encode(${c.instanceAccess}!) : null)";
     }

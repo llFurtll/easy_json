@@ -61,7 +61,7 @@ class EnumStrategy implements TypeStrategy {
     final en = displayNonNull(c.type);
 
     final check =
-        """
+      """
         if (v != null && v is! String) {
           issues.add(EasyIssue(path: ${c.pathExpr}, code: 'type_mismatch', message: 'Expected String with the enum name.'));
         } else if (v != null) {

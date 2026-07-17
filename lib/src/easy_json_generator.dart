@@ -151,7 +151,7 @@ class EasyJsonGenerator extends Generator {
     final className = clazz.displayName;
     final varName = _lcFirst(className);
     final classIncludeIfNull =
-        (annotation.peek('includeIfNull')?.literalValue as bool?) ?? false;
+      (annotation.peek('includeIfNull')?.literalValue as bool?) ?? false;
     final classCaseStyle = _readClassCaseStyle(annotation);
     final generateFromJson = (annotation.peek('fromJson')?.literalValue as bool?) ?? true;
     final generateToJson = (annotation.peek('toJson')?.literalValue as bool?) ?? true;
@@ -170,17 +170,17 @@ class EasyJsonGenerator extends Generator {
 
     // === Render fromJson / toJson / validate / fromJsonSafe ===
     final fromJsonBody = contexts
-        .map((c) => "${c.name}: ${_pick(c).fromJson(c)},")
-        .join('\n');
+      .map((c) => "${c.name}: ${_pick(c).fromJson(c)},")
+      .join('\n');
     final toJsonBody = contexts
-        .map((c) {
-          final s = _pick(c).toJson(c);
-          if (!c.isNullable) return "'${c.jsonKey}': $s,";
-          return c.emitNulls
-              ? "'${c.jsonKey}': $s,"
-              : "if (${c.instanceAccess} != null) '${c.jsonKey}': $s,";
-        })
-        .join('\n');
+      .map((c) {
+        final s = _pick(c).toJson(c);
+        if (!c.isNullable) return "'${c.jsonKey}': $s,";
+        return c.emitNulls
+          ? "'${c.jsonKey}': $s,"
+          : "if (${c.instanceAccess} != null) '${c.jsonKey}': $s,";
+      })
+      .join('\n');
 
     final validateBuf = StringBuffer()
       ..writeln("final issues = <EasyIssue>[];");
@@ -190,8 +190,8 @@ class EasyJsonGenerator extends Generator {
     validateBuf.writeln('return issues;');
 
     final fromJsonSafeBody = contexts
-        .map((c) => "${c.name}: ${_pick(c).fromJsonSafe(c)},")
-        .join('\n');
+      .map((c) => "${c.name}: ${_pick(c).fromJsonSafe(c)},")
+      .join('\n');
 
     // === Métodos ===
     final emitter = DartEmitter();
@@ -459,15 +459,14 @@ class EasyJsonGenerator extends Generator {
 
     final companion = _companionClass(className, varName);
 
-    final src =
-        '''
-        ${generateFromJson ? mFromJson().accept(emitter) : ''}
-        ${generateToJson ? mToJson().accept(emitter) : ''}
-        ${generateToJson ? mixin.build().accept(emitter) : ''}
-        
-        ${generateFromJson ? mValidate().accept(emitter) : ''}
-        ${generateFromJson ? mFromJsonSafe().accept(emitter) : ''}
-        ${generateFromJson ? companion.accept(emitter) : ''}
+    final src = '''
+      ${generateFromJson ? mFromJson().accept(emitter) : ''}
+      ${generateToJson ? mToJson().accept(emitter) : ''}
+      ${generateToJson ? mixin.build().accept(emitter) : ''}
+      
+      ${generateFromJson ? mValidate().accept(emitter) : ''}
+      ${generateFromJson ? mFromJsonSafe().accept(emitter) : ''}
+      ${generateFromJson ? companion.accept(emitter) : ''}
     ''';
 
     return src;

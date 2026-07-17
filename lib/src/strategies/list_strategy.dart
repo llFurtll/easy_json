@@ -8,9 +8,9 @@ class ListStrategy implements TypeStrategy {
     final itemParse = _fastItemParse(item);
 
     final expr = kListFastTpl
-        .replaceAll('{VALUE}', c.jsonAccessor)
-        .replaceAll('{ITEM_T}', itemT)
-        .replaceAll('{ITEM_PARSE}', itemParse);
+      .replaceAll('{VALUE}', c.jsonAccessor)
+      .replaceAll('{ITEM_T}', itemT)
+      .replaceAll('{ITEM_PARSE}', itemParse);
 
     // quando o campo é não-nulo, garanta retorno não-nulo
     return c.isNullable ? expr : '($expr) ?? const <$itemT>[]';
@@ -23,10 +23,10 @@ class ListStrategy implements TypeStrategy {
     final itemParse = _safeItemParse(item, c, indexPath: true);
     final fb = c.isNullable ? 'null' : 'const <$itemT>[]';
     return kListSafeTpl
-        .replaceAll('{VALUE}', c.jsonAccessor)
-        .replaceAll('{FALLBACK}', fb)
-        .replaceAll('{ITEM_T}', itemT)
-        .replaceAll('{ITEM_PARSE}', itemParse);
+      .replaceAll('{VALUE}', c.jsonAccessor)
+      .replaceAll('{FALLBACK}', fb)
+      .replaceAll('{ITEM_T}', itemT)
+      .replaceAll('{ITEM_PARSE}', itemParse);
   }
 
   @override

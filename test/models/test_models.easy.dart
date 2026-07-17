@@ -13,12 +13,16 @@
 
 // ignore_for_file: type=lint, unused_import, unnecessary_cast, unused_local_variable, duplicate_import
 import 'test_models.dart';
+
 import 'package:dart_easy_json/src/easy_issue.dart';
 import 'package:dart_easy_json/types.dart';
+
 import 'test_models.dart';
 import 'test_models.easy.dart';
+
 import 'dart:convert';
 import 'dart:typed_data';
+
 import 'package:dart_easy_json/src/runtime.dart' as ej;
 import 'package:dart_easy_json/src/messages.dart';
 
