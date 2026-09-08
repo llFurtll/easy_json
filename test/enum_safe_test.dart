@@ -1,4 +1,4 @@
-import 'package:dart_easy_json/types.dart';
+import 'models/types.dart';
 
 import 'models/test_models.easy.dart';
 import 'package:dart_easy_json/src/easy_issue.dart';

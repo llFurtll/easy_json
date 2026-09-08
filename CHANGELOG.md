@@ -1,3 +1,12 @@
+## 0.8.2
+
+*   **FIX**: Restored pub.dev analysis. The `0.8.1` analysis was `aborted` on the pub.dev worker (a `dart pub unpack` timeout followed by a failed retry), which left the package with `[unknown platforms]` and 0 pub points. Republishing triggers a fresh analysis.
+*   **CHORE**: Moved `test` from `dependencies` to `dev_dependencies` (it is only used by the package's own test suite).
+*   **CHORE**: Removed the unused `logging` dependency.
+*   **CHORE**: Removed the test-only `lib/types.dart` from the public API (`MyCustomValidators`, `TmRole`, `TmStatus`); these helpers now live under `test/models/`.
+*   **CHORE**: Bumped `lints` to `^6.0.0`; verified against `analyzer` 14.x and `source_gen` 4.3.x.
+*   **DOCS**: Added `repository`, `issue_tracker` and `topics` to `pubspec.yaml`; rewrote the package `description` in English.
+
 ## 0.8.1
 
 *   **FIX**: Fixed static analysis lint issues (`curly_braces_in_flow_control_structures`) in `uint8list_strategy.dart` to achieve full 50/50 on static analysis.

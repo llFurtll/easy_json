@@ -1,5 +1,5 @@
 // test/roundtrip_test.dart
-import 'package:dart_easy_json/types.dart';
+import 'models/types.dart';
 import 'models/test_models.dart';
 import 'models/test_models.easy.dart';
 import 'package:test/test.dart';

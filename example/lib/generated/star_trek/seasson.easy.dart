@@ -11,13 +11,18 @@
 // EasyJsonGenerator
 // **************************************************************************
 
-// ignore_for_file: type=lint
+// ignore_for_file: type=lint, unused_import, unnecessary_cast, unused_local_variable, duplicate_import
+import 'package:example/star_trek/seasson.dart';
 import 'package:dart_easy_json/src/easy_issue.dart';
 import 'package:example/generated/star_trek/episode.easy.dart';
 import 'package:example/generated/star_trek/series.easy.dart';
 import 'package:example/star_trek/episode.dart';
 import 'package:example/star_trek/seasson.dart';
 import 'package:example/star_trek/series.dart';
+
+import 'dart:convert';
+import 'dart:typed_data';
+
 import 'package:dart_easy_json/src/runtime.dart' as ej;
 import 'package:dart_easy_json/src/messages.dart';
 
@@ -342,7 +347,7 @@ Season seasonFromJsonSafe(
             EasyIssue(
               path: 'episodes' + '[' + entry.key.toString() + ']',
               code: 'type_mismatch',
-              message: 'Esperado Map para Episode.',
+              message: 'Expected Map for Episode.',
             ),
           );
           return episodeFromJsonSafe(

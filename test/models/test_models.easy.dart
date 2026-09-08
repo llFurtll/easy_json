@@ -15,10 +15,10 @@
 import 'test_models.dart';
 
 import 'package:dart_easy_json/src/easy_issue.dart';
-import 'package:dart_easy_json/types.dart';
 
 import 'test_models.dart';
 import 'test_models.easy.dart';
+import 'types.dart';
 
 import 'dart:convert';
 import 'dart:typed_data';

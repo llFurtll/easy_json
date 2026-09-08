@@ -11,11 +11,16 @@
 // EasyJsonGenerator
 // **************************************************************************
 
-// ignore_for_file: type=lint
+// ignore_for_file: type=lint, unused_import, unnecessary_cast, unused_local_variable, duplicate_import
+import 'package:example/star_trek/seasson_response.dart';
 import 'package:dart_easy_json/src/easy_issue.dart';
 import 'package:example/generated/star_trek/seasson.easy.dart';
 import 'package:example/star_trek/seasson.dart';
 import 'package:example/star_trek/seasson_response.dart';
+
+import 'dart:convert';
+import 'dart:typed_data';
+
 import 'package:dart_easy_json/src/runtime.dart' as ej;
 import 'package:dart_easy_json/src/messages.dart';
 

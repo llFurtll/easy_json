@@ -11,9 +11,14 @@
 // EasyJsonGenerator
 // **************************************************************************
 
-// ignore_for_file: type=lint
+// ignore_for_file: type=lint, unused_import, unnecessary_cast, unused_local_variable, duplicate_import
+import 'package:example/dolar_rate.dart';
 import 'package:dart_easy_json/src/easy_issue.dart';
 import 'package:example/dolar_rate.dart';
+
+import 'dart:convert';
+import 'dart:typed_data';
+
 import 'package:dart_easy_json/src/runtime.dart' as ej;
 import 'package:dart_easy_json/src/messages.dart';
 
@@ -244,7 +249,7 @@ DollarRate dollarRateFromJsonSafe(
             EasyIssue(
               path: 'fechaActualizacion',
               code: 'type_mismatch',
-              message: 'Formato inválido de DateTime.',
+              message: 'Invalid DateTime format.',
             ),
           );
           return DateTime.fromMillisecondsSinceEpoch(0);
@@ -254,7 +259,7 @@ DollarRate dollarRateFromJsonSafe(
         EasyIssue(
           path: 'fechaActualizacion',
           code: 'type_mismatch',
-          message: 'Esperado String/epoch/DateTime.',
+          message: 'Expected String/epoch/DateTime.',
         ),
       );
       return DateTime.fromMillisecondsSinceEpoch(0);

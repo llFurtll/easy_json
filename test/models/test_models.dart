@@ -1,7 +1,7 @@
 import 'dart:typed_data';
 
 import 'package:dart_easy_json/easy_json.dart';
-import 'package:dart_easy_json/types.dart';
+import 'types.dart';
 import 'test_models.easy.dart';
 
 // ---- Converters p/ testes ----
