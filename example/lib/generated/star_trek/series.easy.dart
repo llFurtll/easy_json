@@ -13,7 +13,7 @@
 
 // ignore_for_file: type=lint, unused_import, unnecessary_cast, unused_local_variable, duplicate_import
 import 'package:example/star_trek/series.dart';
-import 'package:dart_easy_json/src/easy_issue.dart';
+import 'package:dart_easy_json/runtime.dart';
 import 'package:example/generated/star_trek/company.easy.dart';
 import 'package:example/star_trek/company.dart';
 import 'package:example/star_trek/series.dart';
@@ -21,8 +21,7 @@ import 'package:example/star_trek/series.dart';
 import 'dart:convert';
 import 'dart:typed_data';
 
-import 'package:dart_easy_json/src/runtime.dart' as ej;
-import 'package:dart_easy_json/src/messages.dart';
+import 'package:dart_easy_json/runtime.dart' as ej;
 
 Series seriesFromJson(Map<String, dynamic> json) {
   return Series(

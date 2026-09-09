@@ -13,14 +13,13 @@
 
 // ignore_for_file: type=lint, unused_import, unnecessary_cast, unused_local_variable, duplicate_import
 import 'package:example/star_trek/simple_ref.dart';
-import 'package:dart_easy_json/src/easy_issue.dart';
+import 'package:dart_easy_json/runtime.dart';
 import 'package:example/star_trek/simple_ref.dart';
 
 import 'dart:convert';
 import 'dart:typed_data';
 
-import 'package:dart_easy_json/src/runtime.dart' as ej;
-import 'package:dart_easy_json/src/messages.dart';
+import 'package:dart_easy_json/runtime.dart' as ej;
 
 SimpleRef simpleRefFromJson(Map<String, dynamic> json) {
   return SimpleRef(

@@ -13,7 +13,7 @@ import 'annotations.dart';
 import 'field_context.dart';
 import 'strategies.dart';
 
-const _issueImport = "package:dart_easy_json/src/easy_issue.dart";
+const _issueImport = "package:dart_easy_json/runtime.dart";
 
 final _easyConvertChecker = const TypeChecker.typeNamed(EasyConvert);
 final _easyUnionChecker = const TypeChecker.typeNamed(EasyUnion);
@@ -99,8 +99,7 @@ class EasyJsonGenerator extends Generator {
     final extraImports = <String>[
       "import 'dart:convert';",
       "import 'dart:typed_data';",
-      "import 'package:dart_easy_json/src/runtime.dart' as ej;",
-      "import 'package:dart_easy_json/src/messages.dart';",
+      "import 'package:dart_easy_json/runtime.dart' as ej;",
     ];
 
     String fixImport(String uriStr, String fromPath) {

@@ -1,3 +1,9 @@
+## 0.9.0
+
+*   **FEAT**: Generated `*.easy.dart` files now import `package:dart_easy_json/runtime.dart` (a new public support library) instead of reaching into `package:dart_easy_json/src/...`. This removes the `implementation_imports` analyzer warning from consumer projects — excluding generated files from analysis is no longer required.
+*   **CHORE**: Removed the unused `EasyMessages` class (`lib/src/messages.dart`); it was imported by every generated file but never referenced.
+*   **UPGRADE NOTE**: No runtime/API change. After upgrading, run `dart run build_runner build` once to regenerate `*.easy.dart` with the new import path. Previously generated files keep working.
+
 ## 0.8.2
 
 *   **FIX**: Restored pub.dev analysis. The `0.8.1` analysis was `aborted` on the pub.dev worker (a `dart pub unpack` timeout followed by a failed retry), which left the package with `[unknown platforms]` and 0 pub points. Republishing triggers a fresh analysis.

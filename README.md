@@ -57,9 +57,11 @@ targets:
             "^lib/{{}}.dart": "lib/generated/{{}}.easy.dart"
 ```
 
-### `analysis_options.yaml`
+### `analysis_options.yaml` (optional)
 
-To prevent the Dart analyzer from linting the auto-generated files, exclude them in your `analysis_options.yaml`.
+Since `0.9.0` the generated files only import public libraries, so no analyzer
+configuration is required. If you still prefer to keep them out of your lint
+reports, you can exclude them in your `analysis_options.yaml`.
 
 ```yaml
 # analysis_options.yaml

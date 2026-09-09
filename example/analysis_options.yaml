@@ -19,10 +19,8 @@ include: package:lints/recommended.yaml
 #   rules:
 #     - camel_case_types
 
-analyzer:
-  exclude:
-    - lib/generated/**
-    - "**.easy.dart"
+# Note: since dart_easy_json 0.9.0 the generated `*.easy.dart` files only import
+# public libraries, so they no longer need to be excluded from analysis.
 
 # For more information about the core and recommended set of lints, see
 # https://dart.dev/go/core-lints
