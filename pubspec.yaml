@@ -1,6 +1,6 @@
 name: dart_easy_json
 description: 'Code generation for safe, fast JSON serialization and deserialization in Dart, with built-in validation.'
-version: 0.9.0
+version: 0.10.0
 homepage: https://github.com/llFurtll/easy_json
 repository: https://github.com/llFurtll/easy_json
 issue_tracker: https://github.com/llFurtll/easy_json/issues

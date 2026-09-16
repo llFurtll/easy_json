@@ -109,6 +109,12 @@ class FieldContext {
       type is InterfaceType && (type as InterfaceType).element.name == 'Map';
   bool get isUint8List =>
       type is InterfaceType && (type as InterfaceType).element.name == 'Uint8List';
+  bool get isUri =>
+      type is InterfaceType && (type as InterfaceType).element.name == 'Uri';
+  bool get isDuration =>
+      type is InterfaceType && (type as InterfaceType).element.name == 'Duration';
+  bool get isBigInt =>
+      type is InterfaceType && (type as InterfaceType).element.name == 'BigInt';
 
   bool get emitNulls => (includeIfNull ?? classIncludeIfNull) == true;
 

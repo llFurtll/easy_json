@@ -131,3 +131,25 @@ class SimpleRefJson {
     return simpleRefValidate(json);
   }
 }
+
+List<SimpleRef> simpleRefFromJsonList(List<dynamic> json) =>
+    json.map((e) => simpleRefFromJson(e as Map<String, dynamic>)).toList();
+
+List<SimpleRef> simpleRefFromJsonSafeList(
+  List<dynamic> json, {
+  void Function(int index, EasyIssue issue)? onIssue,
+  bool runValidate = true,
+}) => json
+    .asMap()
+    .entries
+    .map(
+      (entry) => simpleRefFromJsonSafe(
+        entry.value as Map<String, dynamic>,
+        onIssue: onIssue == null ? null : (i) => onIssue(entry.key, i),
+        runValidate: runValidate,
+      ),
+    )
+    .toList();
+
+List<Map<String, dynamic>> simpleRefToJsonList(List<SimpleRef> items) =>
+    items.map((e) => simpleRefToJson(e)).toList();

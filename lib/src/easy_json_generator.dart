@@ -295,6 +295,7 @@ class EasyJsonGenerator extends Generator {
         ${generateFromJson ? mValidate().accept(emitter) : ''}
         ${generateFromJson ? mFromJsonSafe().accept(emitter) : ''}
         ${generateFromJson ? companion.accept(emitter) : ''}
+        ${_listHelpers(className, varName, generateFromJson: generateFromJson, generateToJson: generateToJson)}
     ''';
 
     return src;
@@ -466,9 +467,47 @@ class EasyJsonGenerator extends Generator {
       ${generateFromJson ? mValidate().accept(emitter) : ''}
       ${generateFromJson ? mFromJsonSafe().accept(emitter) : ''}
       ${generateFromJson ? companion.accept(emitter) : ''}
+      ${_listHelpers(className, varName, generateFromJson: generateFromJson, generateToJson: generateToJson)}
     ''';
 
     return src;
+  }
+
+  /// Gera helpers de topo para operar sobre `List<$className>` de uma vez:
+  /// `${varName}FromJsonList`, `${varName}FromJsonSafeList` e `${varName}ToJsonList`.
+  String _listHelpers(
+    String className,
+    String varName, {
+    required bool generateFromJson,
+    required bool generateToJson,
+  }) {
+    final buf = StringBuffer();
+
+    if (generateFromJson) {
+      buf.writeln("""
+        List<$className> ${varName}FromJsonList(List<dynamic> json) =>
+            json.map((e) => ${varName}FromJson(e as Map<String, dynamic>)).toList();
+
+        List<$className> ${varName}FromJsonSafeList(
+          List<dynamic> json, {
+          void Function(int index, EasyIssue issue)? onIssue,
+          bool runValidate = true,
+        }) => json.asMap().entries.map((entry) => ${varName}FromJsonSafe(
+              entry.value as Map<String, dynamic>,
+              onIssue: onIssue == null ? null : (i) => onIssue(entry.key, i),
+              runValidate: runValidate,
+            )).toList();
+      """);
+    }
+
+    if (generateToJson) {
+      buf.writeln("""
+        List<Map<String, dynamic>> ${varName}ToJsonList(List<$className> items) =>
+            items.map((e) => ${varName}ToJson(e)).toList();
+      """);
+    }
+
+    return buf.toString();
   }
 
   // ===== infra =====
@@ -479,6 +518,9 @@ class EasyJsonGenerator extends Generator {
     if (c.isSet) return SetStrategy();
     if (c.isMap) return MapStrategy();
     if (c.isUint8List) return Uint8ListStrategy();
+    if (c.isUri) return UriStrategy();
+    if (c.isDuration) return DurationStrategy();
+    if (c.isBigInt) return BigIntStrategy();
     return PrimitiveStrategy();
   }
 

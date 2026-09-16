@@ -127,6 +127,28 @@ class AddressJson {
   }
 }
 
+List<Address> addressFromJsonList(List<dynamic> json) =>
+    json.map((e) => addressFromJson(e as Map<String, dynamic>)).toList();
+
+List<Address> addressFromJsonSafeList(
+  List<dynamic> json, {
+  void Function(int index, EasyIssue issue)? onIssue,
+  bool runValidate = true,
+}) => json
+    .asMap()
+    .entries
+    .map(
+      (entry) => addressFromJsonSafe(
+        entry.value as Map<String, dynamic>,
+        onIssue: onIssue == null ? null : (i) => onIssue(entry.key, i),
+        runValidate: runValidate,
+      ),
+    )
+    .toList();
+
+List<Map<String, dynamic>> addressToJsonList(List<Address> items) =>
+    items.map((e) => addressToJson(e)).toList();
+
 Product productFromJson(Map<String, dynamic> json) {
   return Product(
     id: (json['id'] as int?) ?? 0,
@@ -274,6 +296,28 @@ class ProductJson {
     return productValidate(json);
   }
 }
+
+List<Product> productFromJsonList(List<dynamic> json) =>
+    json.map((e) => productFromJson(e as Map<String, dynamic>)).toList();
+
+List<Product> productFromJsonSafeList(
+  List<dynamic> json, {
+  void Function(int index, EasyIssue issue)? onIssue,
+  bool runValidate = true,
+}) => json
+    .asMap()
+    .entries
+    .map(
+      (entry) => productFromJsonSafe(
+        entry.value as Map<String, dynamic>,
+        onIssue: onIssue == null ? null : (i) => onIssue(entry.key, i),
+        runValidate: runValidate,
+      ),
+    )
+    .toList();
+
+List<Map<String, dynamic>> productToJsonList(List<Product> items) =>
+    items.map((e) => productToJson(e)).toList();
 
 Order orderFromJson(Map<String, dynamic> json) {
   return Order(
@@ -1058,6 +1102,28 @@ class OrderJson {
   }
 }
 
+List<Order> orderFromJsonList(List<dynamic> json) =>
+    json.map((e) => orderFromJson(e as Map<String, dynamic>)).toList();
+
+List<Order> orderFromJsonSafeList(
+  List<dynamic> json, {
+  void Function(int index, EasyIssue issue)? onIssue,
+  bool runValidate = true,
+}) => json
+    .asMap()
+    .entries
+    .map(
+      (entry) => orderFromJsonSafe(
+        entry.value as Map<String, dynamic>,
+        onIssue: onIssue == null ? null : (i) => onIssue(entry.key, i),
+        runValidate: runValidate,
+      ),
+    )
+    .toList();
+
+List<Map<String, dynamic>> orderToJsonList(List<Order> items) =>
+    items.map((e) => orderToJson(e)).toList();
+
 User userFromJson(Map<String, dynamic> json) {
   return User(
     userName: (json['user_name'] as String?) ?? '',
@@ -1222,6 +1288,28 @@ class UserJson {
     return userValidate(json);
   }
 }
+
+List<User> userFromJsonList(List<dynamic> json) =>
+    json.map((e) => userFromJson(e as Map<String, dynamic>)).toList();
+
+List<User> userFromJsonSafeList(
+  List<dynamic> json, {
+  void Function(int index, EasyIssue issue)? onIssue,
+  bool runValidate = true,
+}) => json
+    .asMap()
+    .entries
+    .map(
+      (entry) => userFromJsonSafe(
+        entry.value as Map<String, dynamic>,
+        onIssue: onIssue == null ? null : (i) => onIssue(entry.key, i),
+        runValidate: runValidate,
+      ),
+    )
+    .toList();
+
+List<Map<String, dynamic>> userToJsonList(List<User> items) =>
+    items.map((e) => userToJson(e)).toList();
 
 ValidationModel validationModelFromJson(Map<String, dynamic> json) {
   return ValidationModel(
@@ -1714,6 +1802,30 @@ class ValidationModelJson {
   }
 }
 
+List<ValidationModel> validationModelFromJsonList(List<dynamic> json) => json
+    .map((e) => validationModelFromJson(e as Map<String, dynamic>))
+    .toList();
+
+List<ValidationModel> validationModelFromJsonSafeList(
+  List<dynamic> json, {
+  void Function(int index, EasyIssue issue)? onIssue,
+  bool runValidate = true,
+}) => json
+    .asMap()
+    .entries
+    .map(
+      (entry) => validationModelFromJsonSafe(
+        entry.value as Map<String, dynamic>,
+        onIssue: onIssue == null ? null : (i) => onIssue(entry.key, i),
+        runValidate: runValidate,
+      ),
+    )
+    .toList();
+
+List<Map<String, dynamic>> validationModelToJsonList(
+  List<ValidationModel> items,
+) => items.map((e) => validationModelToJson(e)).toList();
+
 IgnoreModel ignoreModelFromJson(Map<String, dynamic> json) {
   return IgnoreModel(visible: (json['visible'] as String?) ?? '');
 }
@@ -1796,6 +1908,28 @@ class IgnoreModelJson {
     return ignoreModelValidate(json);
   }
 }
+
+List<IgnoreModel> ignoreModelFromJsonList(List<dynamic> json) =>
+    json.map((e) => ignoreModelFromJson(e as Map<String, dynamic>)).toList();
+
+List<IgnoreModel> ignoreModelFromJsonSafeList(
+  List<dynamic> json, {
+  void Function(int index, EasyIssue issue)? onIssue,
+  bool runValidate = true,
+}) => json
+    .asMap()
+    .entries
+    .map(
+      (entry) => ignoreModelFromJsonSafe(
+        entry.value as Map<String, dynamic>,
+        onIssue: onIssue == null ? null : (i) => onIssue(entry.key, i),
+        runValidate: runValidate,
+      ),
+    )
+    .toList();
+
+List<Map<String, dynamic>> ignoreModelToJsonList(List<IgnoreModel> items) =>
+    items.map((e) => ignoreModelToJson(e)).toList();
 
 PathModel pathModelFromJson(Map<String, dynamic> json) {
   return PathModel(
@@ -1918,6 +2052,28 @@ class PathModelJson {
     return pathModelValidate(json);
   }
 }
+
+List<PathModel> pathModelFromJsonList(List<dynamic> json) =>
+    json.map((e) => pathModelFromJson(e as Map<String, dynamic>)).toList();
+
+List<PathModel> pathModelFromJsonSafeList(
+  List<dynamic> json, {
+  void Function(int index, EasyIssue issue)? onIssue,
+  bool runValidate = true,
+}) => json
+    .asMap()
+    .entries
+    .map(
+      (entry) => pathModelFromJsonSafe(
+        entry.value as Map<String, dynamic>,
+        onIssue: onIssue == null ? null : (i) => onIssue(entry.key, i),
+        runValidate: runValidate,
+      ),
+    )
+    .toList();
+
+List<Map<String, dynamic>> pathModelToJsonList(List<PathModel> items) =>
+    items.map((e) => pathModelToJson(e)).toList();
 
 InheritedModel inheritedModelFromJson(Map<String, dynamic> json) {
   return InheritedModel(
@@ -2066,6 +2222,29 @@ class InheritedModelJson {
   }
 }
 
+List<InheritedModel> inheritedModelFromJsonList(List<dynamic> json) =>
+    json.map((e) => inheritedModelFromJson(e as Map<String, dynamic>)).toList();
+
+List<InheritedModel> inheritedModelFromJsonSafeList(
+  List<dynamic> json, {
+  void Function(int index, EasyIssue issue)? onIssue,
+  bool runValidate = true,
+}) => json
+    .asMap()
+    .entries
+    .map(
+      (entry) => inheritedModelFromJsonSafe(
+        entry.value as Map<String, dynamic>,
+        onIssue: onIssue == null ? null : (i) => onIssue(entry.key, i),
+        runValidate: runValidate,
+      ),
+    )
+    .toList();
+
+List<Map<String, dynamic>> inheritedModelToJsonList(
+  List<InheritedModel> items,
+) => items.map((e) => inheritedModelToJson(e)).toList();
+
 ReadOnlyModel readOnlyModelFromJson(Map<String, dynamic> json) {
   return ReadOnlyModel(
     id: (json['id'] as int?) ?? 0,
@@ -2169,6 +2348,25 @@ class ReadOnlyModelJson {
   }
 }
 
+List<ReadOnlyModel> readOnlyModelFromJsonList(List<dynamic> json) =>
+    json.map((e) => readOnlyModelFromJson(e as Map<String, dynamic>)).toList();
+
+List<ReadOnlyModel> readOnlyModelFromJsonSafeList(
+  List<dynamic> json, {
+  void Function(int index, EasyIssue issue)? onIssue,
+  bool runValidate = true,
+}) => json
+    .asMap()
+    .entries
+    .map(
+      (entry) => readOnlyModelFromJsonSafe(
+        entry.value as Map<String, dynamic>,
+        onIssue: onIssue == null ? null : (i) => onIssue(entry.key, i),
+        runValidate: runValidate,
+      ),
+    )
+    .toList();
+
 Map<String, dynamic> writeOnlyModelToJson(WriteOnlyModel instance) {
   return <String, dynamic>{'id': instance.id, 'name': instance.name};
 }
@@ -2178,6 +2376,10 @@ mixin WriteOnlyModelSerializer {
     return writeOnlyModelToJson(this as WriteOnlyModel);
   }
 }
+
+List<Map<String, dynamic>> writeOnlyModelToJsonList(
+  List<WriteOnlyModel> items,
+) => items.map((e) => writeOnlyModelToJson(e)).toList();
 
 DocumentModel documentModelFromJson(Map<String, dynamic> json) {
   return DocumentModel(
@@ -2357,6 +2559,401 @@ class DocumentModelJson {
   }
 }
 
+List<DocumentModel> documentModelFromJsonList(List<dynamic> json) =>
+    json.map((e) => documentModelFromJson(e as Map<String, dynamic>)).toList();
+
+List<DocumentModel> documentModelFromJsonSafeList(
+  List<dynamic> json, {
+  void Function(int index, EasyIssue issue)? onIssue,
+  bool runValidate = true,
+}) => json
+    .asMap()
+    .entries
+    .map(
+      (entry) => documentModelFromJsonSafe(
+        entry.value as Map<String, dynamic>,
+        onIssue: onIssue == null ? null : (i) => onIssue(entry.key, i),
+        runValidate: runValidate,
+      ),
+    )
+    .toList();
+
+List<Map<String, dynamic>> documentModelToJsonList(List<DocumentModel> items) =>
+    items.map((e) => documentModelToJson(e)).toList();
+
+NativeTypesModel nativeTypesModelFromJson(Map<String, dynamic> json) {
+  return NativeTypesModel(
+    homepage: Uri.parse(json['homepage'] as String),
+    repository: (json['repository'] as String?) != null
+        ? Uri.parse(json['repository'] as String)
+        : null,
+    timeout: Duration(microseconds: (json['timeout'] as num).toInt()),
+    extra: (json['extra'] as num?) != null
+        ? Duration(microseconds: (json['extra'] as num).toInt())
+        : null,
+    bigId: BigInt.parse(json['bigId'] as String),
+    bigOptional: (json['bigOptional'] as String?) != null
+        ? BigInt.parse(json['bigOptional'] as String)
+        : null,
+  );
+}
+
+Map<String, dynamic> nativeTypesModelToJson(NativeTypesModel instance) {
+  return <String, dynamic>{
+    'homepage': instance.homepage.toString(),
+    if (instance.repository != null)
+      'repository': instance.repository?.toString(),
+    'timeout': instance.timeout.inMicroseconds,
+    if (instance.extra != null) 'extra': instance.extra?.inMicroseconds,
+    'bigId': instance.bigId.toString(),
+    if (instance.bigOptional != null)
+      'bigOptional': instance.bigOptional?.toString(),
+  };
+}
+
+mixin NativeTypesModelSerializer {
+  Map<String, dynamic> toJson() {
+    return nativeTypesModelToJson(this as NativeTypesModel);
+  }
+}
+
+List<EasyIssue> nativeTypesModelValidate(Map<String, dynamic> json) {
+  final issues = <EasyIssue>[];
+  if (!json.containsKey('homepage')) {
+    issues.add(
+      EasyIssue(
+        path: 'homepage',
+        code: 'missing_required',
+        message: 'Missing required field.',
+      ),
+    );
+  }
+  if (json.containsKey('homepage')) {
+    final v = json['homepage'];
+    if (v is! String) {
+      issues.add(
+        EasyIssue(
+          path: 'homepage',
+          code: 'type_mismatch',
+          message: 'Expected String (URI).',
+        ),
+      );
+    } else if (Uri.tryParse(v) == null) {
+      issues.add(
+        EasyIssue(
+          path: 'homepage',
+          code: 'invalid_uri',
+          message: 'Invalid URI.',
+        ),
+      );
+    }
+  }
+  if (json.containsKey('repository')) {
+    final v = json['repository'];
+    if (v is! String) {
+      issues.add(
+        EasyIssue(
+          path: 'repository',
+          code: 'type_mismatch',
+          message: 'Expected String (URI).',
+        ),
+      );
+    } else if (Uri.tryParse(v) == null) {
+      issues.add(
+        EasyIssue(
+          path: 'repository',
+          code: 'invalid_uri',
+          message: 'Invalid URI.',
+        ),
+      );
+    }
+  }
+  if (!json.containsKey('timeout')) {
+    issues.add(
+      EasyIssue(
+        path: 'timeout',
+        code: 'missing_required',
+        message: 'Missing required field.',
+      ),
+    );
+  }
+  if (json.containsKey('timeout')) {
+    final v = json['timeout'];
+    if (v is! num && !(v is String && int.tryParse(v) != null)) {
+      issues.add(
+        EasyIssue(
+          path: 'timeout',
+          code: 'type_mismatch',
+          message: 'Expected number of microseconds.',
+        ),
+      );
+    }
+  }
+  if (json.containsKey('extra')) {
+    final v = json['extra'];
+    if (v is! num && !(v is String && int.tryParse(v) != null)) {
+      issues.add(
+        EasyIssue(
+          path: 'extra',
+          code: 'type_mismatch',
+          message: 'Expected number of microseconds.',
+        ),
+      );
+    }
+  }
+  if (!json.containsKey('bigId')) {
+    issues.add(
+      EasyIssue(
+        path: 'bigId',
+        code: 'missing_required',
+        message: 'Missing required field.',
+      ),
+    );
+  }
+  if (json.containsKey('bigId')) {
+    final v = json['bigId'];
+    if (v is String) {
+      if (BigInt.tryParse(v) == null) {
+        issues.add(
+          EasyIssue(
+            path: 'bigId',
+            code: 'invalid_bigint',
+            message: 'Invalid integer string.',
+          ),
+        );
+      }
+    } else if (v is! num) {
+      issues.add(
+        EasyIssue(
+          path: 'bigId',
+          code: 'type_mismatch',
+          message: 'Expected String (integer) or int.',
+        ),
+      );
+    }
+  }
+  if (json.containsKey('bigOptional')) {
+    final v = json['bigOptional'];
+    if (v is String) {
+      if (BigInt.tryParse(v) == null) {
+        issues.add(
+          EasyIssue(
+            path: 'bigOptional',
+            code: 'invalid_bigint',
+            message: 'Invalid integer string.',
+          ),
+        );
+      }
+    } else if (v is! num) {
+      issues.add(
+        EasyIssue(
+          path: 'bigOptional',
+          code: 'type_mismatch',
+          message: 'Expected String (integer) or int.',
+        ),
+      );
+    }
+  }
+  return issues;
+}
+
+NativeTypesModel nativeTypesModelFromJsonSafe(
+  Map<String, dynamic> json, {
+  void Function(EasyIssue)? onIssue,
+  bool runValidate = true,
+}) {
+  if (runValidate) {
+    final _issues = nativeTypesModelValidate(json);
+    if (onIssue != null) {
+      for (final i in _issues) onIssue(i);
+    }
+  }
+  return NativeTypesModel(
+    homepage: (() {
+      final v = json['homepage'];
+      if (v == null) return Uri();
+      if (v is String) {
+        final u = Uri.tryParse(v);
+        if (u != null) return u;
+        onIssue?.call(
+          EasyIssue(
+            path: 'homepage',
+            code: 'invalid_uri',
+            message: 'Invalid URI.',
+          ),
+        );
+        return Uri();
+      }
+      onIssue?.call(
+        EasyIssue(
+          path: 'homepage',
+          code: 'type_mismatch',
+          message: 'Expected String (URI).',
+        ),
+      );
+      return Uri();
+    })(),
+    repository: (() {
+      final v = json['repository'];
+      if (v == null) return null;
+      if (v is String) {
+        final u = Uri.tryParse(v);
+        if (u != null) return u;
+        onIssue?.call(
+          EasyIssue(
+            path: 'repository',
+            code: 'invalid_uri',
+            message: 'Invalid URI.',
+          ),
+        );
+        return null;
+      }
+      onIssue?.call(
+        EasyIssue(
+          path: 'repository',
+          code: 'type_mismatch',
+          message: 'Expected String (URI).',
+        ),
+      );
+      return null;
+    })(),
+    timeout: (() {
+      final v = json['timeout'];
+      if (v == null) return Duration.zero;
+      if (v is num) return Duration(microseconds: v.toInt());
+      if (v is String) {
+        final p = int.tryParse(v);
+        if (p != null) return Duration(microseconds: p);
+      }
+      onIssue?.call(
+        EasyIssue(
+          path: 'timeout',
+          code: 'type_mismatch',
+          message: 'Expected number of microseconds.',
+        ),
+      );
+      return Duration.zero;
+    })(),
+    extra: (() {
+      final v = json['extra'];
+      if (v == null) return null;
+      if (v is num) return Duration(microseconds: v.toInt());
+      if (v is String) {
+        final p = int.tryParse(v);
+        if (p != null) return Duration(microseconds: p);
+      }
+      onIssue?.call(
+        EasyIssue(
+          path: 'extra',
+          code: 'type_mismatch',
+          message: 'Expected number of microseconds.',
+        ),
+      );
+      return null;
+    })(),
+    bigId: (() {
+      final v = json['bigId'];
+      if (v == null) return BigInt.zero;
+      if (v is String) {
+        final b = BigInt.tryParse(v);
+        if (b != null) return b;
+        onIssue?.call(
+          EasyIssue(
+            path: 'bigId',
+            code: 'invalid_bigint',
+            message: 'Invalid integer string.',
+          ),
+        );
+        return BigInt.zero;
+      }
+      if (v is int) return BigInt.from(v);
+      if (v is num) return BigInt.from(v.toInt());
+      onIssue?.call(
+        EasyIssue(
+          path: 'bigId',
+          code: 'type_mismatch',
+          message: 'Expected String (integer) or int.',
+        ),
+      );
+      return BigInt.zero;
+    })(),
+    bigOptional: (() {
+      final v = json['bigOptional'];
+      if (v == null) return null;
+      if (v is String) {
+        final b = BigInt.tryParse(v);
+        if (b != null) return b;
+        onIssue?.call(
+          EasyIssue(
+            path: 'bigOptional',
+            code: 'invalid_bigint',
+            message: 'Invalid integer string.',
+          ),
+        );
+        return null;
+      }
+      if (v is int) return BigInt.from(v);
+      if (v is num) return BigInt.from(v.toInt());
+      onIssue?.call(
+        EasyIssue(
+          path: 'bigOptional',
+          code: 'type_mismatch',
+          message: 'Expected String (integer) or int.',
+        ),
+      );
+      return null;
+    })(),
+  );
+}
+
+class NativeTypesModelJson {
+  const NativeTypesModelJson();
+
+  static NativeTypesModel fromJson(Map<String, dynamic> json) {
+    return nativeTypesModelFromJson(json);
+  }
+
+  static NativeTypesModel fromJsonSafe(
+    Map<String, dynamic> json, {
+    void Function(EasyIssue)? onIssue,
+    bool runValidate = true,
+  }) {
+    return nativeTypesModelFromJsonSafe(
+      json,
+      onIssue: onIssue,
+      runValidate: runValidate,
+    );
+  }
+
+  static List<EasyIssue> validate(Map<String, dynamic> json) {
+    return nativeTypesModelValidate(json);
+  }
+}
+
+List<NativeTypesModel> nativeTypesModelFromJsonList(List<dynamic> json) => json
+    .map((e) => nativeTypesModelFromJson(e as Map<String, dynamic>))
+    .toList();
+
+List<NativeTypesModel> nativeTypesModelFromJsonSafeList(
+  List<dynamic> json, {
+  void Function(int index, EasyIssue issue)? onIssue,
+  bool runValidate = true,
+}) => json
+    .asMap()
+    .entries
+    .map(
+      (entry) => nativeTypesModelFromJsonSafe(
+        entry.value as Map<String, dynamic>,
+        onIssue: onIssue == null ? null : (i) => onIssue(entry.key, i),
+        runValidate: runValidate,
+      ),
+    )
+    .toList();
+
+List<Map<String, dynamic>> nativeTypesModelToJsonList(
+  List<NativeTypesModel> items,
+) => items.map((e) => nativeTypesModelToJson(e)).toList();
+
 Post postFromJson(Map<String, dynamic> json) {
   final d = json['type'];
   switch (d) {
@@ -2444,6 +3041,28 @@ class PostJson {
     return postValidate(json);
   }
 }
+
+List<Post> postFromJsonList(List<dynamic> json) =>
+    json.map((e) => postFromJson(e as Map<String, dynamic>)).toList();
+
+List<Post> postFromJsonSafeList(
+  List<dynamic> json, {
+  void Function(int index, EasyIssue issue)? onIssue,
+  bool runValidate = true,
+}) => json
+    .asMap()
+    .entries
+    .map(
+      (entry) => postFromJsonSafe(
+        entry.value as Map<String, dynamic>,
+        onIssue: onIssue == null ? null : (i) => onIssue(entry.key, i),
+        runValidate: runValidate,
+      ),
+    )
+    .toList();
+
+List<Map<String, dynamic>> postToJsonList(List<Post> items) =>
+    items.map((e) => postToJson(e)).toList();
 
 TextPost textPostFromJson(Map<String, dynamic> json) {
   return TextPost(
@@ -2559,6 +3178,28 @@ class TextPostJson {
   }
 }
 
+List<TextPost> textPostFromJsonList(List<dynamic> json) =>
+    json.map((e) => textPostFromJson(e as Map<String, dynamic>)).toList();
+
+List<TextPost> textPostFromJsonSafeList(
+  List<dynamic> json, {
+  void Function(int index, EasyIssue issue)? onIssue,
+  bool runValidate = true,
+}) => json
+    .asMap()
+    .entries
+    .map(
+      (entry) => textPostFromJsonSafe(
+        entry.value as Map<String, dynamic>,
+        onIssue: onIssue == null ? null : (i) => onIssue(entry.key, i),
+        runValidate: runValidate,
+      ),
+    )
+    .toList();
+
+List<Map<String, dynamic>> textPostToJsonList(List<TextPost> items) =>
+    items.map((e) => textPostToJson(e)).toList();
+
 VideoPost videoPostFromJson(Map<String, dynamic> json) {
   return VideoPost(
     author: (json['author'] as String?) ?? '',
@@ -2673,6 +3314,28 @@ class VideoPostJson {
   }
 }
 
+List<VideoPost> videoPostFromJsonList(List<dynamic> json) =>
+    json.map((e) => videoPostFromJson(e as Map<String, dynamic>)).toList();
+
+List<VideoPost> videoPostFromJsonSafeList(
+  List<dynamic> json, {
+  void Function(int index, EasyIssue issue)? onIssue,
+  bool runValidate = true,
+}) => json
+    .asMap()
+    .entries
+    .map(
+      (entry) => videoPostFromJsonSafe(
+        entry.value as Map<String, dynamic>,
+        onIssue: onIssue == null ? null : (i) => onIssue(entry.key, i),
+        runValidate: runValidate,
+      ),
+    )
+    .toList();
+
+List<Map<String, dynamic>> videoPostToJsonList(List<VideoPost> items) =>
+    items.map((e) => videoPostToJson(e)).toList();
+
 UnknownPost unknownPostFromJson(Map<String, dynamic> json) {
   return UnknownPost();
 }
@@ -2729,6 +3392,28 @@ class UnknownPostJson {
     return unknownPostValidate(json);
   }
 }
+
+List<UnknownPost> unknownPostFromJsonList(List<dynamic> json) =>
+    json.map((e) => unknownPostFromJson(e as Map<String, dynamic>)).toList();
+
+List<UnknownPost> unknownPostFromJsonSafeList(
+  List<dynamic> json, {
+  void Function(int index, EasyIssue issue)? onIssue,
+  bool runValidate = true,
+}) => json
+    .asMap()
+    .entries
+    .map(
+      (entry) => unknownPostFromJsonSafe(
+        entry.value as Map<String, dynamic>,
+        onIssue: onIssue == null ? null : (i) => onIssue(entry.key, i),
+        runValidate: runValidate,
+      ),
+    )
+    .toList();
+
+List<Map<String, dynamic>> unknownPostToJsonList(List<UnknownPost> items) =>
+    items.map((e) => unknownPostToJson(e)).toList();
 
 Feed feedFromJson(Map<String, dynamic> json) {
   return Feed(
@@ -2892,3 +3577,25 @@ class FeedJson {
     return feedValidate(json);
   }
 }
+
+List<Feed> feedFromJsonList(List<dynamic> json) =>
+    json.map((e) => feedFromJson(e as Map<String, dynamic>)).toList();
+
+List<Feed> feedFromJsonSafeList(
+  List<dynamic> json, {
+  void Function(int index, EasyIssue issue)? onIssue,
+  bool runValidate = true,
+}) => json
+    .asMap()
+    .entries
+    .map(
+      (entry) => feedFromJsonSafe(
+        entry.value as Map<String, dynamic>,
+        onIssue: onIssue == null ? null : (i) => onIssue(entry.key, i),
+        runValidate: runValidate,
+      ),
+    )
+    .toList();
+
+List<Map<String, dynamic>> feedToJsonList(List<Feed> items) =>
+    items.map((e) => feedToJson(e)).toList();

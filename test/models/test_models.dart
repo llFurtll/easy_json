@@ -257,6 +257,30 @@ class DocumentModel with DocumentModelSerializer {
 }
 
 @EasyJson()
+class NativeTypesModel with NativeTypesModelSerializer {
+  final Uri homepage;
+  final Uri? repository;
+
+  final Duration timeout;
+  final Duration? extra;
+
+  final BigInt bigId;
+  final BigInt? bigOptional;
+
+  NativeTypesModel({
+    required this.homepage,
+    this.repository,
+    required this.timeout,
+    this.extra,
+    required this.bigId,
+    this.bigOptional,
+  });
+
+  factory NativeTypesModel.fromJson(Map<String, dynamic> json) => nativeTypesModelFromJson(json);
+  factory NativeTypesModel.fromJsonSafe(Map<String, dynamic> json, {void Function(EasyIssue)? onIssue}) => nativeTypesModelFromJsonSafe(json, onIssue: onIssue);
+}
+
+@EasyJson()
 @EasyUnion(discriminator: 'type', mapping: {
   'text': TextPost,
   'video': VideoPost,

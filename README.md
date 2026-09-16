@@ -150,7 +150,27 @@ void main() {
 *   **Collections**: `List<T>`, `Set<T>`, `Map<K, V>` (where `K` is usually a String or an enum, and `V` can be any supported type, including nested collections).
 *   **DateTime**: Serialized to ISO-8601 strings, but can gracefully read from integers (milliseconds since epoch) or strings.
 *   **Uint8List (Binary Data)**: Automatically serialized to and deserialized from **Base64** strings. Extremely useful for dealing with file uploads or image blobs directly in JSON.
+*   **Uri**: Serialized to/from a `String`. `fromJsonSafe`/`validate` report `invalid_uri` for malformed values.
+*   **Duration**: Serialized to/from a `num` of **microseconds** (matches `Duration.inMicroseconds`, so no precision is lost). `fromJsonSafe` also accepts a numeric `String`.
+*   **BigInt**: Serialized to/from a decimal `String`, since JSON numbers cannot safely carry arbitrary precision (a JS/web runtime only keeps exact integers up to 2^53). `fromJsonSafe` also accepts a plain `int`/`num` for APIs that send small values as a JSON number.
 *   **Nested Models**: Any other class annotated with `@EasyJson`.
+
+### Working with Lists
+
+Alongside the per-object functions, `easy_json` also generates helpers to convert a whole `List` at once — handy for API responses that return an array of items:
+
+```dart
+// List<dynamic> (raw JSON array) -> List<User>
+final users = userFromJsonList(jsonArray);
+
+// Same, but never throws — reports (index, EasyIssue) for bad entries
+final users = userFromJsonSafeList(jsonArray, onIssue: (index, issue) {
+  print('Item $index: $issue');
+});
+
+// List<User> -> List<Map<String, dynamic>>
+final jsonArray = userToJsonList(users);
+```
 
 ## 5. Safe Deserialization and Validation
 

@@ -477,3 +477,25 @@ class SeriesJson {
     return seriesValidate(json);
   }
 }
+
+List<Series> seriesFromJsonList(List<dynamic> json) =>
+    json.map((e) => seriesFromJson(e as Map<String, dynamic>)).toList();
+
+List<Series> seriesFromJsonSafeList(
+  List<dynamic> json, {
+  void Function(int index, EasyIssue issue)? onIssue,
+  bool runValidate = true,
+}) => json
+    .asMap()
+    .entries
+    .map(
+      (entry) => seriesFromJsonSafe(
+        entry.value as Map<String, dynamic>,
+        onIssue: onIssue == null ? null : (i) => onIssue(entry.key, i),
+        runValidate: runValidate,
+      ),
+    )
+    .toList();
+
+List<Map<String, dynamic>> seriesToJsonList(List<Series> items) =>
+    items.map((e) => seriesToJson(e)).toList();

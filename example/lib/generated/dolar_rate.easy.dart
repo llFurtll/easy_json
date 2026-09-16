@@ -289,3 +289,25 @@ class DollarRateJson {
     return dollarRateValidate(json);
   }
 }
+
+List<DollarRate> dollarRateFromJsonList(List<dynamic> json) =>
+    json.map((e) => dollarRateFromJson(e as Map<String, dynamic>)).toList();
+
+List<DollarRate> dollarRateFromJsonSafeList(
+  List<dynamic> json, {
+  void Function(int index, EasyIssue issue)? onIssue,
+  bool runValidate = true,
+}) => json
+    .asMap()
+    .entries
+    .map(
+      (entry) => dollarRateFromJsonSafe(
+        entry.value as Map<String, dynamic>,
+        onIssue: onIssue == null ? null : (i) => onIssue(entry.key, i),
+        runValidate: runValidate,
+      ),
+    )
+    .toList();
+
+List<Map<String, dynamic>> dollarRateToJsonList(List<DollarRate> items) =>
+    items.map((e) => dollarRateToJson(e)).toList();

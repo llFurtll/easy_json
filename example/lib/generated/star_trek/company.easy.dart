@@ -131,3 +131,25 @@ class CompanyJson {
     return companyValidate(json);
   }
 }
+
+List<Company> companyFromJsonList(List<dynamic> json) =>
+    json.map((e) => companyFromJson(e as Map<String, dynamic>)).toList();
+
+List<Company> companyFromJsonSafeList(
+  List<dynamic> json, {
+  void Function(int index, EasyIssue issue)? onIssue,
+  bool runValidate = true,
+}) => json
+    .asMap()
+    .entries
+    .map(
+      (entry) => companyFromJsonSafe(
+        entry.value as Map<String, dynamic>,
+        onIssue: onIssue == null ? null : (i) => onIssue(entry.key, i),
+        runValidate: runValidate,
+      ),
+    )
+    .toList();
+
+List<Map<String, dynamic>> companyToJsonList(List<Company> items) =>
+    items.map((e) => companyToJson(e)).toList();

@@ -1,3 +1,11 @@
+## 0.10.0
+
+*   **FEAT**: Added native support for `Uri` (serialized as `String`; `invalid_uri` reported in safe/validate for malformed values).
+*   **FEAT**: Added native support for `Duration` (serialized as microseconds, matching `Duration.inMicroseconds`; safe mode also accepts a numeric `String`).
+*   **FEAT**: Added native support for `BigInt` (serialized as a decimal `String`, since JSON numbers cannot carry arbitrary precision; safe mode also accepts a plain `int`/`num`).
+*   **FEAT**: Generator now also emits list helpers for every `@EasyJson` class: `${x}FromJsonList`, `${x}FromJsonSafeList` (reports `(index, EasyIssue)` per bad entry) and `${x}ToJsonList`.
+*   All three new types follow the same `@EasyConvert` override, `fromJsonSafe` fallback and `validate` conventions as the other supported types.
+
 ## 0.9.0
 
 *   **FEAT**: Generated `*.easy.dart` files now import `package:dart_easy_json/runtime.dart` (a new public support library) instead of reaching into `package:dart_easy_json/src/...`. This removes the `implementation_imports` analyzer warning from consumer projects — excluding generated files from analysis is no longer required.

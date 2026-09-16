@@ -608,3 +608,25 @@ class EpisodeJson {
     return episodeValidate(json);
   }
 }
+
+List<Episode> episodeFromJsonList(List<dynamic> json) =>
+    json.map((e) => episodeFromJson(e as Map<String, dynamic>)).toList();
+
+List<Episode> episodeFromJsonSafeList(
+  List<dynamic> json, {
+  void Function(int index, EasyIssue issue)? onIssue,
+  bool runValidate = true,
+}) => json
+    .asMap()
+    .entries
+    .map(
+      (entry) => episodeFromJsonSafe(
+        entry.value as Map<String, dynamic>,
+        onIssue: onIssue == null ? null : (i) => onIssue(entry.key, i),
+        runValidate: runValidate,
+      ),
+    )
+    .toList();
+
+List<Map<String, dynamic>> episodeToJsonList(List<Episode> items) =>
+    items.map((e) => episodeToJson(e)).toList();

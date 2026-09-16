@@ -153,3 +153,26 @@ class SeasonResponseJson {
     return seasonResponseValidate(json);
   }
 }
+
+List<SeasonResponse> seasonResponseFromJsonList(List<dynamic> json) =>
+    json.map((e) => seasonResponseFromJson(e as Map<String, dynamic>)).toList();
+
+List<SeasonResponse> seasonResponseFromJsonSafeList(
+  List<dynamic> json, {
+  void Function(int index, EasyIssue issue)? onIssue,
+  bool runValidate = true,
+}) => json
+    .asMap()
+    .entries
+    .map(
+      (entry) => seasonResponseFromJsonSafe(
+        entry.value as Map<String, dynamic>,
+        onIssue: onIssue == null ? null : (i) => onIssue(entry.key, i),
+        runValidate: runValidate,
+      ),
+    )
+    .toList();
+
+List<Map<String, dynamic>> seasonResponseToJsonList(
+  List<SeasonResponse> items,
+) => items.map((e) => seasonResponseToJson(e)).toList();
