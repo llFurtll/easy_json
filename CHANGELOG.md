@@ -1,3 +1,11 @@
+## 1.0.0
+
+*   **STABLE**: First stable release. `easy_json` now follows semantic versioning — see the "API Stability" section in the README for exactly what's covered.
+*   **CHORE**: Raised the `analyzer` lower bound from `>=8.1.1` to `>=8.4.1` and removed the now-dead `// ignore_for_file: experimental_member_use` suppressions. Verified (by pinning the dependency) that the element APIs this package relies on (`ClassElement`, `FieldElement`, `EnumElement`, `DartType.element`, ...) are no longer `@experimental` anywhere in the supported range — there was no "element2" migration needed, contrary to earlier plans; analyzer itself dropped the `@experimental` flag on these members within the `8.x` series.
+*   **CHORE**: Added GitHub Actions CI (`dart analyze`, `dart test`, `dart pub publish --dry-run`, and a check that committed `*.easy.dart` files match what the generator currently produces) running on every push/PR, for both the package and `example/`.
+*   **DOCS**: Added dartdoc comments to the remaining undocumented public members (`easyJsonBuilder`, the `easy_json.dart` library, `EasyIssue`'s fields).
+*   No behavioral or generated-code changes in this release — regenerating produces byte-identical output to `0.10.0`.
+
 ## 0.10.0
 
 *   **FEAT**: Added native support for `Uri` (serialized as `String`; `invalid_uri` reported in safe/validate for malformed values).

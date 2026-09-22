@@ -1,0 +1,44 @@
+name: CI
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        directory: ['.', 'example']
+    defaults:
+      run:
+        working-directory: ${{ matrix.directory }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dart-lang/setup-dart@v1
+        with:
+          sdk: stable
+
+      - name: Install dependencies
+        run: dart pub get
+
+      - name: Analyze
+        run: dart analyze --fatal-infos
+
+      - name: Run tests
+        if: matrix.directory == '.'
+        run: dart test
+
+      - name: Verify generated code is up to date
+        run: |
+          dart run build_runner build --delete-conflicting-outputs
+          git diff --exit-code -- . ':!pubspec.lock' \
+            || (echo "::error::Generated .easy.dart files are out of date. Run build_runner and commit the result." && exit 1)
+
+      - name: dart pub publish --dry-run
+        if: matrix.directory == '.'
+        run: dart pub publish --dry-run

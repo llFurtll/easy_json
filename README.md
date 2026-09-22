@@ -1,6 +1,7 @@
 # Easy JSON
 
 [![pub package](https://img.shields.io/pub/v/dart_easy_json.svg)](https://pub.dev/packages/dart_easy_json)
+[![CI](https://github.com/llFurtll/easy_json/actions/workflows/ci.yml/badge.svg)](https://github.com/llFurtll/easy_json/actions/workflows/ci.yml)
 
 A powerful and flexible code generation library for JSON serialization and deserialization in Dart. `easy_json` focuses on safety, performance, and ease of use, automating the creation of boilerplate code while providing robust data validation and error handling out of the box.
 
@@ -12,6 +13,19 @@ A powerful and flexible code generation library for JSON serialization and deser
 *   **Standalone Validation**: Generates a `validate` method that checks a JSON map against your model's rules without the overhead of object instantiation.
 *   **Highly Customizable**: Configure JSON key `caseStyle`, custom names, converters, per-field fallbacks, and much more.
 *   **Clean API**: Generates a `...Serializer` mixin for instance methods and top-level functions for a clean, static-like API.
+
+## API Stability
+
+As of `1.0.0`, `easy_json` follows [semantic versioning](https://semver.org). The following are considered part of the public API — a breaking change to any of them requires a major version bump:
+
+*   The annotations and their parameters: `@EasyJson`, `@EasyKey`, `@EasyValidate`, `@EasyUnion`, `@EasyConvert`, `@EasyMapKey`, `@EasyIgnore`, `@EasyPath`, `CaseStyle`, `EasyFormat`.
+*   The naming convention of generated code: `${x}FromJson`, `${x}ToJson`, `${x}Validate`, `${x}FromJsonSafe`, `${x}FromJsonList`, `${x}FromJsonSafeList`, `${x}ToJsonList`, the `${Class}Serializer` mixin and the `${Class}Json` companion class.
+*   The shape of [`EasyIssue`](#fromjsonsafe-and-easyissue) (`path`/`code`/`message`) and the `code` strings the generator emits.
+*   The public exports of `package:dart_easy_json/easy_json.dart` and `package:dart_easy_json/runtime.dart`.
+
+`@EasyConvert`'s `fromJson`/`toJson`/`valueFromJson`/`valueToJson` are intentionally untyped (`Function?`) rather than generic — this is a deliberate trade-off for flexibility over compile-time checking on the converter itself, not an oversight, and isn't expected to change.
+
+The internal code generator implementation (anything under `lib/src/`) is not part of the public API and may change in any release.
 
 ## 1. Installation
 

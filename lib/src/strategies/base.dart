@@ -1,4 +1,3 @@
-// ignore_for_file: experimental_member_use
 part of '../strategies.dart';
 
 abstract class TypeStrategy {
