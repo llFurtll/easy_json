@@ -1,6 +1,11 @@
 part of '../strategies.dart';
 
 class ListStrategy implements TypeStrategy {
+  /// Lista vazia de fallback. `const <T>[]` é inválido quando o item é um
+  /// parâmetro de tipo, então nesse caso a lista não pode ser const.
+  String _emptyList(DartType item) =>
+      '${item is TypeParameterType ? '' : 'const '}<${displayWithNull(item)}>[]';
+
   @override
   String fromJson(FieldContext c) {
     final item = c.listItemType!;
@@ -13,7 +18,7 @@ class ListStrategy implements TypeStrategy {
       .replaceAll('{ITEM_PARSE}', itemParse);
 
     // quando o campo é não-nulo, garanta retorno não-nulo
-    return c.isNullable ? expr : '($expr) ?? const <$itemT>[]';
+    return c.isNullable ? expr : '($expr) ?? ${_emptyList(item)}';
   }
 
   @override
@@ -21,7 +26,7 @@ class ListStrategy implements TypeStrategy {
     final item = c.listItemType!;
     final itemT = displayWithNull(item);
     final itemParse = _safeItemParse(item, c, indexPath: true);
-    final fb = c.isNullable ? 'null' : 'const <$itemT>[]';
+    final fb = c.isNullable ? 'null' : _emptyList(item);
     return kListSafeTpl
       .replaceAll('{VALUE}', c.jsonAccessor)
       .replaceAll('{FALLBACK}', fb)
@@ -49,7 +54,9 @@ class ListStrategy implements TypeStrategy {
           } else {
   """);
 
-    if (isEasyJsonClass(item)) {
+    if (item is TypeParameterType) {
+      // O tipo real de `T` só é conhecido pelo conversor: nada a checar aqui.
+    } else if (isEasyJsonClass(item)) {
       final cn = displayNonNull(item);
       final vn = _lcFirst(cn);
       sb.writeln("""
@@ -93,6 +100,13 @@ class ListStrategy implements TypeStrategy {
   @override
   String toJson(FieldContext c) {
     final item = c.listItemType!;
+    if (item is TypeParameterType) {
+      final t = displayNonNull(item);
+      final conv = displayWithNull(item).endsWith('?')
+          ? "e == null ? null : toJson$t(e as $t)"
+          : "toJson$t(e)";
+      return "${c.instanceAccess}${c.isNullable ? '?' : ''}.map((e)=>$conv).toList()";
+    }
     if (isEasyJsonClass(item)) {
       return "${c.instanceAccess}${c.isNullable ? '?' : ''}.map((e)=>e.toJson()).toList()";
     }

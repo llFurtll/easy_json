@@ -1,3 +1,19 @@
+## 1.1.0
+
+*   **FEAT**: Strict mode — `@EasyJson(strict: true)` makes the generated `fromJson` run `validate` first and throw an `EasyValidationException` listing **every** issue (with full paths for nested objects and list items), instead of failing with a raw `TypeError` on the first bad field. Also enforces `@EasyValidate` rules in `fromJson`. Supported on `@EasyUnion` classes too.
+*   **FEAT**: Generic classes — `@EasyJson` classes can declare type parameters and use them as `T`, `T?` or `List<T>` fields. Generated functions take one converter per type parameter (`fromJsonT` / `toJsonT`); bounds are preserved, and the mixin, companion class and list helpers follow the same convention.
+*   **FEAT**: Unsupported generic usages (`Set<T>`, `Map<K, T>`, a generic `@EasyJson` class as a field type, generic unions, fields inherited from a generic superclass) now fail at build time with a clear message instead of generating code that doesn't compile.
+*   **FIX**: `@EasyValidate(format: EasyFormat.email)` — and any `@EasyValidate(regex: ...)` containing a `'` — generated code that didn't compile (the pattern was emitted as a raw string, where `\'` doesn't escape the quote). Patterns are now emitted as properly escaped string literals.
+*   **FEAT**: The annotations now declare where they can be used (`@Target` from `package:meta`): `@EasyJson`/`@EasyUnion` on classes; `@EasyKey`, `@EasyValidate`, `@EasyConvert`, `@EasyMapKey`, `@EasyIgnore` and `@EasyPath` on fields/parameters. Misplaced annotations are now flagged by the Dart analyzer right in the editor (`invalid_annotation_target`), instead of being silently ignored. Adds `meta` as a dependency.
+*   **FIX**: A `double` field receiving a non-numeric string (e.g. `"cheap"`) silently became `0.0` — neither `validate` nor `fromJsonSafe` reported it, and strict mode let it through. It is now a `type_mismatch` issue (numeric strings like `"9.90"` are still accepted).
+*   **FIX**: `@EasyValidate` rules (`min`, `max`, `custom`) on `double` fields were silently ignored. They are now applied.
+*   **FIX**: `toJson` wrote `@EasyPath` fields flat at the root (e.g. `city`) instead of at their nested path (`shipping.address.city`), so the output couldn't be read back. It now writes them nested, and `fromJson(toJson(x))` round-trips.
+*   **FIX**: `toJson` of `Map<int, V>` fields returned `int` keys, which `jsonEncode` rejects. Keys are now written as strings.
+*   **FIX**: `fromJsonSafe` of a `Map<int, V>` field without `@EasyMapKey` threw at runtime (it tried to insert string keys into an `int`-keyed map). It now converts the keys, like `fromJson` already did.
+*   **DOCS**: README rewritten: quick start first, a "Why dart_easy_json?" section, supported-types table, full `@EasyJson`/annotation reference (including the previously undocumented `@EasyMapKey`), and a table of every issue code. Also fixes outdated or wrong content: the install snippet pinned `^0.4.0`, the build command used a removed `build_runner` flag, the union example lacked the `factory fromJson` it needs to compile, and the safe-parsing example showed made-up output. All example outputs are now checked by `test/readme_test.dart`.
+*   **NEW EXPORT**: `EasyValidationException`, from both `easy_json.dart` and `runtime.dart`; `writePath` from `runtime.dart` (used by generated code).
+*   Generated code for existing non-generic, non-strict classes only changes where the fixes above apply (regex literals, `double` validation, `@EasyPath` and `Map<int, V>` serialization).
+
 ## 1.0.0
 
 *   **STABLE**: First stable release. `easy_json` now follows semantic versioning — see the "API Stability" section in the README for exactly what's covered.

@@ -1,302 +1,295 @@
-# Easy JSON
+# dart_easy_json
 
 [![pub package](https://img.shields.io/pub/v/dart_easy_json.svg)](https://pub.dev/packages/dart_easy_json)
 [![CI](https://github.com/llFurtll/easy_json/actions/workflows/ci.yml/badge.svg)](https://github.com/llFurtll/easy_json/actions/workflows/ci.yml)
 
-A powerful and flexible code generation library for JSON serialization and deserialization in Dart. `easy_json` focuses on safety, performance, and ease of use, automating the creation of boilerplate code while providing robust data validation and error handling out of the box.
+Code generation for JSON in Dart that doesn't fall over on bad data. Besides `fromJson`/`toJson`, it generates a `fromJsonSafe` that never throws and reports every problem with its exact path, a standalone `validate`, and declarative validation rules — all from annotations on plain Dart classes.
 
-## Main Features
+## Quick start
 
-*   **Automatic Code Generation**: Creates all the necessary serialization boilerplate for you (`fromJson`, `toJson`).
-*   **Safe Deserialization**: Provides a `fromJsonSafe` method that never throws exceptions. It uses sensible fallbacks for invalid data and reports all issues found.
-*   **Declarative Validation**: Use the `@EasyValidate` annotation to define powerful validation rules directly on your model fields (e.g., min/max length, regex, formats like email/URL).
-*   **Standalone Validation**: Generates a `validate` method that checks a JSON map against your model's rules without the overhead of object instantiation.
-*   **Highly Customizable**: Configure JSON key `caseStyle`, custom names, converters, per-field fallbacks, and much more.
-*   **Clean API**: Generates a `...Serializer` mixin for instance methods and top-level functions for a clean, static-like API.
+**1. Install**
 
-## API Stability
-
-As of `1.0.0`, `easy_json` follows [semantic versioning](https://semver.org). The following are considered part of the public API — a breaking change to any of them requires a major version bump:
-
-*   The annotations and their parameters: `@EasyJson`, `@EasyKey`, `@EasyValidate`, `@EasyUnion`, `@EasyConvert`, `@EasyMapKey`, `@EasyIgnore`, `@EasyPath`, `CaseStyle`, `EasyFormat`.
-*   The naming convention of generated code: `${x}FromJson`, `${x}ToJson`, `${x}Validate`, `${x}FromJsonSafe`, `${x}FromJsonList`, `${x}FromJsonSafeList`, `${x}ToJsonList`, the `${Class}Serializer` mixin and the `${Class}Json` companion class.
-*   The shape of [`EasyIssue`](#fromjsonsafe-and-easyissue) (`path`/`code`/`message`) and the `code` strings the generator emits.
-*   The public exports of `package:dart_easy_json/easy_json.dart` and `package:dart_easy_json/runtime.dart`.
-
-`@EasyConvert`'s `fromJson`/`toJson`/`valueFromJson`/`valueToJson` are intentionally untyped (`Function?`) rather than generic — this is a deliberate trade-off for flexibility over compile-time checking on the converter itself, not an oversight, and isn't expected to change.
-
-The internal code generator implementation (anything under `lib/src/`) is not part of the public API and may change in any release.
-
-## 1. Installation
-
-Add the necessary dependencies to your project's `pubspec.yaml` file. The `dart_easy_json` package is required in both sections for two key reasons:
-
-```yaml
-# pubspec.yaml
-
-dependencies:
-  # 1. For Runtime: Your application code needs the annotations (@EasyJson, @EasyKey),
-  #    mixins, and helper classes (EasyIssue) to compile.
-  dart_easy_json: ^0.4.0 # Use the latest version from pub.dev
-
-dev_dependencies:
-  # 2. For Development: The build_runner tool needs to find and execute the code
-  #    generator, which is also included in this package.
-  dart_easy_json: ^0.4.0 # Must match the version in dependencies
-  build_runner: ^2.4.0
+```bash
+dart pub add dart_easy_json dev:build_runner
 ```
 
-Run `dart pub get` to install the packages.
-
-## 2. Configuration
-
-To keep your project organized, it's highly recommended to place generated files in a separate directory.
-
-### `build.yaml`
-
-Create a `build.yaml` file in your project's root to configure the output location for the generated files.
-
-```yaml
-# build.yaml
-
-targets:
-  $default:
-    builders:
-      # This key is composed of: <package_name>:<builder_name>
-      dart_easy_json:easy_json_builder:
-        options:
-          build_extensions:
-            # Maps input (e.g., lib/models/user.dart)
-            # to output (e.g., lib/generated/models/user.easy.dart)
-            "^lib/{{}}.dart": "lib/generated/{{}}.easy.dart"
-```
-
-### `analysis_options.yaml` (optional)
-
-Since `0.9.0` the generated files only import public libraries, so no analyzer
-configuration is required. If you still prefer to keep them out of your lint
-reports, you can exclude them in your `analysis_options.yaml`.
-
-```yaml
-# analysis_options.yaml
-
-analyzer:
-  exclude:
-    # Exclude all files in the generated directory
-    - "lib/generated/**"
-    # Or, if you don't use a dedicated directory, exclude by file pattern:
-    # - "**.easy.dart"
-```
-
-## 3. Basic Usage
-
-### Step 1: Annotate Your Model
-
-Create your model class, annotate it with `@EasyJson`, add the `...Serializer` mixin, and **import** the file that will be generated.
+**2. Annotate a model** and import the file that will be generated next to it:
 
 ```dart
 // lib/models/user.dart
 import 'package:dart_easy_json/easy_json.dart';
 
-// The path must match the output location from your build.yaml
-import 'package:my_project/generated/models/user.easy.dart'; // Adjust path as needed
+import 'user.easy.dart';
 
-@EasyJson(caseStyle: CaseStyle.snake, includeIfNull: false)
+@EasyJson()
 class User with UserSerializer {
-  final String userName;
-  final DateTime createdAt;
-
-  @EasyKey(name: 'e_mail') // Override the caseStyle for this specific field
+  final String name;
+  final int age;
   final String? email;
 
-  const User({
-    required this.userName,
-    required this.createdAt,
-    this.email,
-  });
+  User({required this.name, required this.age, this.email});
 
-  // Factory constructors that delegate to the public, generated functions.
   factory User.fromJson(Map<String, dynamic> json) => userFromJson(json);
-  factory User.fromJsonSafe(Map<String, dynamic> json, {void Function(EasyIssue)? onIssue})
-    => userFromJsonSafe(json, onIssue: onIssue);
 }
 ```
 
-### Step 2: Run the Code Generator
-
-Execute the `build_runner` command in your terminal to generate the serialization code.
+**3. Generate the code**
 
 ```bash
-dart run build_runner build --delete-conflicting-outputs
+dart run build_runner build
 ```
 
-This will create the `user.easy.dart` file in the configured output directory.
-
-### Step 3: Use Your Model
-
-You can now seamlessly serialize and deserialize your objects.
+**4. Use it**
 
 ```dart
-void main() {
-  final user = User(
-    userName: 'John Doe',
-    createdAt: DateTime.now(),
-    email: 'john.doe@example.com',
-  );
-
-  // Serialization (uses the `toJson` method from the UserSerializer mixin)
-  final Map<String, dynamic> jsonMap = user.toJson();
-  print(jsonMap);
-  // Output: {'user_name': 'John Doe', 'created_at': '...', 'e_mail': '...'}
-
-  // Deserialization (uses the factory constructor)
-  final userFromJson = User.fromJson(jsonMap);
-  print(userFromJson.userName);
-}
+final user = User.fromJson({'name': 'Ana', 'age': 30});
+print(user.toJson()); // {name: Ana, age: 30}
 ```
 
-## 4. Supported Types
+Null fields are left out of `toJson` by default (see `includeIfNull`).
 
-`easy_json` natively handles a wide variety of types without requiring custom converters:
+## Why dart_easy_json?
 
-*   **Primitives**: `int`, `double`, `bool`, `String`, `num`
-*   **Enums**: Automatically serialized/deserialized by their name.
-*   **Collections**: `List<T>`, `Set<T>`, `Map<K, V>` (where `K` is usually a String or an enum, and `V` can be any supported type, including nested collections).
-*   **DateTime**: Serialized to ISO-8601 strings, but can gracefully read from integers (milliseconds since epoch) or strings.
-*   **Uint8List (Binary Data)**: Automatically serialized to and deserialized from **Base64** strings. Extremely useful for dealing with file uploads or image blobs directly in JSON.
-*   **Uri**: Serialized to/from a `String`. `fromJsonSafe`/`validate` report `invalid_uri` for malformed values.
-*   **Duration**: Serialized to/from a `num` of **microseconds** (matches `Duration.inMicroseconds`, so no precision is lost). `fromJsonSafe` also accepts a numeric `String`.
-*   **BigInt**: Serialized to/from a decimal `String`, since JSON numbers cannot safely carry arbitrary precision (a JS/web runtime only keeps exact integers up to 2^53). `fromJsonSafe` also accepts a plain `int`/`num` for APIs that send small values as a JSON number.
-*   **Nested Models**: Any other class annotated with `@EasyJson`.
+*   **Parsing that never throws.** `fromJsonSafe` builds the object even from broken data, using sensible fallbacks, and tells you what was wrong through `onIssue` — so one bad field in an API response doesn't take down the whole screen.
+*   **Every problem, with its path.** Issues come with the exact location (`items[2].price`, `shipping.address.city`) and a stable, machine-readable `code` you can switch on.
+*   **Validation from annotations.** `@EasyValidate(minLength: 3)`, `format: EasyFormat.email`, `min`/`max`, dates in the past/future, or your own function — checked by `validate`, `fromJsonSafe` and strict mode.
+*   **Strict when you want it.** `@EasyJson(strict: true)` turns `fromJson` into "validate everything, then throw one exception listing all the problems".
+*   **Covers the real-world cases**: polymorphic unions, generic classes (`PageResponse<T>`), nested paths, custom converters, inheritance, and types like `DateTime`, `Uri`, `Duration`, `BigInt` and `Uint8List` out of the box.
 
-### Working with Lists
+## Supported types
 
-Alongside the per-object functions, `easy_json` also generates helpers to convert a whole `List` at once — handy for API responses that return an array of items:
+| Type | In JSON | Notes |
+|---|---|---|
+| `int`, `double`, `num`, `bool`, `String` | number / bool / string | `fromJsonSafe` coerces numeric strings (`"3.5"`) for `double`. |
+| Enums | the value's `name` | `fromJsonSafe` also accepts the index. |
+| `DateTime` | ISO-8601 string | Also reads milliseconds since epoch. |
+| `Uri` | string | |
+| `Duration` | number of **microseconds** | Matches `Duration.inMicroseconds`, no precision lost. |
+| `BigInt` | decimal string | JSON numbers can't safely carry big integers (a JS/web runtime only keeps exact integers up to 2^53). `fromJsonSafe` also accepts a plain number. |
+| `Uint8List` | Base64 string | |
+| `List<T>`, `Set<T>` | array | |
+| `Map<String, V>`, `Map<int, V>` | object | Keys are always strings in JSON; `int` keys are converted both ways. |
+| Other `@EasyJson` classes | object | Nested models, including lists and maps of them. |
+| Type parameters (`T`) | whatever your converter returns | See [Generic classes](#generic-classes). |
 
-```dart
-// List<dynamic> (raw JSON array) -> List<User>
-final users = userFromJsonList(jsonArray);
+Anything else can be handled with [`@EasyConvert`](#easyconvert).
 
-// Same, but never throws — reports (index, EasyIssue) for bad entries
-final users = userFromJsonSafeList(jsonArray, onIssue: (index, issue) {
-  print('Item $index: $issue');
-});
-
-// List<User> -> List<Map<String, dynamic>>
-final jsonArray = userToJsonList(users);
-```
-
-## 5. Safe Deserialization and Validation
-
-A core strength of `easy_json` is its robust error handling.
-
-### `fromJsonSafe` and `EasyIssue`
-
-The `fromJsonSafe` method **never throws an exception**. Instead, it uses fallback values for any invalid or missing fields and reports all problems through the optional `onIssue` callback.
-
-Each problem is reported as an `EasyIssue` object:
-
-```dart
-class EasyIssue {
-  final String path;   // JSON path to the problematic field (e.g., "items[2].price")
-  final String code;   // A machine-readable error code (e.g., "type_mismatch", "min_length")
-  final String message; // A human-readable description of the issue.
-}
-```
-
-**Example:**
-
-```dart
-final badJson = {
-  'user_name': 'Te', // Fails validation (too short)
-  // 'created_at' is missing (required field)
-  'e_mail': 12345,   // Wrong type
-};
-
-final issues = <EasyIssue>[];
-
-// Use fromJsonSafe to parse the invalid JSON
-final user = User.fromJsonSafe(badJson, onIssue: issues.add);
-
-// The 'user' object is still created successfully with fallback values:
-// user.userName -> '' (default fallback for String)
-// user.createdAt -> DateTime(0) (default fallback for DateTime)
-// user.email -> null (since it's nullable)
-
-print('Found ${issues.length} issues:');
-for (final issue in issues) {
-  print('- ${issue.path}: ${issue.code} (${issue.message})');
-}
-/* Output:
-Found 3 issues:
-- user_name: min_length (Value 'Te' must have at least 3 characters.)
-- created_at: missing_required (Field is required but was not found.)
-- e_mail: type_mismatch (Expected a value of type String, but got a value of type int.)
-*/
-```
-
-### Standalone Validation
-
-If you only need to validate a JSON payload without the overhead of creating an object, use the static `validate` method from the generated companion class (`UserJson`).
-
-```dart
-final problems = UserJson.validate(badJson);
-
-if (problems.isNotEmpty) {
-  print('The JSON is invalid!');
-  // ... handle errors ...
-}
-```
-
-## 5. Declarative Validation with `@EasyValidate`
-
-Define powerful validation rules directly on your model fields. These are automatically checked by `fromJsonSafe` and `validate`.
+## Safe parsing with `fromJsonSafe`
 
 ```dart
 @EasyJson()
-class Product {
-  @EasyValidate(minLength: 3, maxLength: 50)
+class Product with ProductSerializer {
+  @EasyValidate(minLength: 3)
   final String name;
-
-  @EasyValidate(min: 0, max: 9999.99)
   final double price;
-
-  @EasyValidate(format: EasyFormat.uuid)
-  final String sku;
-
-  @EasyValidate(past: true)
-  final DateTime? listedDate;
-
-  @EasyValidate(custom: MyValidators.isStockAvailable)
   final int stock;
 
-  // ... constructor and factories ...
-}
+  Product({required this.name, required this.price, required this.stock});
 
-// Custom validation functions must be static or top-level.
-class MyValidators {
-  static bool isStockAvailable(int stock) => stock >= 0;
+  factory Product.fromJsonSafe(
+    Map<String, dynamic> json, {
+    void Function(EasyIssue)? onIssue,
+  }) => productFromJsonSafe(json, onIssue: onIssue);
 }
 ```
 
-#### Supported Validation Rules
+```dart
+final issues = <EasyIssue>[];
+final product = Product.fromJsonSafe(
+  {'name': 'TV', 'price': 'cheap'},
+  onIssue: issues.add,
+);
 
-*   **For `String`, `List`, `Set`, `Map`**:
-    *   `minLength`, `maxLength`
-*   **For `num` (`int`, `double`)**:
-    *   `min`, `max`
-*   **For `String`**:
-    *   `regex`: A regular expression pattern.
-    *   `format`: Pre-defined formats like `EasyFormat.email`, `EasyFormat.url`, `EasyFormat.uuid`.
-*   **For `DateTime`**:
-    *   `past`: The date must be in the past.
-    *   `future`: The date must be in the future.
-*   **For any type**:
-    *   `custom`: A `bool Function(T value)` that returns `true` if the value is valid.
+// The object is still built, with fallbacks for what was wrong:
+// product.name == 'TV', product.price == 0.0, product.stock == 0
 
-## 6. Class Inheritance (Clean Architecture / DDD)
+for (final issue in issues) print(issue);
+// [min_length] name: Must have at least 3 characters.
+// [type_mismatch] price: Expected number.
+// [missing_required] stock: Missing required field.
+```
 
-`easy_json` seamlessly supports class inheritance. If you use an architecture where you have base Entities and need to create a Model to process the API JSON, the inherited attributes from the parent class will be read and mapped automatically.
+Each `EasyIssue` has a `path`, a `code` (see [Issue codes](#issue-codes)) and a human-readable `message`. Per-field fallbacks can be customized with [`@EasyKey(fallback: ...)`](#easykey).
+
+### Validating without parsing
+
+Every model also gets a `validate` function (and a static `validate` on the generated `${Class}Json` companion class) that only checks the payload, without building the object:
+
+```dart
+final problems = ProductJson.validate({'name': 'TV', 'price': 'cheap'});
+if (problems.isNotEmpty) {
+  // reject the request, show the errors, ...
+}
+```
+
+## Validation rules with `@EasyValidate`
+
+```dart
+@EasyJson()
+class Account with AccountSerializer {
+  @EasyValidate(minLength: 3, maxLength: 20, regex: r'^[a-z0-9_]+$')
+  final String username;
+
+  @EasyValidate(format: EasyFormat.email)
+  final String email;
+
+  @EasyValidate(min: 18, max: 120)
+  final int age;
+
+  @EasyValidate(past: true)
+  final DateTime birthDate;
+
+  @EasyValidate(custom: Rules.isEven)
+  final int luckyNumber;
+
+  // ... constructor
+}
+
+// Custom validators must be static methods or top-level functions.
+class Rules {
+  static bool isEven(int value) => value.isEven;
+}
+```
+
+| Rule | Applies to |
+|---|---|
+| `minLength`, `maxLength` | `String` (characters), `List`/`Set`/`Map` (elements) |
+| `regex` | `String` |
+| `format` (`EasyFormat.email`, `.url`, `.uuid`) | `String` |
+| `min`, `max` (inclusive) | `int`, `double`, `num` |
+| `past`, `future` | `DateTime` |
+| `custom` | any type — a `bool Function(FieldType value)` |
+
+Rules are checked by `validate`, by `fromJsonSafe` (as issues) and by `fromJson` in [strict mode](#strict-mode).
+
+## Strict mode
+
+By default, the plain `fromJson` fails on bad data with whatever Dart's own casts throw — usually a `TypeError` that doesn't say which field was wrong. With `strict: true`, `fromJson` validates first and throws an `EasyValidationException` listing **every** problem:
+
+```dart
+@EasyJson(strict: true)
+class SignUp with SignUpSerializer {
+  final String name;
+  final int age;
+
+  @EasyValidate(format: EasyFormat.email)
+  final String email;
+
+  SignUp({required this.name, required this.age, required this.email});
+}
+```
+
+```dart
+try {
+  signUpFromJson({'age': 'forty', 'email': 'ana@'});
+} on EasyValidationException catch (e) {
+  print(e);
+  // EasyValidationException: 3 issue(s) found
+  //   [missing_required] name: Missing required field.
+  //   [type_mismatch] age: Expected int.
+  //   [invalid_email] email: Invalid email.
+}
+```
+
+Issues in nested objects and list items keep their full path (`shipping.number`, `products[1].id`). Strict mode also works on [unions](#unions), where an unknown discriminator becomes an `unknown_union_type` issue. `fromJsonSafe` and `validate` behave the same with or without it.
+
+## Working with lists
+
+Besides the per-object functions, each model gets helpers to convert a whole JSON array at once:
+
+```dart
+final users = userFromJsonList(jsonArray); // List<dynamic> -> List<User>
+
+// Never throws; reports which item each issue came from.
+userFromJsonSafeList(jsonArray, onIssue: (index, issue) {
+  print('item $index: $issue'); // item 1: [type_mismatch] age: Expected int.
+});
+
+final back = userToJsonList(users); // List<User> -> List<Map<String, dynamic>>
+```
+
+## Generic classes
+
+Classes with type parameters are supported. The generator can't know how to convert `T`, so the generated functions take one converter per type parameter — `fromJsonT` to read and `toJsonT` to write (the same convention as `json_serializable`):
+
+```dart
+@EasyJson()
+class PageResponse<T> with PageResponseSerializer<T> {
+  final List<T> items;
+  final int total;
+
+  PageResponse({required this.items, required this.total});
+}
+```
+
+```dart
+final page = pageResponseFromJson(
+  json,
+  (item) => User.fromJson(item as Map<String, dynamic>),
+);
+
+final out = page.toJson((user) => user.toJson());
+```
+
+One `PageResponse<T>` serves every paginated endpoint, instead of a `UserPage`, `ProductPage`, ... per model. With several type parameters you pass one converter each, in declaration order (`pairFromJson(json, fromJsonA, fromJsonB)`); bounds like `<T extends Base>` are preserved; the companion class and list helpers take the same converters.
+
+**Current limitations** — these fail at build time with a clear message instead of generating broken code:
+
+*   Generic fields can be `T`, `T?` or `List<T>`. `Set<T>`, `Map<K, T>` and nested collections like `List<List<T>>` aren't supported yet.
+*   A generic `@EasyJson` class can't be used as another field's type yet (e.g. `final PageResponse<User> page;`).
+*   Generic `@EasyUnion` classes and fields inherited from a generic superclass aren't supported yet.
+*   In `fromJsonSafe`, a nullable `T?` whose converter throws is reported and becomes `null`; a non-nullable `T` has no possible fallback, so it's only as safe as the converter you pass.
+
+## Unions
+
+`@EasyUnion` handles polymorphic JSON: a `discriminator` field decides which subclass to build.
+
+```dart
+@EasyJson()
+@EasyUnion(
+  discriminator: 'type',
+  mapping: {'text': TextPost, 'video': VideoPost},
+  fallback: UnknownPost,
+)
+sealed class Post {
+  Map<String, dynamic> toJson();
+}
+
+@EasyJson()
+class TextPost extends Post with TextPostSerializer {
+  final String content;
+  TextPost({required this.content});
+  factory TextPost.fromJson(Map<String, dynamic> json) => textPostFromJson(json);
+}
+
+@EasyJson()
+class VideoPost extends Post with VideoPostSerializer {
+  final String url;
+  VideoPost({required this.url});
+  factory VideoPost.fromJson(Map<String, dynamic> json) => videoPostFromJson(json);
+}
+
+@EasyJson()
+class UnknownPost extends Post with UnknownPostSerializer {
+  UnknownPost();
+  factory UnknownPost.fromJson(Map<String, dynamic> json) => unknownPostFromJson(json);
+}
+```
+
+```dart
+final posts = [
+  {'type': 'text', 'content': 'Hello'},
+  {'type': 'video', 'url': 'https://youtu.be/x'},
+  {'type': 'poll'},
+].map(postFromJson).toList();
+// [TextPost, VideoPost, UnknownPost]
+```
+
+Each subclass needs a `factory X.fromJson` delegating to its generated function — the union's `fromJson` calls it. Without a `fallback`, an unknown type throws in `fromJson` (or is reported, in [strict mode](#strict-mode)). A field typed `List<Post>` in another model is dispatched the same way.
+
+## Inheritance
+
+Fields inherited from a superclass are serialized too, which fits architectures where a plain entity is extended by a JSON model:
 
 ```dart
 class UserEntity {
@@ -306,143 +299,184 @@ class UserEntity {
 
 @EasyJson(caseStyle: CaseStyle.snake)
 class UserModel extends UserEntity with UserModelSerializer {
-  // The emailAddress field will be automatically serialized as "email_address" 
-  // due to the caseStyle declared in the child class's @EasyJson annotation.
-  
-  UserModel({
-    required super.emailAddress,
-  });
-
-  factory UserModel.fromJson(Map<String, dynamic> json) => userModelFromJson(json);
+  UserModel({required super.emailAddress});
 }
+
+print(UserModel(emailAddress: 'a@b.com').toJson()); // {email_address: a@b.com}
 ```
 
-### Applying Annotations to Inherited Fields
+To annotate an inherited field (a custom key, a validation rule, ...), `@override` it in the subclass and annotate it there.
 
-If the global behavior (like `caseStyle`) is not enough and you need to apply a specific annotation to an inherited attribute (e.g., a custom key name or field validation), simply `@override` this field in the child class and annotate it there:
+## Annotation reference
 
-```dart
-@EasyJson()
-class UserModel extends UserEntity with UserModelSerializer {
-  @override
-  @EasyKey(name: 'custom_email_address')
-  final String emailAddress;
-
-  UserModel({
-    required this.emailAddress,
-  }) : super(emailAddress: emailAddress);
-
-  factory UserModel.fromJson(Map<String, dynamic> json) => userModelFromJson(json);
-}
-```
-
-## 7. Advanced Customization
-
-### Read-Only and Write-Only Models (`fromJson`, `toJson`)
-
-You can optimize the generated code by omitting serialization or deserialization methods for models that only go in one direction.
-
-*   `@EasyJson(toJson: false)`: Generates only `fromJson`, `fromJsonSafe`, and `validate`. Ideal for API response models (read-only) to avoid generating dead code.
-*   `@EasyJson(fromJson: false)`: Generates only `toJson`. Ideal for API request payloads (write-only).
+This model uses most of the field annotations at once:
 
 ```dart
-// Read-only model: will not generate a toJson() method or Serializer mixin.
-@EasyJson(toJson: false)
-class ApiResponse {
-  final int id;
-  // ...
+class EpochMs {
+  static DateTime fromJson(Object? v) =>
+      DateTime.fromMillisecondsSinceEpoch(v as int, isUtc: true);
+  static int toJson(DateTime v) => v.millisecondsSinceEpoch;
 }
 
-// Write-only model: will not generate fromJson(), fromJsonSafe(), or validate().
-@EasyJson(fromJson: false)
-class CreateUserPayload with CreateUserPayloadSerializer {
-  final String email;
-  final String password;
-  // ...
-}
-```
+@EasyJson(caseStyle: CaseStyle.snake)
+class Order with OrderSerializer {
+  @EasyKey(name: '_id')
+  final String id;
 
-### `@EasyKey` Annotation
+  final String customerName; // -> "customer_name"
 
-Use `@EasyKey` to control field-specific behavior:
-*   `name`: Overrides the JSON key name (e.g., `@EasyKey(name: '_id')`).
-*   `includeIfNull`: Overrides the class-level `includeIfNull` setting for this field.
-*   `fallback`: Provides a specific fallback value for `fromJsonSafe` (e.g., `@EasyKey(fallback: -1)`).
-*   `itemFallback`: Provides a fallback for items in a collection (`List`, `Set`, `Map`).
-*   `enumFallback`: The `name` of the enum value to use as a fallback.
+  @EasyPath('shipping.address.city')
+  final String city;
 
-### `@EasyIgnore` Annotation
-
-Use `@EasyIgnore` to exclude a field from both serialization (`toJson`) and deserialization (`fromJson`).
-
-```dart
-@EasyJson()
-class User {
-  final String username;
-
-  @EasyIgnore()
-  final String internalSecret; // Will not be read from or written to JSON
-
-  User({required this.username, this.internalSecret = ''});
-}
-```
-
-### `@EasyPath` Annotation
-
-Use `@EasyPath` to map a field directly to a nested value in the JSON structure using dot notation. This is useful for flattening complex JSON responses without creating intermediate classes.
-
-```dart
-@EasyJson()
-class Product {
-  // Maps to json['meta']['stock']['count']
-  @EasyPath('meta.stock.count')
-  final int stockCount;
-
-  Product({required this.stockCount});
-}
-```
-
-### `@EasyUnion` Annotation (Polymorphism)
-
-Use `@EasyUnion` to seamlessly serialize and deserialize polymorphic types (sealed classes or abstract classes). It uses a `discriminator` field in the JSON to route deserialization to the correct subclass.
-
-```dart
-@EasyJson()
-@EasyUnion(discriminator: 'type', mapping: {
-  'text': TextPost,
-  'video': VideoPost,
-}, fallback: UnknownPost)
-sealed class Post {
-  Map<String, dynamic> toJson();
-}
-
-@EasyJson()
-class TextPost extends Post with TextPostSerializer {
-  final String content;
-  TextPost({required this.content});
-}
-```
-
-With this, you can parse a `List<Post>` effortlessly, and `easy_json` will correctly dispatch JSON objects to `TextPost`, `VideoPost`, or your provided `fallback` class.
-
-### `@EasyConvert` Annotation
-
-For complex types or custom formats, use `@EasyConvert` to provide your own `fromJson` and `toJson` functions.
-
-```dart
-class MillisecondsSinceEpochConverter {
-  static DateTime fromJson(int ms) => DateTime.fromMillisecondsSinceEpoch(ms, isUtc: true);
-  static int toJson(DateTime dt) => dt.millisecondsSinceEpoch;
-}
-
-@EasyJson()
-class Order {
-  @EasyConvert(
-    fromJson: MillisecondsSinceEpochConverter.fromJson,
-    toJson: MillisecondsSinceEpochConverter.toJson
-  )
+  @EasyConvert(fromJson: EpochMs.fromJson, toJson: EpochMs.toJson)
   final DateTime createdAt;
 
-  // ... constructor and factories ...
+  @EasyMapKey(type: EasyMapKeyType.int)
+  final Map<int, int> quantities;
+
+  @EasyIgnore()
+  final bool selected;
+
+  Order({
+    required this.id,
+    required this.customerName,
+    required this.city,
+    required this.createdAt,
+    required this.quantities,
+    this.selected = false,
+  });
 }
 ```
+
+```dart
+final order = orderFromJson({
+  '_id': 'A-1',
+  'customer_name': 'Ana',
+  'shipping': {'address': {'city': 'Curitiba'}},
+  'created_at': 1700000000000,
+  'quantities': {'10': 2, '20': 1},
+});
+
+print(order.toJson());
+// {_id: A-1, customer_name: Ana, created_at: 1700000000000,
+//  quantities: {10: 2, 20: 1}, shipping: {address: {city: Curitiba}}}
+```
+
+### `@EasyJson`
+
+| Parameter | Default | |
+|---|---|---|
+| `caseStyle` | `null` | Key style for fields without an explicit name: `CaseStyle.snake`, `.kebab`, `.camel`, `.pascal`, `.none`. |
+| `includeIfNull` | `false` | Whether `toJson` writes null fields. |
+| `strict` | `false` | See [Strict mode](#strict-mode). |
+| `fromJson` / `toJson` | `true` | Set one to `false` to skip generating that direction (see below). |
+
+### `@EasyKey`
+
+*   `name`: the JSON key for this field (overrides `caseStyle`).
+*   `includeIfNull`: overrides the class setting for this field.
+*   `fallback`: value used by `fromJsonSafe` when the field is missing or invalid (e.g. `@EasyKey(fallback: -1)`).
+*   `itemFallback`: same, for each item of a collection.
+*   `enumFallback`: the `name` of the enum value to use as fallback.
+
+### `@EasyPath`
+
+Reads the field from a nested location (`'shipping.address.city'`) without writing intermediate classes. `toJson` writes it back at the same nested location, so the output can be read again.
+
+### `@EasyConvert`
+
+Your own conversion functions for the field (`fromJson`/`toJson`), or for each value of a `Map` (`valueFromJson`/`valueToJson`). They must be static methods or top-level functions.
+
+### `@EasyMapKey`
+
+Converts JSON object keys (always strings) to `int` keys: `{"10": 2}` becomes `Map<int, int>{10: 2}`, and back to strings in `toJson`. `Map<int, V>` fields do this even without the annotation.
+
+### `@EasyIgnore`
+
+Leaves the field out of both reading and writing. Since `fromJson` won't pass it, the constructor parameter must be optional (a default value, or nullable).
+
+### Read-only and write-only models
+
+Skip the code you don't need for models that only go one way:
+
+```dart
+@EasyJson(toJson: false) // only fromJson / fromJsonSafe / validate
+class LoginResponse {
+  final String token;
+  LoginResponse({required this.token});
+}
+
+@EasyJson(fromJson: false) // only toJson
+class LoginRequest with LoginRequestSerializer {
+  final String user;
+  final String password;
+  LoginRequest({required this.user, required this.password});
+}
+```
+
+## Issue codes
+
+The `code` of an `EasyIssue` is stable and safe to switch on.
+
+| Code | Meaning |
+|---|---|
+| `missing_required` | A non-nullable field without a default value is missing. |
+| `type_mismatch` | The value has the wrong type (e.g. a string where a number was expected). |
+| `null_not_allowed` | A collection item is `null` but its type isn't nullable. |
+| `invalid_enum` | A string that isn't the name of any enum value. |
+| `invalid_enum_index` | An integer outside the enum's index range. |
+| `key_type_mismatch` | A map key that can't be converted to the key type. |
+| `invalid_uri` | A string that isn't a valid URI. |
+| `invalid_bigint` | A string that isn't a valid integer. |
+| `invalid_base64` | A string that isn't valid Base64 (`Uint8List`). |
+| `min_length`, `max_length` | `@EasyValidate(minLength / maxLength)` failed. |
+| `regex_mismatch` | `@EasyValidate(regex)` failed. |
+| `invalid_email`, `invalid_url`, `invalid_uuid` | `@EasyValidate(format)` failed. |
+| `min_value`, `max_value` | `@EasyValidate(min / max)` failed. |
+| `must_be_past`, `must_be_future` | `@EasyValidate(past / future)` failed. |
+| `custom_validation_failed` | `@EasyValidate(custom)` returned `false`. |
+| `unknown_union_type` | The discriminator doesn't match any class in `@EasyUnion`'s `mapping`. |
+
+## Configuration
+
+### Putting generated files in a separate folder
+
+By default, `user.easy.dart` is created next to `user.dart`. To keep generated files in their own folder, add a `build.yaml` to your project:
+
+```yaml
+targets:
+  $default:
+    builders:
+      dart_easy_json:easy_json_builder:
+        options:
+          build_extensions:
+            "^lib/{{}}.dart": "lib/generated/{{}}.easy.dart"
+```
+
+Then import them from there: `import 'package:my_app/generated/models/user.easy.dart';`.
+
+### Analyzer
+
+The generated files only import public libraries, so no analyzer configuration is needed. If you prefer to keep them out of your lint reports anyway:
+
+```yaml
+# analysis_options.yaml
+analyzer:
+  exclude:
+    - "**.easy.dart"
+```
+
+## API stability
+
+`dart_easy_json` follows [semantic versioning](https://semver.org) since `1.0.0`. These are part of the public API — breaking any of them requires a major version:
+
+*   The annotations and their parameters: `@EasyJson`, `@EasyKey`, `@EasyValidate`, `@EasyUnion`, `@EasyConvert`, `@EasyMapKey`, `@EasyIgnore`, `@EasyPath`, `CaseStyle`, `EasyFormat`.
+*   The names of generated code: `${x}FromJson`, `${x}ToJson`, `${x}Validate`, `${x}FromJsonSafe`, `${x}FromJsonList`, `${x}FromJsonSafeList`, `${x}ToJsonList`, the `${Class}Serializer` mixin, the `${Class}Json` companion class and, for generic classes, the `fromJson${T}` / `toJson${T}` converter parameters.
+*   The shape of `EasyIssue` (`path` / `code` / `message`), the [issue codes](#issue-codes) and `EasyValidationException`.
+*   The public exports of `package:dart_easy_json/easy_json.dart` and `package:dart_easy_json/runtime.dart`.
+
+`@EasyConvert`'s functions are intentionally untyped (`Function?`) rather than generic, trading compile-time checking of the converter for flexibility. Anything under `lib/src/` is internal and may change in any release.
+
+## Changelog
+
+See [CHANGELOG.md](CHANGELOG.md).

@@ -65,6 +65,13 @@ class EasyJsonGenerator extends Generator {
         _collectReferencedClasses(f.type, referenced);
       }
 
+      // Bounds dos parâmetros de tipo (`class X<T extends Base>`) também
+      // aparecem no código gerado.
+      for (final tp in clazz.typeParameters) {
+        final bound = tp.bound;
+        if (bound != null) _collectReferencedClasses(bound, referenced);
+      }
+
       for (final cls in referenced) {
         // Ignora tipos do SDK
         if (cls.library.uri.scheme == 'dart') continue;
@@ -166,11 +173,21 @@ class EasyJsonGenerator extends Generator {
         ),
     ].where((c) => !c.isIgnored).toList();
 
+    // === Genéricos / strict ===
+    final generics = _Generics(clazz);
+    for (final c in contexts) {
+      _checkGenericSupport(c, generics);
+    }
+    // `ApiResponse<T>` para classes genéricas, `User` para as demais.
+    final classRef = '$className${generics.args}';
+    final strict = (annotation.peek('strict')?.literalValue as bool?) ?? false;
+
     // === Render fromJson / toJson / validate / fromJsonSafe ===
     final fromJsonBody = contexts
       .map((c) => "${c.name}: ${_pick(c).fromJson(c)},")
       .join('\n');
     final toJsonBody = contexts
+      .where((c) => c.easyPath == null)
       .map((c) {
         final s = _pick(c).toJson(c);
         if (!c.isNullable) return "'${c.jsonKey}': $s,";
@@ -179,6 +196,19 @@ class EasyJsonGenerator extends Generator {
           : "if (${c.instanceAccess} != null) '${c.jsonKey}': $s,";
       })
       .join('\n');
+
+    // Campos com @EasyPath são escritos aninhados (mesmo formato que o
+    // fromJson lê), então saem do literal e viram chamadas a ej.writePath.
+    final pathFields = contexts.where((c) => c.easyPath != null).toList();
+    final toJsonCode = pathFields.isEmpty
+        ? 'return <String, dynamic>{$toJsonBody};'
+        : [
+            'final json = <String, dynamic>{$toJsonBody};',
+            for (final c in pathFields)
+              '${!c.isNullable || c.emitNulls ? '' : 'if (${c.instanceAccess} != null) '}'
+                  'ej.writePath(json, const [${c.easyPath!.split('.').map(_quote).join(', ')}], ${_pick(c).toJson(c)});',
+            'return json;',
+          ].join('\n');
 
     final validateBuf = StringBuffer()
       ..writeln("final issues = <EasyIssue>[];");
@@ -194,10 +224,22 @@ class EasyJsonGenerator extends Generator {
     // === Métodos ===
     final emitter = DartEmitter();
 
+    // strict: valida tudo antes e lança EasyValidationException com todos os
+    // problemas; se passar, constrói pelo caminho safe (que aceita tudo que
+    // o validate aceita), então nunca sobra um TypeError cru.
+    final fromJsonCode = strict
+        ? '''
+          final issues = ${varName}Validate${generics.args}(json);
+          if (issues.isNotEmpty) throw EasyValidationException(issues);
+          return ${varName}FromJsonSafe${generics.args}(json${generics.fromJsonArgs}, runValidate: false);
+        '''
+        : 'return $classRef($fromJsonBody);';
+
     Method mFromJson() => Method(
       (b) => b
         ..name = '${varName}FromJson'
-        ..returns = refer(className)
+        ..types.addAll(generics.typeRefs)
+        ..returns = refer(classRef)
         ..requiredParameters.add(
           Parameter(
             (p) => p
@@ -205,26 +247,32 @@ class EasyJsonGenerator extends Generator {
               ..type = refer('Map<String, dynamic>'),
           ),
         )
-        ..body = Code('return $className($fromJsonBody);'),
+        ..requiredParameters.addAll(generics.fromJsonParams)
+        ..body = Code(fromJsonCode),
     );
 
     Method mToJson() => Method(
       (b) => b
         ..name = '${varName}ToJson'
+        ..types.addAll(generics.typeRefs)
         ..returns = refer('Map<String, dynamic>')
         ..requiredParameters.add(
           Parameter(
             (p) => p
               ..name = 'instance'
-              ..type = refer(className),
+              ..type = refer(classRef),
           ),
         )
-        ..body = Code('return <String, dynamic>{$toJsonBody};'),
+        ..requiredParameters.addAll(generics.toJsonParams)
+        ..body = Code(toJsonCode),
     );
 
     Method mValidate() => Method(
       (b) => b
         ..name = '${varName}Validate'
+        // Genérico só para que `T` esteja em escopo caso alguma regra o
+        // mencione; nenhum conversor é necessário para validar.
+        ..types.addAll(generics.typeRefs)
         ..returns = refer('List<EasyIssue>')
         ..requiredParameters.add(
           Parameter(
@@ -239,7 +287,8 @@ class EasyJsonGenerator extends Generator {
     Method mFromJsonSafe() => Method(
       (b) => b
         ..name = '${varName}FromJsonSafe'
-        ..returns = refer(className)
+        ..types.addAll(generics.typeRefs)
+        ..returns = refer(classRef)
         ..requiredParameters.add(
           Parameter(
             (p) => p
@@ -247,6 +296,7 @@ class EasyJsonGenerator extends Generator {
               ..type = refer('Map<String, dynamic>'),
           ),
         )
+        ..requiredParameters.addAll(generics.fromJsonParams)
         ..optionalParameters.addAll([
           Parameter(
             (p) => p
@@ -264,10 +314,10 @@ class EasyJsonGenerator extends Generator {
         ])
         ..body = Code("""
         if (runValidate) {
-          final _issues = ${varName}Validate(json);
+          final _issues = ${varName}Validate${generics.args}(json);
           if (onIssue != null) { for (final i in _issues) onIssue(i); }
         }
-        return $className(
+        return $classRef(
           $fromJsonSafeBody
         );
       """),
@@ -275,16 +325,20 @@ class EasyJsonGenerator extends Generator {
 
     final mixin = MixinBuilder()
       ..name = '${className}Serializer'
+      ..types.addAll(generics.typeRefs)
       ..methods.add(
         Method(
           (b) => b
             ..name = 'toJson'
             ..returns = refer('Map<String, dynamic>')
-            ..body = Code('return ${varName}ToJson(this as $className);'),
+            ..requiredParameters.addAll(generics.toJsonParams)
+            ..body = Code(
+              'return ${varName}ToJson${generics.args}(this as $classRef${generics.toJsonArgs});',
+            ),
         ),
       );
 
-    final companion = _companionClass(className, varName);
+    final companion = _companionClass(className, varName, generics);
 
     final src =
         '''
@@ -294,7 +348,7 @@ class EasyJsonGenerator extends Generator {
         ${generateFromJson ? mValidate().accept(emitter) : ''}
         ${generateFromJson ? mFromJsonSafe().accept(emitter) : ''}
         ${generateFromJson ? companion.accept(emitter) : ''}
-        ${_listHelpers(className, varName, generateFromJson: generateFromJson, generateToJson: generateToJson)}
+        ${_listHelpers(className, varName, generics, generateFromJson: generateFromJson, generateToJson: generateToJson)}
     ''';
 
     return src;
@@ -305,15 +359,31 @@ class EasyJsonGenerator extends Generator {
     final varName = _lcFirst(className);
     final generateFromJson = (jsonAnn.peek('fromJson')?.literalValue as bool?) ?? true;
     final generateToJson = (jsonAnn.peek('toJson')?.literalValue as bool?) ?? true;
+    final strict = (jsonAnn.peek('strict')?.literalValue as bool?) ?? false;
+
+    if (clazz.typeParameters.isNotEmpty) {
+      throw InvalidGenerationSourceError(
+        '`$className` is a generic @EasyUnion, which is not supported yet.',
+        element: clazz,
+      );
+    }
+    final generics = _Generics(clazz); // sempre vazio aqui
 
     final discriminator = unionAnn.peek('discriminator')!.stringValue;
-    
+
     final mappingMap = unionAnn.peek('mapping')!.mapValue;
     final mapping = <String, String>{};
     for (final entry in mappingMap.entries) {
       final k = entry.key!.toStringValue()!;
-      final v = entry.value!.toTypeValue()!.element!.displayName;
-      mapping[k] = v;
+      final type = entry.value!.toTypeValue()!;
+      if (type is InterfaceType && type.element.typeParameters.isNotEmpty) {
+        throw InvalidGenerationSourceError(
+          '@EasyUnion on `$className` maps \'$k\' to the generic class '
+          '`${type.element.displayName}`, which is not supported yet.',
+          element: clazz,
+        );
+      }
+      mapping[k] = type.element!.displayName;
     }
 
     final fallbackType = unionAnn.peek('fallback')?.typeValue.element?.displayName;
@@ -335,6 +405,16 @@ class EasyJsonGenerator extends Generator {
     }
     fromJsonBuf.writeln("}");
 
+    // strict: mesma ideia das classes normais — valida (inclusive o
+    // discriminator) e só então delega para o caminho safe.
+    final fromJsonCode = strict
+        ? '''
+          final issues = ${varName}Validate(json);
+          if (issues.isNotEmpty) throw EasyValidationException(issues);
+          return ${varName}FromJsonSafe(json, runValidate: false);
+        '''
+        : fromJsonBuf.toString();
+
     Method mFromJson() => Method(
       (b) => b
         ..name = '${varName}FromJson'
@@ -346,7 +426,7 @@ class EasyJsonGenerator extends Generator {
               ..type = refer('Map<String, dynamic>'),
           ),
         )
-        ..body = Code(fromJsonBuf.toString()),
+        ..body = Code(fromJsonCode),
     );
 
     // validate
@@ -456,7 +536,7 @@ class EasyJsonGenerator extends Generator {
         ),
       );
 
-    final companion = _companionClass(className, varName);
+    final companion = _companionClass(className, varName, generics);
 
     final src = '''
       ${generateFromJson ? mFromJson().accept(emitter) : ''}
@@ -466,7 +546,7 @@ class EasyJsonGenerator extends Generator {
       ${generateFromJson ? mValidate().accept(emitter) : ''}
       ${generateFromJson ? mFromJsonSafe().accept(emitter) : ''}
       ${generateFromJson ? companion.accept(emitter) : ''}
-      ${_listHelpers(className, varName, generateFromJson: generateFromJson, generateToJson: generateToJson)}
+      ${_listHelpers(className, varName, generics, generateFromJson: generateFromJson, generateToJson: generateToJson)}
     ''';
 
     return src;
@@ -476,23 +556,27 @@ class EasyJsonGenerator extends Generator {
   /// `${varName}FromJsonList`, `${varName}FromJsonSafeList` e `${varName}ToJsonList`.
   String _listHelpers(
     String className,
-    String varName, {
+    String varName,
+    _Generics generics, {
     required bool generateFromJson,
     required bool generateToJson,
   }) {
     final buf = StringBuffer();
+    final classRef = '$className${generics.args}';
+    final args = generics.args;
+    final decl = generics.decl;
 
     if (generateFromJson) {
       buf.writeln("""
-        List<$className> ${varName}FromJsonList(List<dynamic> json) =>
-            json.map((e) => ${varName}FromJson(e as Map<String, dynamic>)).toList();
+        List<$classRef> ${varName}FromJsonList$decl(List<dynamic> json${generics.fromJsonParamsDecl}) =>
+            json.map((e) => ${varName}FromJson$args(e as Map<String, dynamic>${generics.fromJsonArgs})).toList();
 
-        List<$className> ${varName}FromJsonSafeList(
-          List<dynamic> json, {
+        List<$classRef> ${varName}FromJsonSafeList$decl(
+          List<dynamic> json${generics.fromJsonParamsDecl}, {
           void Function(int index, EasyIssue issue)? onIssue,
           bool runValidate = true,
-        }) => json.asMap().entries.map((entry) => ${varName}FromJsonSafe(
-              entry.value as Map<String, dynamic>,
+        }) => json.asMap().entries.map((entry) => ${varName}FromJsonSafe$args(
+              entry.value as Map<String, dynamic>${generics.fromJsonArgs},
               onIssue: onIssue == null ? null : (i) => onIssue(entry.key, i),
               runValidate: runValidate,
             )).toList();
@@ -501,16 +585,72 @@ class EasyJsonGenerator extends Generator {
 
     if (generateToJson) {
       buf.writeln("""
-        List<Map<String, dynamic>> ${varName}ToJsonList(List<$className> items) =>
-            items.map((e) => ${varName}ToJson(e)).toList();
+        List<Map<String, dynamic>> ${varName}ToJsonList$decl(List<$classRef> items${generics.toJsonParamsDecl}) =>
+            items.map((e) => ${varName}ToJson$args(e${generics.toJsonArgs})).toList();
       """);
     }
 
     return buf.toString();
   }
 
+  /// Garante que o gerador sabe lidar com o tipo do campo quando há genéricos
+  /// envolvidos. Casos não suportados viram um erro claro no build, em vez de
+  /// gerar código que não compila.
+  void _checkGenericSupport(FieldContext c, _Generics generics) {
+    final t = c.type;
+    final where =
+        '`${c.enclosingClass.displayName}.${c.name}` (`${t.getDisplayString()}`)';
+
+    if (_usesGenericEasyJsonClass(t)) {
+      throw InvalidGenerationSourceError(
+        'Field $where uses a generic @EasyJson class as its type, '
+        'which is not supported yet.',
+        element: c.element,
+      );
+    }
+
+    final DartType? typeParam = t is TypeParameterType
+        ? t
+        : (c.isList && c.listItemType is TypeParameterType ? c.listItemType : null);
+
+    if (typeParam != null) {
+      if (!generics.names.contains(displayNonNull(typeParam))) {
+        throw InvalidGenerationSourceError(
+          'Field $where uses a type parameter that is not declared by '
+          '`${c.enclosingClass.displayName}` (e.g. a field inherited from a '
+          'generic superclass), which is not supported yet.',
+          element: c.element,
+        );
+      }
+      return;
+    }
+
+    if (_containsTypeParameter(t)) {
+      throw InvalidGenerationSourceError(
+        'Field $where: generic fields are only supported as `T`, `T?` or '
+        '`List<T>` for now.',
+        element: c.element,
+      );
+    }
+  }
+
+  bool _containsTypeParameter(DartType t) {
+    if (t is TypeParameterType) return true;
+    if (t is InterfaceType) return t.typeArguments.any(_containsTypeParameter);
+    return false;
+  }
+
+  /// `ApiResponse<User>`, `List<ApiResponse<User>>`, ... — uma classe
+  /// @EasyJson genérica usada como tipo de campo.
+  bool _usesGenericEasyJsonClass(DartType t) {
+    if (t is! InterfaceType) return false;
+    if (t.typeArguments.isNotEmpty && isEasyJsonClass(t)) return true;
+    return t.typeArguments.any(_usesGenericEasyJsonClass);
+  }
+
   // ===== infra =====
   TypeStrategy _pick(FieldContext c) {
+    if (c.isTypeParameter) return GenericStrategy();
     if (c.isEnum) return EnumStrategy();
     if (c.isEasyJsonObject) return ObjectStrategy();
     if (c.isList) return ListStrategy();
@@ -572,6 +712,10 @@ class EasyJsonGenerator extends Generator {
   String _lcFirst(String s) =>
       s.isEmpty ? s : (s[0].toLowerCase() + s.substring(1));
 
+  /// Literal de string Dart (aspas simples) com escape de `\`, `'` e `$`.
+  String _quote(String s) =>
+      "'${s.replaceAll(r'\', r'\\').replaceAll("'", r"\'").replaceAll(r'$', r'\$')}'";
+
   CaseStyle? _readClassCaseStyle(ConstantReader classAnn) {
     final peek = classAnn.peek('caseStyle');
     if (peek == null || peek.isNull) return null;
@@ -583,7 +727,10 @@ class EasyJsonGenerator extends Generator {
     );
   }
 
-  Class _companionClass(String className, String varName) => Class((b) {
+  Class _companionClass(String className, String varName, _Generics generics) => Class((b) {
+    // Métodos estáticos não enxergam parâmetros de tipo da classe, então os
+    // genéricos ficam nos próprios métodos: `ApiResponseJson.fromJson<T>(...)`.
+    final classRef = '$className${generics.args}';
     b
       ..name = '${className}Json'
       ..constructors.add(Constructor((c) => c..constant = true))
@@ -592,7 +739,8 @@ class EasyJsonGenerator extends Generator {
           (m) => m
             ..name = 'fromJson'
             ..static = true
-            ..returns = refer(className)
+            ..types.addAll(generics.typeRefs)
+            ..returns = refer(classRef)
             ..requiredParameters.add(
               Parameter(
                 (p) => p
@@ -600,13 +748,17 @@ class EasyJsonGenerator extends Generator {
                   ..type = refer('Map<String, dynamic>'),
               ),
             )
-            ..body = Code('return ${varName}FromJson(json);'),
+            ..requiredParameters.addAll(generics.fromJsonParams)
+            ..body = Code(
+              'return ${varName}FromJson${generics.args}(json${generics.fromJsonArgs});',
+            ),
         ),
         Method(
           (m) => m
             ..name = 'fromJsonSafe'
             ..static = true
-            ..returns = refer(className)
+            ..types.addAll(generics.typeRefs)
+            ..returns = refer(classRef)
             ..requiredParameters.add(
               Parameter(
                 (p) => p
@@ -614,6 +766,7 @@ class EasyJsonGenerator extends Generator {
                   ..type = refer('Map<String, dynamic>'),
               ),
             )
+            ..requiredParameters.addAll(generics.fromJsonParams)
             ..optionalParameters.addAll([
               Parameter(
                 (p) => p
@@ -630,7 +783,7 @@ class EasyJsonGenerator extends Generator {
               ),
             ])
             ..body = Code(
-              'return ${varName}FromJsonSafe(json, onIssue: onIssue, runValidate: runValidate);',
+              'return ${varName}FromJsonSafe${generics.args}(json${generics.fromJsonArgs}, onIssue: onIssue, runValidate: runValidate);',
             ),
         ),
         Method(
@@ -649,6 +802,75 @@ class EasyJsonGenerator extends Generator {
         ),
       ]);
   });
+}
+
+/// Parâmetros de tipo de uma classe @EasyJson e os pedaços de código que
+/// derivam deles. Para classes não genéricas tudo é vazio, então o código
+/// gerado continua idêntico ao de antes.
+///
+/// Segue a convenção do `json_serializable`: um conversor por parâmetro de
+/// tipo, `T Function(Object? json) fromJsonT` / `Object? Function(T value) toJsonT`.
+class _Generics {
+  _Generics(ClassElement clazz)
+      : names = [for (final tp in clazz.typeParameters) tp.displayName],
+        _bounds = [
+          for (final tp in clazz.typeParameters) tp.bound?.getDisplayString(),
+        ];
+
+  final List<String> names;
+  final List<String?> _bounds;
+
+  bool get isGeneric => names.isNotEmpty;
+
+  /// `<T, U>` (uso) ou ''.
+  String get args => isGeneric ? '<${names.join(', ')}>' : '';
+
+  /// `<T extends Base, U>` (declaração) ou ''.
+  String get decl {
+    if (!isGeneric) return '';
+    final parts = [
+      for (var i = 0; i < names.length; i++)
+        _bounds[i] == null ? names[i] : '${names[i]} extends ${_bounds[i]}',
+    ];
+    return '<${parts.join(', ')}>';
+  }
+
+  List<Reference> get typeRefs => [
+    for (var i = 0; i < names.length; i++)
+      TypeReference(
+        (b) => b
+          ..symbol = names[i]
+          ..bound = _bounds[i] == null ? null : refer(_bounds[i]!),
+      ),
+  ];
+
+  List<Parameter> get fromJsonParams => [
+    for (final t in names)
+      Parameter(
+        (p) => p
+          ..name = 'fromJson$t'
+          ..type = refer('$t Function(Object? json)'),
+      ),
+  ];
+
+  List<Parameter> get toJsonParams => [
+    for (final t in names)
+      Parameter(
+        (p) => p
+          ..name = 'toJson$t'
+          ..type = refer('Object? Function($t value)'),
+      ),
+  ];
+
+  /// `, T Function(Object? json) fromJsonT` — para templates em string.
+  String get fromJsonParamsDecl =>
+      names.map((t) => ', $t Function(Object? json) fromJson$t').join();
+  String get toJsonParamsDecl =>
+      names.map((t) => ', Object? Function($t value) toJson$t').join();
+
+  /// `, fromJsonT` — repassa os conversores adiante.
+  String get fromJsonArgs => names.map((t) => ', fromJson$t').join();
+  String get toJsonArgs => names.map((t) => ', toJson$t').join();
 }
 
 /// Calcula o AssetId de saída para um AssetId de entrada com base nas regras de build_extensions.

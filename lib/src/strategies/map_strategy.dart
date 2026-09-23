@@ -1,6 +1,14 @@
 part of '../strategies.dart';
 
 class MapStrategy implements TypeStrategy {
+  /// Como coagir a chave: a anotação @EasyMapKey manda; sem ela, `Map<int, V>`
+  /// ainda precisa de chaves int (o fromJson já fazia isso; safe/validate não).
+  EasyMapKeyType _keyType(FieldContext c) =>
+      c.mapKeyCoercion ??
+      (displayNonNull(asMapKV(c.type).key!) == 'int'
+          ? EasyMapKeyType.int
+          : EasyMapKeyType.string);
+
   @override
   String fromJson(FieldContext c) {
     final kv = asMapKV(c.type);
@@ -53,10 +61,7 @@ class MapStrategy implements TypeStrategy {
       return "((){ final _v=${c.jsonAccessor}; if(_v is! Map) return ${c.isNullable ? 'null' : typedEmpty}; final _m=Map<dynamic,dynamic>.from(_v as Map); try{ return ${c.convertFromJson!}(_m);} catch(_){ return ${c.isNullable ? 'null' : typedEmpty}; } })()";
     }
 
-    final keySafe = _coerceMapKeySafe(
-      'entry.key',
-      c.mapKeyCoercion ?? EasyMapKeyType.string,
-    );
+    final keySafe = _coerceMapKeySafe('entry.key', _keyType(c));
     final valParse = _safeValueParse(V, c, keyPath: true);
 
     final onIssue =
@@ -77,7 +82,7 @@ class MapStrategy implements TypeStrategy {
   void validate(FieldContext c, StringBuffer out) {
     final kv = asMapKV(c.type);
     final V = kv.value!;
-    final mk = c.mapKeyCoercion;
+    final mk = _keyType(c);
 
     final sb = StringBuffer("""
         if (v != null && v is! Map) {
@@ -161,19 +166,29 @@ class MapStrategy implements TypeStrategy {
       return "${c.instanceAccess} == null ? null : ${c.convertToJson!}(${c.instanceAccess})";
     }
 
+    // Objetos JSON só têm chaves String: chaves int (Map<int, V>, com ou
+    // sem @EasyMapKey) precisam virar String, senão o jsonEncode lança.
+    final stringKeys = displayNonNull(kv.key!) == 'String';
+    final k = stringKeys ? 'k' : 'k.toString()';
+    final q = c.isNullable ? '?' : '';
+
     if (isEasyJsonClass(V)) {
       final vConv = c.valueToJson != null
-          ? "(k,v)=>MapEntry(k, ${c.valueToJson!}(v.toJson()))"
-          : "(k,v)=>MapEntry(k, v.toJson())";
-      return "${c.instanceAccess}${c.isNullable ? '?' : ''}.map($vConv)";
+          ? "(k,v)=>MapEntry($k, ${c.valueToJson!}(v.toJson()))"
+          : "(k,v)=>MapEntry($k, v.toJson())";
+      return "${c.instanceAccess}$q.map($vConv)";
     }
 
     if (isEnumType(V)) {
-      return "${c.instanceAccess}${c.isNullable ? '?' : ''}.map((k,v)=>MapEntry(k, v${displayWithNull(V).endsWith('?') ? '?' : ''}.name))";
+      return "${c.instanceAccess}$q.map((k,v)=>MapEntry($k, v${displayWithNull(V).endsWith('?') ? '?' : ''}.name))";
     }
 
     if (c.valueToJson != null) {
-      return "${c.instanceAccess}${c.isNullable ? '?' : ''}.map((k,v)=>MapEntry(k, ${c.valueToJson!}(v)))";
+      return "${c.instanceAccess}$q.map((k,v)=>MapEntry($k, ${c.valueToJson!}(v)))";
+    }
+
+    if (!stringKeys) {
+      return "${c.instanceAccess}$q.map((k,v)=>MapEntry($k, v))";
     }
 
     return c.instanceAccess;
@@ -182,6 +197,12 @@ class MapStrategy implements TypeStrategy {
 
 // ====== Parsers auxiliares (itens/valores) ======
 String _fastItemParse(DartType item) {
+  if (item is TypeParameterType) {
+    final t = displayNonNull(item);
+    return displayWithNull(item).endsWith('?')
+        ? "e == null ? null : fromJson$t(e)"
+        : "fromJson$t(e)";
+  }
   if (isEasyJsonClass(item)) {
     final cn = displayNonNull(item);
     final vn = _lcFirst(cn);
@@ -219,6 +240,25 @@ String _safeItemParse(DartType item, FieldContext c, {bool indexPath = false}) {
   final pathPrefix = indexPath
       ? "${c.pathExpr} + '[' + entry.key.toString() + ']'"
       : c.pathExpr;
+
+  // ===== Parâmetro de tipo (T) =====
+  if (item is TypeParameterType) {
+    final t = displayNonNull(item);
+    // Item não-nulo: sem fallback possível para `T`, depende do conversor.
+    if (!displayWithNull(item).endsWith('?')) return "fromJson$t(entry.value)";
+    return """
+      (() {
+        final v = entry.value;
+        if (v == null) return null;
+        try {
+          return fromJson$t(v);
+        } catch (_) {
+          onIssue?.call(EasyIssue(path: $pathPrefix, code: 'type_mismatch', message: 'Could not convert value to $t.'));
+          return null;
+        }
+      })()
+    """;
+  }
 
   // ===== Objetos @EasyJson =====
   if (isEasyJsonClass(item)) {

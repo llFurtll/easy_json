@@ -1,6 +1,12 @@
 // Arquivo: lib/src/annotations.dart
 
+// Os @Target fazem o próprio analyzer do Dart avisar no editor quando uma
+// anotação é usada no lugar errado (ex.: @EasyKey numa classe), sem depender
+// do build_runner.
+import 'package:meta/meta_meta.dart';
+
 /// Marca uma classe para a geração de código de serialização JSON.
+@Target({TargetKind.classType})
 class EasyJson {
   /// O comportamento padrão para a inclusão de campos nulos no método toJson().
   /// Se `false` (padrão), campos com valor nulo serão omitidos do JSON.
@@ -16,15 +22,23 @@ class EasyJson {
   /// Se `false`, os métodos de serialização (toJson) e o mixin não serão gerados.
   final bool toJson;
 
+  /// Se `true`, o `fromJson` gerado roda o `validate` antes de construir o
+  /// objeto e lança uma `EasyValidationException` com **todos** os problemas
+  /// encontrados, em vez de estourar um `TypeError` genérico no primeiro campo
+  /// inválido. Também aplica as regras de `@EasyValidate` no `fromJson`.
+  final bool strict;
+
   const EasyJson({
     this.includeIfNull = false,
     this.caseStyle,
     this.fromJson = true,
     this.toJson = true,
+    this.strict = false,
   });
 }
 
 /// Define que esta classe é polimórfica e atua como um roteador para subclasses.
+@Target({TargetKind.classType})
 class EasyUnion {
   /// O nome do campo no JSON que determina o tipo.
   final String discriminator;
@@ -45,6 +59,7 @@ class EasyUnion {
 }
 
 /// Anota um campo para configurar como ele será serializado.
+@Target({TargetKind.field, TargetKind.parameter})
 class EasyKey {
   /// O nome da chave que este campo terá no JSON.
   final String? name;
@@ -81,6 +96,7 @@ enum EasyMapKeyType { string, int }
 /// Converte um campo inteiro OU os valores de um Map< K,V >.
 /// - fromJson/toJson: aplicados ao CAMPO inteiro (ex.: DateTime <-> epoch)
 /// - valueFromJson/valueToJson: aplicados a CADA VALOR de Map< K,V >
+@Target({TargetKind.field, TargetKind.parameter})
 class EasyConvert {
   final Function? fromJson;
   final Function? toJson;
@@ -101,6 +117,7 @@ class EasyConvert {
 ///
 /// Ex.: @EasyMapKey(type: EasyMapKeyType.int)
 ///   JSON: {"1": "Ana", "2":"Bia"}  => Map< int,String > {1:"Ana", 2:"Bia"}
+@Target({TargetKind.field, TargetKind.parameter})
 class EasyMapKey {
   final EasyMapKeyType type;
   // (opcional futuramente) serializeAs: como serializar a chave na saída
@@ -122,6 +139,7 @@ enum EasyFormat {
 
 /// Adiciona regras de validação customizadas para um campo, que serão
 /// verificadas pelos métodos `validate` e `fromJsonSafe`.
+@Target({TargetKind.field, TargetKind.parameter})
 class EasyValidate {
   /// Para `String`: comprimento mínimo.
   /// Para `List`/`Set`/`Map`: número mínimo de elementos.
@@ -168,12 +186,14 @@ class EasyValidate {
 }
 
 /// Marca o campo para ser ignorado na geração de fromJson/toJson.
+@Target({TargetKind.field, TargetKind.parameter})
 class EasyIgnore {
   const EasyIgnore();
 }
 
 /// Define um caminho aninhado para ler o valor do JSON.
 /// Ex.: @EasyPath('client.address.city') fará a leitura em json['client']['address']['city'].
+@Target({TargetKind.field, TargetKind.parameter})
 class EasyPath {
   final String path;
   const EasyPath(this.path);

@@ -77,6 +77,25 @@ int? coerceKeyIntOrNull(Object? k) {
 
 String coerceKeyString(Object? k) => k is String ? k : k.toString();
 
+/// Escreve [value] em [json] no caminho aninhado [path] (ex.:
+/// `['shipping', 'address', 'city']`), criando os mapas intermediários.
+/// Usado pelo `toJson` gerado para campos com `@EasyPath`, para que a saída
+/// tenha o mesmo formato aninhado que o `fromJson` lê.
+void writePath(Map<String, dynamic> json, List<String> path, Object? value) {
+  var current = json;
+  for (var i = 0; i < path.length - 1; i++) {
+    final next = current[path[i]];
+    if (next is Map<String, dynamic>) {
+      current = next;
+    } else {
+      final created = <String, dynamic>{};
+      current[path[i]] = created;
+      current = created;
+    }
+  }
+  current[path.last] = value;
+}
+
 /// Iteradores com índice (para List/Set/Map) — economizam código gerado
 typedef ListItemMapper<T> = T Function(int index, Object? raw);
 List<T>? mapListOrNull<T>(Object? raw, ListItemMapper<T> f) {

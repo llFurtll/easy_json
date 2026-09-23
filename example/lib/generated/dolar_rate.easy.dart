@@ -125,14 +125,19 @@ List<EasyIssue> dollarRateValidate(Map<String, dynamic> json) {
   }
   if (json.containsKey('compra')) {
     final v = json['compra'];
-    if (v != null && v is! num && v is! String) {
-      issues.add(
-        EasyIssue(
-          path: 'compra',
-          code: 'type_mismatch',
-          message: 'Expected number.',
-        ),
-      );
+    if (v != null) {
+      final _n = v is num ? v : (v is String ? double.tryParse(v) : null);
+      if (_n == null) {
+        issues.add(
+          EasyIssue(
+            path: 'compra',
+            code: 'type_mismatch',
+            message: 'Expected number.',
+          ),
+        );
+      } else {
+        final v = _n.toDouble();
+      }
     }
   }
   if (!json.containsKey('venta')) {
@@ -146,14 +151,19 @@ List<EasyIssue> dollarRateValidate(Map<String, dynamic> json) {
   }
   if (json.containsKey('venta')) {
     final v = json['venta'];
-    if (v != null && v is! num && v is! String) {
-      issues.add(
-        EasyIssue(
-          path: 'venta',
-          code: 'type_mismatch',
-          message: 'Expected number.',
-        ),
-      );
+    if (v != null) {
+      final _n = v is num ? v : (v is String ? double.tryParse(v) : null);
+      if (_n == null) {
+        issues.add(
+          EasyIssue(
+            path: 'venta',
+            code: 'type_mismatch',
+            message: 'Expected number.',
+          ),
+        );
+      } else {
+        final v = _n.toDouble();
+      }
     }
   }
   if (!json.containsKey('fechaActualizacion')) {

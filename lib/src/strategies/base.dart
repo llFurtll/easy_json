@@ -70,10 +70,8 @@ void _generateValidationChecks(FieldContext c, StringBuffer out) {
   // regex
   final regex = validator.peek('regex')?.stringValue;
   if (regex != null && isString) {
-    // Escapa a string para ser usada dentro de uma string literal em Dart
-    final escapedRegex = regex.replaceAll("'", r"\'");
     out.writeln(
-      "if (!RegExp(r'$escapedRegex').hasMatch(v as String)) { issues.add(EasyIssue(path: ${c.pathExpr}, code: 'regex_mismatch', message: 'Invalid format.')); }",
+      "if (!RegExp(${_dartStringLiteral(regex)}).hasMatch(v as String)) { issues.add(EasyIssue(path: ${c.pathExpr}, code: 'regex_mismatch', message: 'Invalid format.')); }",
     );
   }
 
@@ -106,9 +104,8 @@ void _generateValidationChecks(FieldContext c, StringBuffer out) {
         break;
     }
     if (regex != null) {
-      final escapedRegex = regex.replaceAll("'", r"\'");
       out.writeln(
-        "if (!RegExp(r'$escapedRegex').hasMatch(v as String)) { issues.add(EasyIssue(path: ${c.pathExpr}, code: '$code', message: '$message')); }",
+        "if (!RegExp(${_dartStringLiteral(regex)}).hasMatch(v as String)) { issues.add(EasyIssue(path: ${c.pathExpr}, code: '$code', message: '$message')); }",
       );
     }
   }
@@ -138,6 +135,20 @@ void _generateValidationChecks(FieldContext c, StringBuffer out) {
       "if (!(${c.customValidatorFn!}(v as $fieldType))) { issues.add(EasyIssue(path: ${c.pathExpr}, code: 'custom_validation_failed', message: 'Custom validation failed.')); }",
     );
   }
+}
+
+/// Literal de string Dart (aspas simples, não-raw) que representa `s`
+/// exatamente. Uma raw string (`r'...'`) não serve: nela `\'` não escapa a
+/// aspa, então qualquer regex contendo `'` (ex.: a de email) quebrava o
+/// código gerado.
+String _dartStringLiteral(String s) {
+  final escaped = s
+      .replaceAll(r'\', r'\\')
+      .replaceAll("'", r"\'")
+      .replaceAll(r'$', r'\$')
+      .replaceAll('\n', r'\n')
+      .replaceAll('\r', r'\r');
+  return "'$escaped'";
 }
 
 String _enumFallbackExpr(String enumName, String? fallbackName) =>

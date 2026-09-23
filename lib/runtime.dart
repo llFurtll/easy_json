@@ -7,4 +7,5 @@
 library;
 
 export 'src/easy_issue.dart';
+export 'src/easy_validation_exception.dart';
 export 'src/runtime.dart';

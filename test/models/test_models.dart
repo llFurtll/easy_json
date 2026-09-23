@@ -331,3 +331,95 @@ class Feed with FeedSerializer {
   factory Feed.fromJsonSafe(Map<String, dynamic> json, {void Function(EasyIssue)? onIssue})
     => feedFromJsonSafe(json, onIssue: onIssue);
 }
+
+// ---- Genéricos ----
+@EasyJson()
+class ApiResponse<T> with ApiResponseSerializer<T> {
+  final T data;
+  final int statusCode;
+  final String? message;
+
+  ApiResponse({required this.data, required this.statusCode, this.message});
+}
+
+@EasyJson()
+class PageResponse<T> with PageResponseSerializer<T> {
+  final List<T> items;
+  final int total;
+  final T? highlight;
+
+  PageResponse({required this.items, required this.total, this.highlight});
+}
+
+@EasyJson()
+class Pair<A, B extends Object> with PairSerializer<A, B> {
+  final A first;
+  final B second;
+
+  Pair({required this.first, required this.second});
+}
+
+// ---- Regressão: regras do @EasyValidate em double ----
+@EasyJson()
+class RangeModel with RangeModelSerializer {
+  @EasyValidate(min: 0, max: 100)
+  final double score;
+
+  RangeModel({required this.score});
+}
+
+// ---- Strict ----
+@EasyJson(strict: true)
+class StrictUser with StrictUserSerializer {
+  final String name;
+  final int age;
+
+  @EasyValidate(format: EasyFormat.email)
+  final String? email;
+
+  StrictUser({required this.name, required this.age, this.email});
+}
+
+@EasyJson(strict: true)
+class StrictOrder with StrictOrderSerializer {
+  final String id;
+  final Address shipping;
+  final List<Product> products;
+
+  StrictOrder({required this.id, required this.shipping, required this.products});
+}
+
+@EasyJson(strict: true)
+class StrictEnvelope<T> with StrictEnvelopeSerializer<T> {
+  final T payload;
+  final String version;
+
+  StrictEnvelope({required this.payload, required this.version});
+}
+
+@EasyJson(strict: true)
+@EasyUnion(discriminator: 'kind', mapping: {
+  'circle': Circle,
+  'square': Square,
+})
+sealed class Shape {
+  Map<String, dynamic> toJson();
+}
+
+@EasyJson()
+class Circle extends Shape with CircleSerializer {
+  final double radius;
+
+  Circle({required this.radius});
+
+  factory Circle.fromJson(Map<String, dynamic> json) => circleFromJson(json);
+}
+
+@EasyJson()
+class Square extends Shape with SquareSerializer {
+  final double side;
+
+  Square({required this.side});
+
+  factory Square.fromJson(Map<String, dynamic> json) => squareFromJson(json);
+}

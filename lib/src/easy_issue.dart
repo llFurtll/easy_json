@@ -8,13 +8,15 @@ class EasyIssue {
   /// `'items[2].street'` / `'items.someKey'`.
   final String path;
 
-  /// A short, stable machine-readable code identifying the kind of problem,
-  /// e.g. `'missing_required'`, `'type_mismatch'`, `'invalid_enum'`,
-  /// `'min_length'`, `'max_length'`, `'regex_mismatch'`, `'invalid_email'`,
-  /// `'invalid_url'`, `'invalid_uuid'`, `'min_value'`, `'max_value'`,
-  /// `'custom_validation_failed'`, `'invalid_base64'`, `'invalid_uri'`,
-  /// `'invalid_bigint'`, `'must_be_past'`, `'must_be_future'` or
-  /// `'unknown_union_type'`. Safe to switch on.
+  /// A short, stable machine-readable code identifying the kind of problem.
+  /// Safe to switch on. One of: `'missing_required'`, `'type_mismatch'`,
+  /// `'null_not_allowed'`, `'invalid_enum'`, `'invalid_enum_index'`,
+  /// `'key_type_mismatch'`, `'invalid_uri'`, `'invalid_bigint'`,
+  /// `'invalid_base64'`, `'min_length'`, `'max_length'`, `'regex_mismatch'`,
+  /// `'invalid_email'`, `'invalid_url'`, `'invalid_uuid'`, `'min_value'`,
+  /// `'max_value'`, `'must_be_past'`, `'must_be_future'`,
+  /// `'custom_validation_failed'` or `'unknown_union_type'`. See the "Issue
+  /// codes" section of the README for what each one means.
   final String code;
 
   /// A human-readable explanation, in English, suitable for logs or as a

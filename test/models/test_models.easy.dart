@@ -201,14 +201,19 @@ List<EasyIssue> productValidate(Map<String, dynamic> json) {
   }
   if (json.containsKey('price')) {
     final v = json['price'];
-    if (v != null && v is! num && v is! String) {
-      issues.add(
-        EasyIssue(
-          path: 'price',
-          code: 'type_mismatch',
-          message: 'Expected number.',
-        ),
-      );
+    if (v != null) {
+      final _n = v is num ? v : (v is String ? double.tryParse(v) : null);
+      if (_n == null) {
+        issues.add(
+          EasyIssue(
+            path: 'price',
+            code: 'type_mismatch',
+            message: 'Expected number.',
+          ),
+        );
+      } else {
+        final v = _n.toDouble();
+      }
     }
   }
   if (!json.containsKey('name')) {
@@ -393,7 +398,7 @@ Map<String, dynamic> orderToJson(Order instance) {
     'createdAt': TmDateMs.toJson(instance.createdAt),
     'buyerRole': instance.buyerRole.name,
     'shipping': instance.shipping.toJson(),
-    'items': instance.items.map((k, v) => MapEntry(k, v.toJson())),
+    'items': instance.items.map((k, v) => MapEntry(k.toString(), v.toJson())),
     'quantities': instance.quantities,
     'notes': instance.notes,
     'tags': instance.tags.toList(),
@@ -1449,7 +1454,7 @@ List<EasyIssue> validationModelValidate(Map<String, dynamic> json) {
       );
     } else if (v != null) {
       if (!RegExp(
-        r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$',
+        '^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}\$',
       ).hasMatch(v as String)) {
         issues.add(
           EasyIssue(
@@ -1535,7 +1540,7 @@ List<EasyIssue> validationModelValidate(Map<String, dynamic> json) {
       );
     } else if (v != null) {
       if (!RegExp(
-        r'^(https|http)://[-a-zA-Z0-9@:%._+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_+.~#?&//=]*)$',
+        '^(https|http)://[-a-zA-Z0-9@:%._+~#=]{1,256}\\.[a-zA-Z0-9()]{1,6}\\b([-a-zA-Z0-9()@:%_+.~#?&//=]*)\$',
       ).hasMatch(v as String)) {
         issues.add(
           EasyIssue(
@@ -1568,7 +1573,7 @@ List<EasyIssue> validationModelValidate(Map<String, dynamic> json) {
       );
     } else if (v != null) {
       if (!RegExp(
-        r'^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$',
+        '^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}\$',
       ).hasMatch(v as String)) {
         issues.add(
           EasyIssue(
@@ -1941,10 +1946,10 @@ PathModel pathModelFromJson(Map<String, dynamic> json) {
 }
 
 Map<String, dynamic> pathModelToJson(PathModel instance) {
-  return <String, dynamic>{
-    'count': instance.count,
-    'userName': instance.userName,
-  };
+  final json = <String, dynamic>{};
+  ej.writePath(json, const ['meta', 'count'], instance.count);
+  ej.writePath(json, const ['meta', 'info', 'user_name'], instance.userName);
+  return json;
 }
 
 mixin PathModelSerializer {
@@ -3599,3 +3604,1581 @@ List<Feed> feedFromJsonSafeList(
 
 List<Map<String, dynamic>> feedToJsonList(List<Feed> items) =>
     items.map((e) => feedToJson(e)).toList();
+
+ApiResponse<T> apiResponseFromJson<T>(
+  Map<String, dynamic> json,
+  T Function(Object? json) fromJsonT,
+) {
+  return ApiResponse<T>(
+    data: fromJsonT(json['data']),
+    statusCode: (json['statusCode'] as int?) ?? 0,
+    message: json['message'] as String?,
+  );
+}
+
+Map<String, dynamic> apiResponseToJson<T>(
+  ApiResponse<T> instance,
+  Object? Function(T value) toJsonT,
+) {
+  return <String, dynamic>{
+    'data': toJsonT(instance.data),
+    'statusCode': instance.statusCode,
+    if (instance.message != null) 'message': instance.message,
+  };
+}
+
+mixin ApiResponseSerializer<T> {
+  Map<String, dynamic> toJson(Object? Function(T value) toJsonT) {
+    return apiResponseToJson<T>(this as ApiResponse<T>, toJsonT);
+  }
+}
+
+List<EasyIssue> apiResponseValidate<T>(Map<String, dynamic> json) {
+  final issues = <EasyIssue>[];
+  if (!json.containsKey('data')) {
+    issues.add(
+      EasyIssue(
+        path: 'data',
+        code: 'missing_required',
+        message: 'Missing required field.',
+      ),
+    );
+  }
+  if (json.containsKey('data')) {
+    final v = json['data'];
+  }
+  if (!json.containsKey('statusCode')) {
+    issues.add(
+      EasyIssue(
+        path: 'statusCode',
+        code: 'missing_required',
+        message: 'Missing required field.',
+      ),
+    );
+  }
+  if (json.containsKey('statusCode')) {
+    final v = json['statusCode'];
+    if (v != null && v is! int) {
+      issues.add(
+        EasyIssue(
+          path: 'statusCode',
+          code: 'type_mismatch',
+          message: 'Expected int.',
+        ),
+      );
+    } else if (v != null) {}
+  }
+  if (json.containsKey('message')) {
+    final v = json['message'];
+    if (v != null && v is! String) {
+      issues.add(
+        EasyIssue(
+          path: 'message',
+          code: 'type_mismatch',
+          message: 'Expected String.',
+        ),
+      );
+    } else if (v != null) {}
+  }
+  return issues;
+}
+
+ApiResponse<T> apiResponseFromJsonSafe<T>(
+  Map<String, dynamic> json,
+  T Function(Object? json) fromJsonT, {
+  void Function(EasyIssue)? onIssue,
+  bool runValidate = true,
+}) {
+  if (runValidate) {
+    final _issues = apiResponseValidate<T>(json);
+    if (onIssue != null) {
+      for (final i in _issues) onIssue(i);
+    }
+  }
+  return ApiResponse<T>(
+    data: fromJsonT(json['data']),
+    statusCode: (() {
+      final v = json['statusCode'];
+      if (v is int) return v;
+      if (v is num) return v.toInt();
+      if (v is String) {
+        final p = int.tryParse(v);
+        if (p != null) return p;
+      }
+      return 0;
+    })(),
+    message: (() {
+      final v = json['message'];
+      return (v is String) ? v : null;
+    })(),
+  );
+}
+
+class ApiResponseJson {
+  const ApiResponseJson();
+
+  static ApiResponse<T> fromJson<T>(
+    Map<String, dynamic> json,
+    T Function(Object? json) fromJsonT,
+  ) {
+    return apiResponseFromJson<T>(json, fromJsonT);
+  }
+
+  static ApiResponse<T> fromJsonSafe<T>(
+    Map<String, dynamic> json,
+    T Function(Object? json) fromJsonT, {
+    void Function(EasyIssue)? onIssue,
+    bool runValidate = true,
+  }) {
+    return apiResponseFromJsonSafe<T>(
+      json,
+      fromJsonT,
+      onIssue: onIssue,
+      runValidate: runValidate,
+    );
+  }
+
+  static List<EasyIssue> validate(Map<String, dynamic> json) {
+    return apiResponseValidate(json);
+  }
+}
+
+List<ApiResponse<T>> apiResponseFromJsonList<T>(
+  List<dynamic> json,
+  T Function(Object? json) fromJsonT,
+) => json
+    .map((e) => apiResponseFromJson<T>(e as Map<String, dynamic>, fromJsonT))
+    .toList();
+
+List<ApiResponse<T>> apiResponseFromJsonSafeList<T>(
+  List<dynamic> json,
+  T Function(Object? json) fromJsonT, {
+  void Function(int index, EasyIssue issue)? onIssue,
+  bool runValidate = true,
+}) => json
+    .asMap()
+    .entries
+    .map(
+      (entry) => apiResponseFromJsonSafe<T>(
+        entry.value as Map<String, dynamic>,
+        fromJsonT,
+        onIssue: onIssue == null ? null : (i) => onIssue(entry.key, i),
+        runValidate: runValidate,
+      ),
+    )
+    .toList();
+
+List<Map<String, dynamic>> apiResponseToJsonList<T>(
+  List<ApiResponse<T>> items,
+  Object? Function(T value) toJsonT,
+) => items.map((e) => apiResponseToJson<T>(e, toJsonT)).toList();
+
+PageResponse<T> pageResponseFromJson<T>(
+  Map<String, dynamic> json,
+  T Function(Object? json) fromJsonT,
+) {
+  return PageResponse<T>(
+    items:
+        ((json['items'] as List?)?.asMap().entries.map<T>((entry) {
+          final i = entry.key;
+          final e = entry.value;
+          return fromJsonT(e);
+        }).toList()) ??
+        <T>[],
+    total: (json['total'] as int?) ?? 0,
+    highlight: json['highlight'] == null ? null : fromJsonT(json['highlight']),
+  );
+}
+
+Map<String, dynamic> pageResponseToJson<T>(
+  PageResponse<T> instance,
+  Object? Function(T value) toJsonT,
+) {
+  return <String, dynamic>{
+    'items': instance.items.map((e) => toJsonT(e)).toList(),
+    'total': instance.total,
+    if (instance.highlight != null)
+      'highlight': (instance.highlight == null
+          ? null
+          : toJsonT(instance.highlight as T)),
+  };
+}
+
+mixin PageResponseSerializer<T> {
+  Map<String, dynamic> toJson(Object? Function(T value) toJsonT) {
+    return pageResponseToJson<T>(this as PageResponse<T>, toJsonT);
+  }
+}
+
+List<EasyIssue> pageResponseValidate<T>(Map<String, dynamic> json) {
+  final issues = <EasyIssue>[];
+  if (!json.containsKey('items')) {
+    issues.add(
+      EasyIssue(
+        path: 'items',
+        code: 'missing_required',
+        message: 'Missing required field.',
+      ),
+    );
+  }
+  if (json.containsKey('items')) {
+    final v = json['items'];
+    if (v != null && v is! List) {
+      issues.add(
+        EasyIssue(
+          path: 'items',
+          code: 'type_mismatch',
+          message: 'Expected List.',
+        ),
+      );
+    } else if (v is List) {
+      for (var i = 0; i < v.length; i++) {
+        final e = v[i];
+        if (e == null) {
+          issues.add(
+            EasyIssue(
+              path: 'items' + '[' + i.toString() + ']',
+              code: 'null_not_allowed',
+              message: 'Null value not allowed.',
+            ),
+          );
+        } else {}
+      }
+    }
+  }
+  if (!json.containsKey('total')) {
+    issues.add(
+      EasyIssue(
+        path: 'total',
+        code: 'missing_required',
+        message: 'Missing required field.',
+      ),
+    );
+  }
+  if (json.containsKey('total')) {
+    final v = json['total'];
+    if (v != null && v is! int) {
+      issues.add(
+        EasyIssue(
+          path: 'total',
+          code: 'type_mismatch',
+          message: 'Expected int.',
+        ),
+      );
+    } else if (v != null) {}
+  }
+  if (json.containsKey('highlight')) {
+    final v = json['highlight'];
+  }
+  return issues;
+}
+
+PageResponse<T> pageResponseFromJsonSafe<T>(
+  Map<String, dynamic> json,
+  T Function(Object? json) fromJsonT, {
+  void Function(EasyIssue)? onIssue,
+  bool runValidate = true,
+}) {
+  if (runValidate) {
+    final _issues = pageResponseValidate<T>(json);
+    if (onIssue != null) {
+      for (final i in _issues) onIssue(i);
+    }
+  }
+  return PageResponse<T>(
+    items: (() {
+      final _v = json['items'];
+      if (_v is! List) return <T>[];
+      final _list = _v;
+      return _list.asMap().entries.map<T>((entry) {
+        final idx = entry.key;
+        final elem = entry.value;
+        return fromJsonT(entry.value);
+      }).toList();
+    })(),
+    total: (() {
+      final v = json['total'];
+      if (v is int) return v;
+      if (v is num) return v.toInt();
+      if (v is String) {
+        final p = int.tryParse(v);
+        if (p != null) return p;
+      }
+      return 0;
+    })(),
+    highlight: (() {
+      final v = json['highlight'];
+      if (v == null) return null;
+      try {
+        return fromJsonT(v);
+      } catch (_) {
+        onIssue?.call(
+          EasyIssue(
+            path: 'highlight',
+            code: 'type_mismatch',
+            message: 'Could not convert value to T.',
+          ),
+        );
+        return null;
+      }
+    })(),
+  );
+}
+
+class PageResponseJson {
+  const PageResponseJson();
+
+  static PageResponse<T> fromJson<T>(
+    Map<String, dynamic> json,
+    T Function(Object? json) fromJsonT,
+  ) {
+    return pageResponseFromJson<T>(json, fromJsonT);
+  }
+
+  static PageResponse<T> fromJsonSafe<T>(
+    Map<String, dynamic> json,
+    T Function(Object? json) fromJsonT, {
+    void Function(EasyIssue)? onIssue,
+    bool runValidate = true,
+  }) {
+    return pageResponseFromJsonSafe<T>(
+      json,
+      fromJsonT,
+      onIssue: onIssue,
+      runValidate: runValidate,
+    );
+  }
+
+  static List<EasyIssue> validate(Map<String, dynamic> json) {
+    return pageResponseValidate(json);
+  }
+}
+
+List<PageResponse<T>> pageResponseFromJsonList<T>(
+  List<dynamic> json,
+  T Function(Object? json) fromJsonT,
+) => json
+    .map((e) => pageResponseFromJson<T>(e as Map<String, dynamic>, fromJsonT))
+    .toList();
+
+List<PageResponse<T>> pageResponseFromJsonSafeList<T>(
+  List<dynamic> json,
+  T Function(Object? json) fromJsonT, {
+  void Function(int index, EasyIssue issue)? onIssue,
+  bool runValidate = true,
+}) => json
+    .asMap()
+    .entries
+    .map(
+      (entry) => pageResponseFromJsonSafe<T>(
+        entry.value as Map<String, dynamic>,
+        fromJsonT,
+        onIssue: onIssue == null ? null : (i) => onIssue(entry.key, i),
+        runValidate: runValidate,
+      ),
+    )
+    .toList();
+
+List<Map<String, dynamic>> pageResponseToJsonList<T>(
+  List<PageResponse<T>> items,
+  Object? Function(T value) toJsonT,
+) => items.map((e) => pageResponseToJson<T>(e, toJsonT)).toList();
+
+Pair<A, B> pairFromJson<A, B extends Object>(
+  Map<String, dynamic> json,
+  A Function(Object? json) fromJsonA,
+  B Function(Object? json) fromJsonB,
+) {
+  return Pair<A, B>(
+    first: fromJsonA(json['first']),
+    second: fromJsonB(json['second']),
+  );
+}
+
+Map<String, dynamic> pairToJson<A, B extends Object>(
+  Pair<A, B> instance,
+  Object? Function(A value) toJsonA,
+  Object? Function(B value) toJsonB,
+) {
+  return <String, dynamic>{
+    'first': toJsonA(instance.first),
+    'second': toJsonB(instance.second),
+  };
+}
+
+mixin PairSerializer<A, B extends Object> {
+  Map<String, dynamic> toJson(
+    Object? Function(A value) toJsonA,
+    Object? Function(B value) toJsonB,
+  ) {
+    return pairToJson<A, B>(this as Pair<A, B>, toJsonA, toJsonB);
+  }
+}
+
+List<EasyIssue> pairValidate<A, B extends Object>(Map<String, dynamic> json) {
+  final issues = <EasyIssue>[];
+  if (!json.containsKey('first')) {
+    issues.add(
+      EasyIssue(
+        path: 'first',
+        code: 'missing_required',
+        message: 'Missing required field.',
+      ),
+    );
+  }
+  if (json.containsKey('first')) {
+    final v = json['first'];
+  }
+  if (!json.containsKey('second')) {
+    issues.add(
+      EasyIssue(
+        path: 'second',
+        code: 'missing_required',
+        message: 'Missing required field.',
+      ),
+    );
+  }
+  if (json.containsKey('second')) {
+    final v = json['second'];
+  }
+  return issues;
+}
+
+Pair<A, B> pairFromJsonSafe<A, B extends Object>(
+  Map<String, dynamic> json,
+  A Function(Object? json) fromJsonA,
+  B Function(Object? json) fromJsonB, {
+  void Function(EasyIssue)? onIssue,
+  bool runValidate = true,
+}) {
+  if (runValidate) {
+    final _issues = pairValidate<A, B>(json);
+    if (onIssue != null) {
+      for (final i in _issues) onIssue(i);
+    }
+  }
+  return Pair<A, B>(
+    first: fromJsonA(json['first']),
+    second: fromJsonB(json['second']),
+  );
+}
+
+class PairJson {
+  const PairJson();
+
+  static Pair<A, B> fromJson<A, B extends Object>(
+    Map<String, dynamic> json,
+    A Function(Object? json) fromJsonA,
+    B Function(Object? json) fromJsonB,
+  ) {
+    return pairFromJson<A, B>(json, fromJsonA, fromJsonB);
+  }
+
+  static Pair<A, B> fromJsonSafe<A, B extends Object>(
+    Map<String, dynamic> json,
+    A Function(Object? json) fromJsonA,
+    B Function(Object? json) fromJsonB, {
+    void Function(EasyIssue)? onIssue,
+    bool runValidate = true,
+  }) {
+    return pairFromJsonSafe<A, B>(
+      json,
+      fromJsonA,
+      fromJsonB,
+      onIssue: onIssue,
+      runValidate: runValidate,
+    );
+  }
+
+  static List<EasyIssue> validate(Map<String, dynamic> json) {
+    return pairValidate(json);
+  }
+}
+
+List<Pair<A, B>> pairFromJsonList<A, B extends Object>(
+  List<dynamic> json,
+  A Function(Object? json) fromJsonA,
+  B Function(Object? json) fromJsonB,
+) => json
+    .map(
+      (e) =>
+          pairFromJson<A, B>(e as Map<String, dynamic>, fromJsonA, fromJsonB),
+    )
+    .toList();
+
+List<Pair<A, B>> pairFromJsonSafeList<A, B extends Object>(
+  List<dynamic> json,
+  A Function(Object? json) fromJsonA,
+  B Function(Object? json) fromJsonB, {
+  void Function(int index, EasyIssue issue)? onIssue,
+  bool runValidate = true,
+}) => json
+    .asMap()
+    .entries
+    .map(
+      (entry) => pairFromJsonSafe<A, B>(
+        entry.value as Map<String, dynamic>,
+        fromJsonA,
+        fromJsonB,
+        onIssue: onIssue == null ? null : (i) => onIssue(entry.key, i),
+        runValidate: runValidate,
+      ),
+    )
+    .toList();
+
+List<Map<String, dynamic>> pairToJsonList<A, B extends Object>(
+  List<Pair<A, B>> items,
+  Object? Function(A value) toJsonA,
+  Object? Function(B value) toJsonB,
+) => items.map((e) => pairToJson<A, B>(e, toJsonA, toJsonB)).toList();
+
+RangeModel rangeModelFromJson(Map<String, dynamic> json) {
+  return RangeModel(score: (json['score'] as num?)?.toDouble() ?? 0.0);
+}
+
+Map<String, dynamic> rangeModelToJson(RangeModel instance) {
+  return <String, dynamic>{'score': instance.score};
+}
+
+mixin RangeModelSerializer {
+  Map<String, dynamic> toJson() {
+    return rangeModelToJson(this as RangeModel);
+  }
+}
+
+List<EasyIssue> rangeModelValidate(Map<String, dynamic> json) {
+  final issues = <EasyIssue>[];
+  if (!json.containsKey('score')) {
+    issues.add(
+      EasyIssue(
+        path: 'score',
+        code: 'missing_required',
+        message: 'Missing required field.',
+      ),
+    );
+  }
+  if (json.containsKey('score')) {
+    final v = json['score'];
+    if (v != null) {
+      final _n = v is num ? v : (v is String ? double.tryParse(v) : null);
+      if (_n == null) {
+        issues.add(
+          EasyIssue(
+            path: 'score',
+            code: 'type_mismatch',
+            message: 'Expected number.',
+          ),
+        );
+      } else {
+        final v = _n.toDouble();
+        if ((v as num) < 0) {
+          issues.add(
+            EasyIssue(
+              path: 'score',
+              code: 'min_value',
+              message: 'The minimum value is 0.',
+            ),
+          );
+        }
+        if ((v as num) > 100) {
+          issues.add(
+            EasyIssue(
+              path: 'score',
+              code: 'max_value',
+              message: 'The maximum value is 100.',
+            ),
+          );
+        }
+      }
+    }
+  }
+  return issues;
+}
+
+RangeModel rangeModelFromJsonSafe(
+  Map<String, dynamic> json, {
+  void Function(EasyIssue)? onIssue,
+  bool runValidate = true,
+}) {
+  if (runValidate) {
+    final _issues = rangeModelValidate(json);
+    if (onIssue != null) {
+      for (final i in _issues) onIssue(i);
+    }
+  }
+  return RangeModel(
+    score: (() {
+      final v = json['score'];
+      if (v is num) return v.toDouble();
+      if (v is String) {
+        final p = double.tryParse(v);
+        if (p != null) return p;
+      }
+      return 0.0;
+    })(),
+  );
+}
+
+class RangeModelJson {
+  const RangeModelJson();
+
+  static RangeModel fromJson(Map<String, dynamic> json) {
+    return rangeModelFromJson(json);
+  }
+
+  static RangeModel fromJsonSafe(
+    Map<String, dynamic> json, {
+    void Function(EasyIssue)? onIssue,
+    bool runValidate = true,
+  }) {
+    return rangeModelFromJsonSafe(
+      json,
+      onIssue: onIssue,
+      runValidate: runValidate,
+    );
+  }
+
+  static List<EasyIssue> validate(Map<String, dynamic> json) {
+    return rangeModelValidate(json);
+  }
+}
+
+List<RangeModel> rangeModelFromJsonList(List<dynamic> json) =>
+    json.map((e) => rangeModelFromJson(e as Map<String, dynamic>)).toList();
+
+List<RangeModel> rangeModelFromJsonSafeList(
+  List<dynamic> json, {
+  void Function(int index, EasyIssue issue)? onIssue,
+  bool runValidate = true,
+}) => json
+    .asMap()
+    .entries
+    .map(
+      (entry) => rangeModelFromJsonSafe(
+        entry.value as Map<String, dynamic>,
+        onIssue: onIssue == null ? null : (i) => onIssue(entry.key, i),
+        runValidate: runValidate,
+      ),
+    )
+    .toList();
+
+List<Map<String, dynamic>> rangeModelToJsonList(List<RangeModel> items) =>
+    items.map((e) => rangeModelToJson(e)).toList();
+
+StrictUser strictUserFromJson(Map<String, dynamic> json) {
+  final issues = strictUserValidate(json);
+  if (issues.isNotEmpty) throw EasyValidationException(issues);
+  return strictUserFromJsonSafe(json, runValidate: false);
+}
+
+Map<String, dynamic> strictUserToJson(StrictUser instance) {
+  return <String, dynamic>{
+    'name': instance.name,
+    'age': instance.age,
+    if (instance.email != null) 'email': instance.email,
+  };
+}
+
+mixin StrictUserSerializer {
+  Map<String, dynamic> toJson() {
+    return strictUserToJson(this as StrictUser);
+  }
+}
+
+List<EasyIssue> strictUserValidate(Map<String, dynamic> json) {
+  final issues = <EasyIssue>[];
+  if (!json.containsKey('name')) {
+    issues.add(
+      EasyIssue(
+        path: 'name',
+        code: 'missing_required',
+        message: 'Missing required field.',
+      ),
+    );
+  }
+  if (json.containsKey('name')) {
+    final v = json['name'];
+    if (v != null && v is! String) {
+      issues.add(
+        EasyIssue(
+          path: 'name',
+          code: 'type_mismatch',
+          message: 'Expected String.',
+        ),
+      );
+    } else if (v != null) {}
+  }
+  if (!json.containsKey('age')) {
+    issues.add(
+      EasyIssue(
+        path: 'age',
+        code: 'missing_required',
+        message: 'Missing required field.',
+      ),
+    );
+  }
+  if (json.containsKey('age')) {
+    final v = json['age'];
+    if (v != null && v is! int) {
+      issues.add(
+        EasyIssue(path: 'age', code: 'type_mismatch', message: 'Expected int.'),
+      );
+    } else if (v != null) {}
+  }
+  if (json.containsKey('email')) {
+    final v = json['email'];
+    if (v != null && v is! String) {
+      issues.add(
+        EasyIssue(
+          path: 'email',
+          code: 'type_mismatch',
+          message: 'Expected String.',
+        ),
+      );
+    } else if (v != null) {
+      if (!RegExp(
+        '^[a-zA-Z0-9.a-zA-Z0-9.!#\$%&\'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,253}[a-zA-Z0-9])?(?:\\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,253}[a-zA-Z0-9])?)*\$',
+      ).hasMatch(v as String)) {
+        issues.add(
+          EasyIssue(
+            path: 'email',
+            code: 'invalid_email',
+            message: 'Invalid email.',
+          ),
+        );
+      }
+    }
+  }
+  return issues;
+}
+
+StrictUser strictUserFromJsonSafe(
+  Map<String, dynamic> json, {
+  void Function(EasyIssue)? onIssue,
+  bool runValidate = true,
+}) {
+  if (runValidate) {
+    final _issues = strictUserValidate(json);
+    if (onIssue != null) {
+      for (final i in _issues) onIssue(i);
+    }
+  }
+  return StrictUser(
+    name: (() {
+      final v = json['name'];
+      return (v is String) ? v : '';
+    })(),
+    age: (() {
+      final v = json['age'];
+      if (v is int) return v;
+      if (v is num) return v.toInt();
+      if (v is String) {
+        final p = int.tryParse(v);
+        if (p != null) return p;
+      }
+      return 0;
+    })(),
+    email: (() {
+      final v = json['email'];
+      return (v is String) ? v : null;
+    })(),
+  );
+}
+
+class StrictUserJson {
+  const StrictUserJson();
+
+  static StrictUser fromJson(Map<String, dynamic> json) {
+    return strictUserFromJson(json);
+  }
+
+  static StrictUser fromJsonSafe(
+    Map<String, dynamic> json, {
+    void Function(EasyIssue)? onIssue,
+    bool runValidate = true,
+  }) {
+    return strictUserFromJsonSafe(
+      json,
+      onIssue: onIssue,
+      runValidate: runValidate,
+    );
+  }
+
+  static List<EasyIssue> validate(Map<String, dynamic> json) {
+    return strictUserValidate(json);
+  }
+}
+
+List<StrictUser> strictUserFromJsonList(List<dynamic> json) =>
+    json.map((e) => strictUserFromJson(e as Map<String, dynamic>)).toList();
+
+List<StrictUser> strictUserFromJsonSafeList(
+  List<dynamic> json, {
+  void Function(int index, EasyIssue issue)? onIssue,
+  bool runValidate = true,
+}) => json
+    .asMap()
+    .entries
+    .map(
+      (entry) => strictUserFromJsonSafe(
+        entry.value as Map<String, dynamic>,
+        onIssue: onIssue == null ? null : (i) => onIssue(entry.key, i),
+        runValidate: runValidate,
+      ),
+    )
+    .toList();
+
+List<Map<String, dynamic>> strictUserToJsonList(List<StrictUser> items) =>
+    items.map((e) => strictUserToJson(e)).toList();
+
+StrictOrder strictOrderFromJson(Map<String, dynamic> json) {
+  final issues = strictOrderValidate(json);
+  if (issues.isNotEmpty) throw EasyValidationException(issues);
+  return strictOrderFromJsonSafe(json, runValidate: false);
+}
+
+Map<String, dynamic> strictOrderToJson(StrictOrder instance) {
+  return <String, dynamic>{
+    'id': instance.id,
+    'shipping': instance.shipping.toJson(),
+    'products': instance.products.map((e) => e.toJson()).toList(),
+  };
+}
+
+mixin StrictOrderSerializer {
+  Map<String, dynamic> toJson() {
+    return strictOrderToJson(this as StrictOrder);
+  }
+}
+
+List<EasyIssue> strictOrderValidate(Map<String, dynamic> json) {
+  final issues = <EasyIssue>[];
+  if (!json.containsKey('id')) {
+    issues.add(
+      EasyIssue(
+        path: 'id',
+        code: 'missing_required',
+        message: 'Missing required field.',
+      ),
+    );
+  }
+  if (json.containsKey('id')) {
+    final v = json['id'];
+    if (v != null && v is! String) {
+      issues.add(
+        EasyIssue(
+          path: 'id',
+          code: 'type_mismatch',
+          message: 'Expected String.',
+        ),
+      );
+    } else if (v != null) {}
+  }
+  if (!json.containsKey('shipping')) {
+    issues.add(
+      EasyIssue(
+        path: 'shipping',
+        code: 'missing_required',
+        message: 'Missing required field.',
+      ),
+    );
+  }
+  if (json.containsKey('shipping')) {
+    final v = json['shipping'];
+    if (v != null && v is! Map) {
+      issues.add(
+        EasyIssue(
+          path: 'shipping',
+          code: 'type_mismatch',
+          message: 'Expected Map for Address.',
+        ),
+      );
+    } else if (v is Map) {
+      final child = addressValidate(Map<String, dynamic>.from(v));
+      for (final ci in child) {
+        issues.add(
+          EasyIssue(
+            path: 'shipping' + '.' + ci.path,
+            code: ci.code,
+            message: ci.message,
+          ),
+        );
+      }
+    }
+  }
+  if (!json.containsKey('products')) {
+    issues.add(
+      EasyIssue(
+        path: 'products',
+        code: 'missing_required',
+        message: 'Missing required field.',
+      ),
+    );
+  }
+  if (json.containsKey('products')) {
+    final v = json['products'];
+    if (v != null && v is! List) {
+      issues.add(
+        EasyIssue(
+          path: 'products',
+          code: 'type_mismatch',
+          message: 'Expected List.',
+        ),
+      );
+    } else if (v is List) {
+      for (var i = 0; i < v.length; i++) {
+        final e = v[i];
+        if (e == null) {
+          issues.add(
+            EasyIssue(
+              path: 'products' + '[' + i.toString() + ']',
+              code: 'null_not_allowed',
+              message: 'Null value not allowed.',
+            ),
+          );
+        } else {
+          if (e is! Map) {
+            issues.add(
+              EasyIssue(
+                path: 'products' + '[' + i.toString() + ']',
+                code: 'type_mismatch',
+                message: 'Expected Map for Product.',
+              ),
+            );
+          } else {
+            final child = productValidate(Map<String, dynamic>.from(e as Map));
+            for (final ci in child) {
+              issues.add(
+                EasyIssue(
+                  path: 'products' + '[' + i.toString() + '].' + ci.path,
+                  code: ci.code,
+                  message: ci.message,
+                ),
+              );
+            }
+          }
+        }
+      }
+    }
+  }
+  return issues;
+}
+
+StrictOrder strictOrderFromJsonSafe(
+  Map<String, dynamic> json, {
+  void Function(EasyIssue)? onIssue,
+  bool runValidate = true,
+}) {
+  if (runValidate) {
+    final _issues = strictOrderValidate(json);
+    if (onIssue != null) {
+      for (final i in _issues) onIssue(i);
+    }
+  }
+  return StrictOrder(
+    id: (() {
+      final v = json['id'];
+      return (v is String) ? v : '';
+    })(),
+    shipping: (() {
+      final _v = json['shipping'];
+      if (_v == null)
+        return addressFromJsonSafe(
+          const <String, dynamic>{},
+          onIssue: (i) => onIssue?.call(
+            EasyIssue(
+              path: 'shipping' + '.' + i.path,
+              code: i.code,
+              message: i.message,
+            ),
+          ),
+          runValidate: false,
+        );
+      if (_v is Map) {
+        return addressFromJsonSafe(
+          Map<String, dynamic>.from(_v as Map),
+          onIssue: (i) => onIssue?.call(
+            EasyIssue(
+              path: 'shipping' + '.' + i.path,
+              code: i.code,
+              message: i.message,
+            ),
+          ),
+          runValidate: false,
+        );
+      }
+      return addressFromJsonSafe(
+        const <String, dynamic>{},
+        onIssue: (i) => onIssue?.call(
+          EasyIssue(
+            path: 'shipping' + '.' + i.path,
+            code: i.code,
+            message: i.message,
+          ),
+        ),
+        runValidate: false,
+      );
+    })(),
+    products: (() {
+      final _v = json['products'];
+      if (_v is! List) return const <Product>[];
+      final _list = _v;
+      return _list.asMap().entries.map<Product>((entry) {
+        final idx = entry.key;
+        final elem = entry.value;
+        return (() {
+          final _v = entry.value;
+          if (_v is Map) {
+            return productFromJsonSafe(
+              Map<String, dynamic>.from(_v as Map),
+              onIssue: (i) => onIssue?.call(
+                EasyIssue(
+                  path:
+                      'products' +
+                      '[' +
+                      entry.key.toString() +
+                      ']' +
+                      '.' +
+                      i.path,
+                  code: i.code,
+                  message: i.message,
+                ),
+              ),
+              runValidate: false,
+            );
+          }
+          onIssue?.call(
+            EasyIssue(
+              path: 'products' + '[' + entry.key.toString() + ']',
+              code: 'type_mismatch',
+              message: 'Expected Map for Product.',
+            ),
+          );
+          return productFromJsonSafe(
+            const <String, dynamic>{},
+            onIssue: (i) => onIssue?.call(
+              EasyIssue(
+                path: "'products' + '[' + entry.key.toString() + ']'." + i.path,
+                code: i.code,
+                message: i.message,
+              ),
+            ),
+            runValidate: false,
+          );
+        })();
+      }).toList();
+    })(),
+  );
+}
+
+class StrictOrderJson {
+  const StrictOrderJson();
+
+  static StrictOrder fromJson(Map<String, dynamic> json) {
+    return strictOrderFromJson(json);
+  }
+
+  static StrictOrder fromJsonSafe(
+    Map<String, dynamic> json, {
+    void Function(EasyIssue)? onIssue,
+    bool runValidate = true,
+  }) {
+    return strictOrderFromJsonSafe(
+      json,
+      onIssue: onIssue,
+      runValidate: runValidate,
+    );
+  }
+
+  static List<EasyIssue> validate(Map<String, dynamic> json) {
+    return strictOrderValidate(json);
+  }
+}
+
+List<StrictOrder> strictOrderFromJsonList(List<dynamic> json) =>
+    json.map((e) => strictOrderFromJson(e as Map<String, dynamic>)).toList();
+
+List<StrictOrder> strictOrderFromJsonSafeList(
+  List<dynamic> json, {
+  void Function(int index, EasyIssue issue)? onIssue,
+  bool runValidate = true,
+}) => json
+    .asMap()
+    .entries
+    .map(
+      (entry) => strictOrderFromJsonSafe(
+        entry.value as Map<String, dynamic>,
+        onIssue: onIssue == null ? null : (i) => onIssue(entry.key, i),
+        runValidate: runValidate,
+      ),
+    )
+    .toList();
+
+List<Map<String, dynamic>> strictOrderToJsonList(List<StrictOrder> items) =>
+    items.map((e) => strictOrderToJson(e)).toList();
+
+StrictEnvelope<T> strictEnvelopeFromJson<T>(
+  Map<String, dynamic> json,
+  T Function(Object? json) fromJsonT,
+) {
+  final issues = strictEnvelopeValidate<T>(json);
+  if (issues.isNotEmpty) throw EasyValidationException(issues);
+  return strictEnvelopeFromJsonSafe<T>(json, fromJsonT, runValidate: false);
+}
+
+Map<String, dynamic> strictEnvelopeToJson<T>(
+  StrictEnvelope<T> instance,
+  Object? Function(T value) toJsonT,
+) {
+  return <String, dynamic>{
+    'payload': toJsonT(instance.payload),
+    'version': instance.version,
+  };
+}
+
+mixin StrictEnvelopeSerializer<T> {
+  Map<String, dynamic> toJson(Object? Function(T value) toJsonT) {
+    return strictEnvelopeToJson<T>(this as StrictEnvelope<T>, toJsonT);
+  }
+}
+
+List<EasyIssue> strictEnvelopeValidate<T>(Map<String, dynamic> json) {
+  final issues = <EasyIssue>[];
+  if (!json.containsKey('payload')) {
+    issues.add(
+      EasyIssue(
+        path: 'payload',
+        code: 'missing_required',
+        message: 'Missing required field.',
+      ),
+    );
+  }
+  if (json.containsKey('payload')) {
+    final v = json['payload'];
+  }
+  if (!json.containsKey('version')) {
+    issues.add(
+      EasyIssue(
+        path: 'version',
+        code: 'missing_required',
+        message: 'Missing required field.',
+      ),
+    );
+  }
+  if (json.containsKey('version')) {
+    final v = json['version'];
+    if (v != null && v is! String) {
+      issues.add(
+        EasyIssue(
+          path: 'version',
+          code: 'type_mismatch',
+          message: 'Expected String.',
+        ),
+      );
+    } else if (v != null) {}
+  }
+  return issues;
+}
+
+StrictEnvelope<T> strictEnvelopeFromJsonSafe<T>(
+  Map<String, dynamic> json,
+  T Function(Object? json) fromJsonT, {
+  void Function(EasyIssue)? onIssue,
+  bool runValidate = true,
+}) {
+  if (runValidate) {
+    final _issues = strictEnvelopeValidate<T>(json);
+    if (onIssue != null) {
+      for (final i in _issues) onIssue(i);
+    }
+  }
+  return StrictEnvelope<T>(
+    payload: fromJsonT(json['payload']),
+    version: (() {
+      final v = json['version'];
+      return (v is String) ? v : '';
+    })(),
+  );
+}
+
+class StrictEnvelopeJson {
+  const StrictEnvelopeJson();
+
+  static StrictEnvelope<T> fromJson<T>(
+    Map<String, dynamic> json,
+    T Function(Object? json) fromJsonT,
+  ) {
+    return strictEnvelopeFromJson<T>(json, fromJsonT);
+  }
+
+  static StrictEnvelope<T> fromJsonSafe<T>(
+    Map<String, dynamic> json,
+    T Function(Object? json) fromJsonT, {
+    void Function(EasyIssue)? onIssue,
+    bool runValidate = true,
+  }) {
+    return strictEnvelopeFromJsonSafe<T>(
+      json,
+      fromJsonT,
+      onIssue: onIssue,
+      runValidate: runValidate,
+    );
+  }
+
+  static List<EasyIssue> validate(Map<String, dynamic> json) {
+    return strictEnvelopeValidate(json);
+  }
+}
+
+List<StrictEnvelope<T>> strictEnvelopeFromJsonList<T>(
+  List<dynamic> json,
+  T Function(Object? json) fromJsonT,
+) => json
+    .map((e) => strictEnvelopeFromJson<T>(e as Map<String, dynamic>, fromJsonT))
+    .toList();
+
+List<StrictEnvelope<T>> strictEnvelopeFromJsonSafeList<T>(
+  List<dynamic> json,
+  T Function(Object? json) fromJsonT, {
+  void Function(int index, EasyIssue issue)? onIssue,
+  bool runValidate = true,
+}) => json
+    .asMap()
+    .entries
+    .map(
+      (entry) => strictEnvelopeFromJsonSafe<T>(
+        entry.value as Map<String, dynamic>,
+        fromJsonT,
+        onIssue: onIssue == null ? null : (i) => onIssue(entry.key, i),
+        runValidate: runValidate,
+      ),
+    )
+    .toList();
+
+List<Map<String, dynamic>> strictEnvelopeToJsonList<T>(
+  List<StrictEnvelope<T>> items,
+  Object? Function(T value) toJsonT,
+) => items.map((e) => strictEnvelopeToJson<T>(e, toJsonT)).toList();
+
+Shape shapeFromJson(Map<String, dynamic> json) {
+  final issues = shapeValidate(json);
+  if (issues.isNotEmpty) throw EasyValidationException(issues);
+  return shapeFromJsonSafe(json, runValidate: false);
+}
+
+Map<String, dynamic> shapeToJson(Shape instance) {
+  return (instance as dynamic).toJson() as Map<String, dynamic>;
+}
+
+mixin ShapeSerializer {
+  Map<String, dynamic> toJson() {
+    return shapeToJson(this as Shape);
+  }
+}
+
+List<EasyIssue> shapeValidate(Map<String, dynamic> json) {
+  final d = json['kind'];
+  switch (d) {
+    case 'circle':
+      return circleValidate(json);
+    case 'square':
+      return squareValidate(json);
+    default:
+      final issues = [
+        EasyIssue(
+          path: 'kind',
+          code: 'unknown_union_type',
+          message: 'Unknown type: \$d',
+        ),
+      ];
+      return issues;
+  }
+}
+
+Shape shapeFromJsonSafe(
+  Map<String, dynamic> json, {
+  void Function(EasyIssue)? onIssue,
+  bool runValidate = true,
+}) {
+  if (runValidate) {
+    final _issues = shapeValidate(json);
+    if (onIssue != null) {
+      for (final i in _issues) onIssue(i);
+    }
+  }
+  final d = json['kind'];
+  switch (d) {
+    case 'circle':
+      return circleFromJsonSafe(json, onIssue: onIssue, runValidate: false);
+    case 'square':
+      return squareFromJsonSafe(json, onIssue: onIssue, runValidate: false);
+    default:
+      throw Exception(
+        'Unknown union type: \$d. Provide a fallback in @EasyUnion to avoid crashes on unknown types.',
+      );
+  }
+}
+
+class ShapeJson {
+  const ShapeJson();
+
+  static Shape fromJson(Map<String, dynamic> json) {
+    return shapeFromJson(json);
+  }
+
+  static Shape fromJsonSafe(
+    Map<String, dynamic> json, {
+    void Function(EasyIssue)? onIssue,
+    bool runValidate = true,
+  }) {
+    return shapeFromJsonSafe(json, onIssue: onIssue, runValidate: runValidate);
+  }
+
+  static List<EasyIssue> validate(Map<String, dynamic> json) {
+    return shapeValidate(json);
+  }
+}
+
+List<Shape> shapeFromJsonList(List<dynamic> json) =>
+    json.map((e) => shapeFromJson(e as Map<String, dynamic>)).toList();
+
+List<Shape> shapeFromJsonSafeList(
+  List<dynamic> json, {
+  void Function(int index, EasyIssue issue)? onIssue,
+  bool runValidate = true,
+}) => json
+    .asMap()
+    .entries
+    .map(
+      (entry) => shapeFromJsonSafe(
+        entry.value as Map<String, dynamic>,
+        onIssue: onIssue == null ? null : (i) => onIssue(entry.key, i),
+        runValidate: runValidate,
+      ),
+    )
+    .toList();
+
+List<Map<String, dynamic>> shapeToJsonList(List<Shape> items) =>
+    items.map((e) => shapeToJson(e)).toList();
+
+Circle circleFromJson(Map<String, dynamic> json) {
+  return Circle(radius: (json['radius'] as num?)?.toDouble() ?? 0.0);
+}
+
+Map<String, dynamic> circleToJson(Circle instance) {
+  return <String, dynamic>{'radius': instance.radius};
+}
+
+mixin CircleSerializer {
+  Map<String, dynamic> toJson() {
+    return circleToJson(this as Circle);
+  }
+}
+
+List<EasyIssue> circleValidate(Map<String, dynamic> json) {
+  final issues = <EasyIssue>[];
+  if (!json.containsKey('radius')) {
+    issues.add(
+      EasyIssue(
+        path: 'radius',
+        code: 'missing_required',
+        message: 'Missing required field.',
+      ),
+    );
+  }
+  if (json.containsKey('radius')) {
+    final v = json['radius'];
+    if (v != null) {
+      final _n = v is num ? v : (v is String ? double.tryParse(v) : null);
+      if (_n == null) {
+        issues.add(
+          EasyIssue(
+            path: 'radius',
+            code: 'type_mismatch',
+            message: 'Expected number.',
+          ),
+        );
+      } else {
+        final v = _n.toDouble();
+      }
+    }
+  }
+  return issues;
+}
+
+Circle circleFromJsonSafe(
+  Map<String, dynamic> json, {
+  void Function(EasyIssue)? onIssue,
+  bool runValidate = true,
+}) {
+  if (runValidate) {
+    final _issues = circleValidate(json);
+    if (onIssue != null) {
+      for (final i in _issues) onIssue(i);
+    }
+  }
+  return Circle(
+    radius: (() {
+      final v = json['radius'];
+      if (v is num) return v.toDouble();
+      if (v is String) {
+        final p = double.tryParse(v);
+        if (p != null) return p;
+      }
+      return 0.0;
+    })(),
+  );
+}
+
+class CircleJson {
+  const CircleJson();
+
+  static Circle fromJson(Map<String, dynamic> json) {
+    return circleFromJson(json);
+  }
+
+  static Circle fromJsonSafe(
+    Map<String, dynamic> json, {
+    void Function(EasyIssue)? onIssue,
+    bool runValidate = true,
+  }) {
+    return circleFromJsonSafe(json, onIssue: onIssue, runValidate: runValidate);
+  }
+
+  static List<EasyIssue> validate(Map<String, dynamic> json) {
+    return circleValidate(json);
+  }
+}
+
+List<Circle> circleFromJsonList(List<dynamic> json) =>
+    json.map((e) => circleFromJson(e as Map<String, dynamic>)).toList();
+
+List<Circle> circleFromJsonSafeList(
+  List<dynamic> json, {
+  void Function(int index, EasyIssue issue)? onIssue,
+  bool runValidate = true,
+}) => json
+    .asMap()
+    .entries
+    .map(
+      (entry) => circleFromJsonSafe(
+        entry.value as Map<String, dynamic>,
+        onIssue: onIssue == null ? null : (i) => onIssue(entry.key, i),
+        runValidate: runValidate,
+      ),
+    )
+    .toList();
+
+List<Map<String, dynamic>> circleToJsonList(List<Circle> items) =>
+    items.map((e) => circleToJson(e)).toList();
+
+Square squareFromJson(Map<String, dynamic> json) {
+  return Square(side: (json['side'] as num?)?.toDouble() ?? 0.0);
+}
+
+Map<String, dynamic> squareToJson(Square instance) {
+  return <String, dynamic>{'side': instance.side};
+}
+
+mixin SquareSerializer {
+  Map<String, dynamic> toJson() {
+    return squareToJson(this as Square);
+  }
+}
+
+List<EasyIssue> squareValidate(Map<String, dynamic> json) {
+  final issues = <EasyIssue>[];
+  if (!json.containsKey('side')) {
+    issues.add(
+      EasyIssue(
+        path: 'side',
+        code: 'missing_required',
+        message: 'Missing required field.',
+      ),
+    );
+  }
+  if (json.containsKey('side')) {
+    final v = json['side'];
+    if (v != null) {
+      final _n = v is num ? v : (v is String ? double.tryParse(v) : null);
+      if (_n == null) {
+        issues.add(
+          EasyIssue(
+            path: 'side',
+            code: 'type_mismatch',
+            message: 'Expected number.',
+          ),
+        );
+      } else {
+        final v = _n.toDouble();
+      }
+    }
+  }
+  return issues;
+}
+
+Square squareFromJsonSafe(
+  Map<String, dynamic> json, {
+  void Function(EasyIssue)? onIssue,
+  bool runValidate = true,
+}) {
+  if (runValidate) {
+    final _issues = squareValidate(json);
+    if (onIssue != null) {
+      for (final i in _issues) onIssue(i);
+    }
+  }
+  return Square(
+    side: (() {
+      final v = json['side'];
+      if (v is num) return v.toDouble();
+      if (v is String) {
+        final p = double.tryParse(v);
+        if (p != null) return p;
+      }
+      return 0.0;
+    })(),
+  );
+}
+
+class SquareJson {
+  const SquareJson();
+
+  static Square fromJson(Map<String, dynamic> json) {
+    return squareFromJson(json);
+  }
+
+  static Square fromJsonSafe(
+    Map<String, dynamic> json, {
+    void Function(EasyIssue)? onIssue,
+    bool runValidate = true,
+  }) {
+    return squareFromJsonSafe(json, onIssue: onIssue, runValidate: runValidate);
+  }
+
+  static List<EasyIssue> validate(Map<String, dynamic> json) {
+    return squareValidate(json);
+  }
+}
+
+List<Square> squareFromJsonList(List<dynamic> json) =>
+    json.map((e) => squareFromJson(e as Map<String, dynamic>)).toList();
+
+List<Square> squareFromJsonSafeList(
+  List<dynamic> json, {
+  void Function(int index, EasyIssue issue)? onIssue,
+  bool runValidate = true,
+}) => json
+    .asMap()
+    .entries
+    .map(
+      (entry) => squareFromJsonSafe(
+        entry.value as Map<String, dynamic>,
+        onIssue: onIssue == null ? null : (i) => onIssue(entry.key, i),
+        runValidate: runValidate,
+      ),
+    )
+    .toList();
+
+List<Map<String, dynamic>> squareToJsonList(List<Square> items) =>
+    items.map((e) => squareToJson(e)).toList();

@@ -154,10 +154,20 @@ class PrimitiveStrategy implements TypeStrategy {
         }
       """;
     } else if (t == 'double') {
-      check =
-          "if (v != null && v is! num && v is! String) { "
-          "  issues.add(EasyIssue(path: ${c.pathExpr}, code: 'type_mismatch', message: 'Expected number.')); "
-          "}";
+      // Aceita num ou String numérica (o parse safe converte "3.5"); qualquer
+      // outra coisa — inclusive String não numérica — é type_mismatch. As
+      // regras do @EasyValidate (min/max/custom) rodam sobre o número já
+      // convertido, que sombreia `v` dentro do bloco.
+      final sb = StringBuffer(
+        "if (v != null) { "
+        "  final _n = v is num ? v : (v is String ? double.tryParse(v) : null); "
+        "  if (_n == null) { "
+        "    issues.add(EasyIssue(path: ${c.pathExpr}, code: 'type_mismatch', message: 'Expected number.')); "
+        "  } else { final v = _n.toDouble(); ",
+      );
+      _generateValidationChecks(c, sb);
+      sb.write('} }');
+      check = sb.toString();
     } else {
       final sb = StringBuffer(
         "if (v != null && v is! $t) { "

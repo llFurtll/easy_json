@@ -114,6 +114,8 @@ class FieldContext {
       type is InterfaceType && (type as InterfaceType).element.name == 'Duration';
   bool get isBigInt =>
       type is InterfaceType && (type as InterfaceType).element.name == 'BigInt';
+  /// Campo tipado diretamente com um parâmetro de tipo da classe (`T` / `T?`).
+  bool get isTypeParameter => type is TypeParameterType;
 
   bool get emitNulls => (includeIfNull ?? classIncludeIfNull) == true;
 

@@ -288,26 +288,36 @@ List<EasyIssue> episodeValidate(Map<String, dynamic> json) {
   }
   if (json.containsKey('stardateFrom')) {
     final v = json['stardateFrom'];
-    if (v != null && v is! num && v is! String) {
-      issues.add(
-        EasyIssue(
-          path: 'stardateFrom',
-          code: 'type_mismatch',
-          message: 'Expected number.',
-        ),
-      );
+    if (v != null) {
+      final _n = v is num ? v : (v is String ? double.tryParse(v) : null);
+      if (_n == null) {
+        issues.add(
+          EasyIssue(
+            path: 'stardateFrom',
+            code: 'type_mismatch',
+            message: 'Expected number.',
+          ),
+        );
+      } else {
+        final v = _n.toDouble();
+      }
     }
   }
   if (json.containsKey('stardateTo')) {
     final v = json['stardateTo'];
-    if (v != null && v is! num && v is! String) {
-      issues.add(
-        EasyIssue(
-          path: 'stardateTo',
-          code: 'type_mismatch',
-          message: 'Expected number.',
-        ),
-      );
+    if (v != null) {
+      final _n = v is num ? v : (v is String ? double.tryParse(v) : null);
+      if (_n == null) {
+        issues.add(
+          EasyIssue(
+            path: 'stardateTo',
+            code: 'type_mismatch',
+            message: 'Expected number.',
+          ),
+        );
+      } else {
+        final v = _n.toDouble();
+      }
     }
   }
   if (json.containsKey('yearFrom')) {
