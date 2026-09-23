@@ -3,6 +3,8 @@ import 'dart:convert';
 import 'package:dart_easy_json/easy_json.dart';
 import 'package:test/test.dart';
 
+import 'models/matrix_models.dart' show Color;
+import 'models/matrix_models.easy.dart';
 import 'models/test_models.dart';
 import 'models/test_models.easy.dart';
 import 'models/types.dart';
@@ -36,6 +38,34 @@ void main() {
         rangeModelValidate({'score': 100.5}).map((i) => i.code),
         ['max_value'],
       );
+    });
+  });
+
+  group('validate accepts what fromJsonSafe accepts (1.1.0 upgrade notes)', () {
+    final base = {
+      'i': 7, 'd': 2.5, 'n': 3, 'b': true, 's': 'x',
+      'dt': '2024-01-02T03:04:05.000Z', 'u': 'https://a.dev', 'du': 1,
+      'bi': '1', 'by': 'AQID', 'c': 'green', 'o': {'n': 1},
+    };
+
+    test('an integer string for an int', () {
+      expect(scalarsValidate({...base, 'i': '5'}), isEmpty);
+      expect(scalarsFromJsonSafe({...base, 'i': '5'}).i, 5);
+    });
+
+    test('an enum given by its index', () {
+      expect(scalarsValidate({...base, 'c': 1}), isEmpty);
+      expect(scalarsFromJsonSafe({...base, 'c': 1}).c, Color.green);
+      expect(scalarsValidate({...base, 'c': 9}).map((i) => i.code), ['invalid_enum_index']);
+    });
+
+    test('an integer inside a List<double>', () {
+      final lists = {
+        'i': [], 'd': [3], 'n': [], 'b': [], 's': [], 'dt': [], 'u': [],
+        'du': [], 'bi': [], 'by': [], 'c': [], 'o': [], 'iN': [],
+      };
+      expect(listsValidate(lists), isEmpty);
+      expect(listsFromJsonSafe(lists).d, [3.0]);
     });
   });
 

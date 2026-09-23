@@ -481,4 +481,4 @@ analyzer:
 
 ## Changelog
 
-See [CHANGELOG.md](CHANGELOG.md).
+See [CHANGELOG.md](CHANGELOG.md). Upgrading from 1.0.x? The 1.1.0 entry has an "Upgrading from 1.0.x" section listing every behavior change and what to check.
