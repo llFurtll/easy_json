@@ -60,14 +60,14 @@ Null fields are left out of `toJson` by default (see `includeIfNull`).
 
 | Type | In JSON | Notes |
 |---|---|---|
-| `int`, `double`, `num`, `bool`, `String` | number / bool / string | `fromJsonSafe` coerces numeric strings (`"3.5"`) for `double`. |
+| `int`, `double`, `num`, `bool`, `String` | number / bool / string | Numeric strings (`"5"`, `"3.5"`) are accepted for `int`, `double` and `num`. |
 | Enums | the value's `name` | `fromJsonSafe` also accepts the index. |
 | `DateTime` | ISO-8601 string | Also reads milliseconds since epoch. |
 | `Uri` | string | |
 | `Duration` | number of **microseconds** | Matches `Duration.inMicroseconds`, no precision lost. |
 | `BigInt` | decimal string | JSON numbers can't safely carry big integers (a JS/web runtime only keeps exact integers up to 2^53). `fromJsonSafe` also accepts a plain number. |
 | `Uint8List` | Base64 string | |
-| `List<T>`, `Set<T>` | array | |
+| `List<T>`, `Set<T>` | array | `T` can be any type in this table. |
 | `Map<String, V>`, `Map<int, V>` | object | Keys are always strings in JSON; `int` keys are converted both ways. |
 | Other `@EasyJson` classes | object | Nested models, including lists and maps of them. |
 | Type parameters (`T`) | whatever your converter returns | See [Generic classes](#generic-classes). |
@@ -109,7 +109,7 @@ for (final issue in issues) print(issue);
 // [missing_required] stock: Missing required field.
 ```
 
-Each `EasyIssue` has a `path`, a `code` (see [Issue codes](#issue-codes)) and a human-readable `message`. Per-field fallbacks can be customized with [`@EasyKey(fallback: ...)`](#easykey).
+Each `EasyIssue` has a `path`, a `code` (see [Issue codes](#issue-codes)) and a human-readable `message`, and each problem is reported once. Nullable fields stay `null` when the value is missing or `null`; non-nullable ones fall back to a neutral value (`0`, `''`, `false`, an empty list...), which you can customize with [`@EasyKey(fallback: ...)`](#easykey).
 
 ### Validating without parsing
 
@@ -375,9 +375,11 @@ print(order.toJson());
 
 *   `name`: the JSON key for this field (overrides `caseStyle`).
 *   `includeIfNull`: overrides the class setting for this field.
-*   `fallback`: value used by `fromJsonSafe` when the field is missing or invalid (e.g. `@EasyKey(fallback: -1)`).
-*   `itemFallback`: same, for each item of a collection.
+*   `fallback`: value used by `fromJsonSafe` when the field is invalid — or missing/`null`, if the field isn't nullable. Supported for `int`, `double`, `num`, `bool`, `String` and, written as in JSON, `DateTime` (ISO string or epoch ms), `Uri` (string), `Duration` (microseconds), `BigInt` (int or string) and `Uint8List` (Base64 string): e.g. `@EasyKey(fallback: '2020-01-01T00:00:00Z')`.
+*   `itemFallback`: same, for each invalid item of a `List` or value of a `Map`.
 *   `enumFallback`: the `name` of the enum value to use as fallback.
+
+These values are checked at build time: a fallback of the wrong type, a malformed date or URI, an `enumFallback` that isn't a value of the enum, or a fallback on a type that doesn't support one fails the build with a message pointing at the field.
 
 ### `@EasyPath`
 

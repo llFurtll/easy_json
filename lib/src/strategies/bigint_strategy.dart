@@ -21,12 +21,16 @@ class BigIntStrategy implements TypeStrategy {
 
   @override
   String fromJsonSafe(FieldContext c) {
-    final nfb = c.isNullable ? 'null' : 'BigInt.zero';
+    // null num campo nullable continua null; valor inválido usa o
+    // @EasyKey(fallback:) se houver.
+    final custom = _fieldFallbackExpr(c);
+    final onNull = c.isNullable ? 'null' : (custom ?? 'BigInt.zero');
+    final nfb = custom ?? (c.isNullable ? 'null' : 'BigInt.zero');
     final code =
         """
       (() {
         final v = ${c.jsonAccessor};
-        if (v == null) return $nfb;
+        if (v == null) return $onNull;
         if (v is String) {
           final b = BigInt.tryParse(v);
           if (b != null) return b;

@@ -17,12 +17,16 @@ class UriStrategy implements TypeStrategy {
 
   @override
   String fromJsonSafe(FieldContext c) {
-    final nfb = c.isNullable ? 'null' : 'Uri()';
+    // null num campo nullable continua null; valor inválido usa o
+    // @EasyKey(fallback:) se houver.
+    final custom = _fieldFallbackExpr(c);
+    final onNull = c.isNullable ? 'null' : (custom ?? 'Uri()');
+    final nfb = custom ?? (c.isNullable ? 'null' : 'Uri()');
     final code =
         """
       (() {
         final v = ${c.jsonAccessor};
-        if (v == null) return $nfb;
+        if (v == null) return $onNull;
         if (v is String) {
           final u = Uri.tryParse(v);
           if (u != null) return u;

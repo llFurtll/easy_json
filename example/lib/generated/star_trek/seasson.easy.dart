@@ -70,6 +70,15 @@ List<EasyIssue> seasonValidate(Map<String, dynamic> json) {
       ),
     );
   }
+  if (json.containsKey('uid') && json['uid'] == null) {
+    issues.add(
+      EasyIssue(
+        path: 'uid',
+        code: 'null_not_allowed',
+        message: 'Null value not allowed.',
+      ),
+    );
+  }
   if (json.containsKey('uid')) {
     final v = json['uid'];
     if (v != null && v is! String) {
@@ -91,6 +100,15 @@ List<EasyIssue> seasonValidate(Map<String, dynamic> json) {
       ),
     );
   }
+  if (json.containsKey('title') && json['title'] == null) {
+    issues.add(
+      EasyIssue(
+        path: 'title',
+        code: 'null_not_allowed',
+        message: 'Null value not allowed.',
+      ),
+    );
+  }
   if (json.containsKey('title')) {
     final v = json['title'];
     if (v != null && v is! String) {
@@ -109,6 +127,15 @@ List<EasyIssue> seasonValidate(Map<String, dynamic> json) {
         path: 'series',
         code: 'missing_required',
         message: 'Missing required field.',
+      ),
+    );
+  }
+  if (json.containsKey('series') && json['series'] == null) {
+    issues.add(
+      EasyIssue(
+        path: 'series',
+        code: 'null_not_allowed',
+        message: 'Null value not allowed.',
       ),
     );
   }
@@ -144,17 +171,31 @@ List<EasyIssue> seasonValidate(Map<String, dynamic> json) {
       ),
     );
   }
+  if (json.containsKey('seasonNumber') && json['seasonNumber'] == null) {
+    issues.add(
+      EasyIssue(
+        path: 'seasonNumber',
+        code: 'null_not_allowed',
+        message: 'Null value not allowed.',
+      ),
+    );
+  }
   if (json.containsKey('seasonNumber')) {
     final v = json['seasonNumber'];
-    if (v != null && v is! int) {
-      issues.add(
-        EasyIssue(
-          path: 'seasonNumber',
-          code: 'type_mismatch',
-          message: 'Expected int.',
-        ),
-      );
-    } else if (v != null) {}
+    if (v != null) {
+      final _n = v is int ? v : (v is String ? int.tryParse(v) : null);
+      if (_n == null) {
+        issues.add(
+          EasyIssue(
+            path: 'seasonNumber',
+            code: 'type_mismatch',
+            message: 'Expected int.',
+          ),
+        );
+      } else {
+        final v = _n;
+      }
+    }
   }
   if (!json.containsKey('numberOfEpisodes')) {
     issues.add(
@@ -165,17 +206,32 @@ List<EasyIssue> seasonValidate(Map<String, dynamic> json) {
       ),
     );
   }
+  if (json.containsKey('numberOfEpisodes') &&
+      json['numberOfEpisodes'] == null) {
+    issues.add(
+      EasyIssue(
+        path: 'numberOfEpisodes',
+        code: 'null_not_allowed',
+        message: 'Null value not allowed.',
+      ),
+    );
+  }
   if (json.containsKey('numberOfEpisodes')) {
     final v = json['numberOfEpisodes'];
-    if (v != null && v is! int) {
-      issues.add(
-        EasyIssue(
-          path: 'numberOfEpisodes',
-          code: 'type_mismatch',
-          message: 'Expected int.',
-        ),
-      );
-    } else if (v != null) {}
+    if (v != null) {
+      final _n = v is int ? v : (v is String ? int.tryParse(v) : null);
+      if (_n == null) {
+        issues.add(
+          EasyIssue(
+            path: 'numberOfEpisodes',
+            code: 'type_mismatch',
+            message: 'Expected int.',
+          ),
+        );
+      } else {
+        final v = _n;
+      }
+    }
   }
   if (!json.containsKey('episodes')) {
     issues.add(
@@ -183,6 +239,15 @@ List<EasyIssue> seasonValidate(Map<String, dynamic> json) {
         path: 'episodes',
         code: 'missing_required',
         message: 'Missing required field.',
+      ),
+    );
+  }
+  if (json.containsKey('episodes') && json['episodes'] == null) {
+    issues.add(
+      EasyIssue(
+        path: 'episodes',
+        code: 'null_not_allowed',
+        message: 'Null value not allowed.',
       ),
     );
   }
@@ -240,13 +305,12 @@ Season seasonFromJsonSafe(
   void Function(EasyIssue)? onIssue,
   bool runValidate = true,
 }) {
-  if (runValidate) {
-    final _issues = seasonValidate(json);
-    if (onIssue != null) {
-      for (final i in _issues) onIssue(i);
-    }
+  // validate + parse podem apontar o mesmo problema: reporta uma vez só.
+  final _report = ej.dedupeIssues(onIssue);
+  if (runValidate && _report != null) {
+    for (final i in seasonValidate(json)) _report(i);
   }
-  return Season(
+  return ((void Function(EasyIssue)? onIssue) => Season(
     uid: (() {
       final v = json['uid'];
       return (v is String) ? v : '';
@@ -323,6 +387,32 @@ Season seasonFromJsonSafe(
         final elem = entry.value;
         return (() {
           final _v = entry.value;
+          if (_v == null) {
+            onIssue?.call(
+              EasyIssue(
+                path: 'episodes' + '[' + entry.key.toString() + ']',
+                code: 'null_not_allowed',
+                message: 'Null value not allowed.',
+              ),
+            );
+            return episodeFromJsonSafe(
+              const <String, dynamic>{},
+              onIssue: (i) => onIssue?.call(
+                EasyIssue(
+                  path:
+                      'episodes' +
+                      '[' +
+                      entry.key.toString() +
+                      ']' +
+                      '.' +
+                      i.path,
+                  code: i.code,
+                  message: i.message,
+                ),
+              ),
+              runValidate: false,
+            );
+          }
           if (_v is Map) {
             return episodeFromJsonSafe(
               Map<String, dynamic>.from(_v as Map),
@@ -363,7 +453,7 @@ Season seasonFromJsonSafe(
         })();
       }).toList();
     })(),
-  );
+  ))(_report);
 }
 
 class SeasonJson {

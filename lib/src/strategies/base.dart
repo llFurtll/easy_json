@@ -32,6 +32,14 @@ void _validateField(FieldContext c, StringBuffer out, String checkBody) {
       out.writeln(
         "if (!json.containsKey('${c.jsonKey}')) { issues.add(EasyIssue(path: ${c.pathExpr}, code: 'missing_required', message: 'Missing required field.')); }",
       );
+      // A chave presente com `null` num campo não-nullable também é um
+      // problema (antes passava em silêncio e o safe usava o fallback).
+      // Campos `T` ficam de fora: `T` pode ser instanciado como nullable.
+      if (!c.isTypeParameter) {
+        out.writeln(
+          "if (json.containsKey('${c.jsonKey}') && json['${c.jsonKey}'] == null) { issues.add(EasyIssue(path: ${c.pathExpr}, code: 'null_not_allowed', message: 'Null value not allowed.')); }",
+        );
+      }
     }
     out.writeln(
       "if (json.containsKey('${c.jsonKey}')) { final v = ${c.jsonAccessor}; $checkBody }",
@@ -156,17 +164,140 @@ String _enumFallbackExpr(String enumName, String? fallbackName) =>
     ? "$enumName.values.first"
     : "$enumName.values.firstWhere((e)=>e.name=='$fallbackName', orElse: ()=>$enumName.values.first)";
 
-String _fallbackFor(DartType t, {required bool nullable, Object? custom}) {
-  if (custom != null) {
-    if (custom is String) return "'${custom.replaceAll("'", r"\'")}'";
-    return custom.toString();
+/// Expressão Dart para o valor de `@EasyKey(fallback / itemFallback)` no
+/// tipo [t]. Se o valor não servir para o tipo (ou o tipo não suportar
+/// fallback), lança um erro de build claro — antes o valor ia "cru" para o
+/// código gerado, que às vezes não compilava e às vezes o ignorava.
+String _customValueExpr(Object value, DartType t, FieldContext c, String param) {
+  final shown = value is String ? "'$value'" : '$value';
+  Never bad(String why) => throw InvalidGenerationSourceError(
+    '@EasyKey($param: $shown) on `${c.enclosingClass.displayName}.${c.name}` '
+    '(`${t.getDisplayString()}`): $why',
+    element: c.element,
+  );
+
+  switch (displayNonNull(t)) {
+    case 'int':
+      if (value is int) return '$value';
+      bad('expected an int.');
+    case 'double':
+      if (value is num) return '${value.toDouble()}';
+      bad('expected a number.');
+    case 'num':
+      if (value is num) return '$value';
+      bad('expected a number.');
+    case 'bool':
+      if (value is bool) return '$value';
+      bad('expected a bool.');
+    case 'String':
+      if (value is String) return _dartStringLiteral(value);
+      bad('expected a String.');
+    case 'DateTime':
+      if (value is int) return 'DateTime.fromMillisecondsSinceEpoch($value)';
+      if (value is String && DateTime.tryParse(value) != null) {
+        return 'DateTime.parse(${_dartStringLiteral(value)})';
+      }
+      bad('expected an ISO-8601 String or epoch milliseconds (int).');
+    case 'Uri':
+      if (value is String && Uri.tryParse(value) != null) {
+        return 'Uri.parse(${_dartStringLiteral(value)})';
+      }
+      bad('expected a valid URI String.');
+    case 'Duration':
+      if (value is int) return 'Duration(microseconds: $value)';
+      bad('expected a number of microseconds (int).');
+    case 'BigInt':
+      if (value is int) return 'BigInt.from($value)';
+      if (value is String && BigInt.tryParse(value) != null) {
+        return 'BigInt.parse(${_dartStringLiteral(value)})';
+      }
+      bad('expected an int or an integer String.');
+    case 'Uint8List':
+      if (value is String) {
+        try {
+          base64Decode(value);
+          return 'base64Decode(${_dartStringLiteral(value)})';
+        } on FormatException {
+          // cai no erro abaixo
+        }
+      }
+      bad('expected a Base64 String.');
   }
+  if (isEnumType(t)) bad('use `enumFallback` for enums.');
+  bad('fallbacks are supported for int, double, num, bool, String, DateTime, '
+      'Uri, Duration, BigInt and Uint8List values.');
+}
+
+/// Fallback de campo (`@EasyKey(fallback:)`) já convertido, ou null.
+String? _fieldFallbackExpr(FieldContext c) => c.fieldFallback == null
+    ? null
+    : _customValueExpr(c.fieldFallback!, c.type, c, 'fallback');
+
+/// Tipo do item/valor de uma coleção (List, Set ou Map), ou null.
+DartType? _collectionItemType(FieldContext c) =>
+    c.listItemType ?? c.setItemType ?? c.mapValueType;
+
+/// Checa, no build, todos os valores de `@EasyKey` de [c] — inclusive nos
+/// tipos em que o fallback não chega a ser usado, para que um valor inválido
+/// nunca passe em silêncio.
+void checkEasyKeyValues(FieldContext c) {
+  _fieldFallbackExpr(c);
+
+  if (c.itemFallback != null) {
+    final item = c.isSet ? null : _collectionItemType(c);
+    if (item == null) {
+      throw InvalidGenerationSourceError(
+        '@EasyKey(itemFallback:) on `${c.enclosingClass.displayName}.${c.name}`: '
+        'itemFallback is only supported on List and Map fields.',
+        element: c.element,
+      );
+    }
+    _customValueExpr(c.itemFallback!, item, c, 'itemFallback');
+  }
+
+  final name = c.enumFallbackName;
+  if (name != null) {
+    final enumType = isEnumType(c.type) ? c.type : _collectionItemType(c);
+    final el = enumType?.element;
+    if (el is! EnumElement) {
+      throw InvalidGenerationSourceError(
+        "@EasyKey(enumFallback: '$name') on `${c.enclosingClass.displayName}.${c.name}`: "
+        'the field is not an enum (or a List/Set/Map of an enum).',
+        element: c.element,
+      );
+    }
+    final names = [
+      for (final f in el.fields)
+        if (f.isEnumConstant) f.displayName,
+    ];
+    if (!names.contains(name)) {
+      throw InvalidGenerationSourceError(
+        "@EasyKey(enumFallback: '$name') on `${c.enclosingClass.displayName}.${c.name}`: "
+        '`${el.displayName}` has no value named `$name` (values: ${names.join(', ')}).',
+        element: c.element,
+      );
+    }
+  }
+}
+
+String _fallbackFor(
+  DartType t, {
+  required bool nullable,
+  Object? custom,
+  FieldContext? c,
+  String param = 'fallback',
+}) {
+  if (custom != null) return _customValueExpr(custom, t, c!, param);
+  // Sem fallback customizado, um tipo nullable volta para `null` — e não para
+  // o "zero" do tipo (antes, um `int?` ausente virava 0 no fromJsonSafe).
+  if (nullable) return 'null';
   final base = displayNonNull(t);
   if (base == 'DateTime') {
     return nullable ? 'null' : 'DateTime.fromMillisecondsSinceEpoch(0)';
   }
   switch (base) {
     case 'int':
+    case 'num':
       return '0';
     case 'double':
       return '0.0';

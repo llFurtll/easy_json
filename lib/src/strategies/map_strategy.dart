@@ -137,12 +137,25 @@ class MapStrategy implements TypeStrategy {
             }
           }
         """);
+      } else if (_richScalar(V) != null) {
+        final path = "${c.pathExpr} + '.' + e.key.toString()";
+        final nullCheck = displayWithNull(V).endsWith('?')
+            ? ''
+            : "if (val == null) { issues.add(EasyIssue(path: $path, code: 'null_not_allowed', message: 'Null value not allowed.')); } else ";
+        sb.writeln("""
+          for (final e in v.entries) {
+            final val = e.value;
+            $nullCheck if (val != null) { ${_validateRich(_richScalar(V)!, 'val', path)} }
+          }
+        """);
       } else {
         final vBase = displayNonNull(V);
         sb.writeln("""
           for (final e in v.entries) {
             final val = e.value;
-            if (val != null && val is! $vBase) {
+            if (val == null) {
+              ${displayWithNull(V).endsWith('?') ? '' : "issues.add(EasyIssue(path: ${c.pathExpr} + '.' + e.key.toString(), code: 'null_not_allowed', message: 'Null value not allowed.'));"}
+            } else if (val is! ${vBase == 'double' ? 'num' : vBase}) {
               issues.add(EasyIssue(path: ${c.pathExpr} + '.' + e.key.toString(), code: 'type_mismatch', message: 'Expected $vBase.'));
             }
           }
@@ -187,6 +200,14 @@ class MapStrategy implements TypeStrategy {
       return "${c.instanceAccess}$q.map((k,v)=>MapEntry($k, ${c.valueToJson!}(v)))";
     }
 
+    final rs = _richScalar(V);
+    if (rs != null) {
+      final enc = displayWithNull(V).endsWith('?')
+          ? "v == null ? null : ${rs.encode('v')}"
+          : rs.encode('v');
+      return "${c.instanceAccess}$q.map((k,v)=>MapEntry($k, $enc))";
+    }
+
     if (!stringKeys) {
       return "${c.instanceAccess}$q.map((k,v)=>MapEntry($k, v))";
     }
@@ -203,6 +224,8 @@ String _fastItemParse(DartType item) {
         ? "e == null ? null : fromJson$t(e)"
         : "fromJson$t(e)";
   }
+  final rs = _richScalar(item);
+  if (rs != null) return _fastRich(rs, item, 'e');
   if (isEasyJsonClass(item)) {
     final cn = displayNonNull(item);
     final vn = _lcFirst(cn);
@@ -260,6 +283,12 @@ String _safeItemParse(DartType item, FieldContext c, {bool indexPath = false}) {
     """;
   }
 
+  final rs = _richScalar(item);
+  if (rs != null) {
+    return _safeRich(rs, item, 'entry.value', pathPrefix,
+        customFallback: c.itemFallback == null ? null : _customValueExpr(c.itemFallback!, item, c, 'itemFallback'));
+  }
+
   // ===== Objetos @EasyJson =====
   if (isEasyJsonClass(item)) {
     final cn = displayNonNull(item);
@@ -270,9 +299,22 @@ String _safeItemParse(DartType item, FieldContext c, {bool indexPath = false}) {
     // Se NÃO for Map -> emite issue e:
     //   - item nullable: devolve null
     //   - item non-nullable: instancia com {} pra não quebrar
+    final emptyObj = '''${vn}FromJsonSafe(
+            const <String,dynamic>{},
+            onIssue:(i)=>onIssue?.call(EasyIssue(
+              path: $pathPrefix + '.' + i.path,
+              code: i.code,
+              message: i.message
+            )),
+            runValidate:false
+          )''';
+    final onNull = isNullableItem
+        ? 'return null;'
+        : "onIssue?.call(EasyIssue(path: $pathPrefix, code: 'null_not_allowed', message: 'Null value not allowed.')); return $emptyObj;";
     return """
 (() {
   final _v = entry.value;
+  if (_v == null) { $onNull }
   if (_v is Map) {
     return ${vn}FromJsonSafe(
       Map<String,dynamic>.from(_v as Map),
@@ -343,22 +385,29 @@ String _safeItemParse(DartType item, FieldContext c, {bool indexPath = false}) {
     item,
     nullable: displayWithNull(item).endsWith('?'),
     custom: c.itemFallback,
+    c: c,
+    param: 'itemFallback',
   );
 
-  // Em todos os casos abaixo, quando não bate o tipo:
-  // - emite issue type_mismatch no pathPrefix
-  // - retorna fallback coerente
+  // Em todos os casos abaixo:
+  // - item null: nullable -> null; senão null_not_allowed (igual ao validate)
+  // - tipo errado: issue type_mismatch no pathPrefix + fallback coerente
+  final onNull = displayWithNull(item).endsWith('?')
+      ? 'return null;'
+      : "onIssue?.call(EasyIssue(path: $pathPrefix, code: 'null_not_allowed', message: 'Null value not allowed.')); return $itemFb;";
+  String prim(String accept, String message) =>
+      "((){ final v=entry.value; if (v == null) { $onNull } $accept onIssue?.call(EasyIssue(path: $pathPrefix, code: 'type_mismatch', message: '$message')); return $itemFb; })()";
   switch (base) {
     case 'int':
-      return "((){ final v=entry.value; if (v is int) return v; onIssue?.call(EasyIssue(path: $pathPrefix, code: 'type_mismatch', message: 'Expected int.')); return $itemFb; })()";
+      return prim('if (v is int) return v;', 'Expected int.');
     case 'double':
-      return "((){ final v=entry.value; if (v is num) return v.toDouble(); onIssue?.call(EasyIssue(path: $pathPrefix, code: 'type_mismatch', message: 'Expected number (int/double).')); return $itemFb; })()";
+      return prim('if (v is num) return v.toDouble();', 'Expected number (int/double).');
     case 'bool':
-      return "((){ final v=entry.value; if (v is bool) return v; onIssue?.call(EasyIssue(path: $pathPrefix, code: 'type_mismatch', message: 'Expected bool.')); return $itemFb; })()";
+      return prim('if (v is bool) return v;', 'Expected bool.');
     case 'String':
-      return "((){ final v=entry.value; if (v is String) return v; onIssue?.call(EasyIssue(path: $pathPrefix, code: 'type_mismatch', message: 'Expected String.')); return $itemFb; })()";
+      return prim('if (v is String) return v;', 'Expected String.');
     default:
-      return "((){ final v=entry.value; if (v is $base) return v; onIssue?.call(EasyIssue(path: $pathPrefix, code: 'type_mismatch', message: 'Expected $base.')); return $itemFb; })()";
+      return prim('if (v is $base) return v;', 'Expected $base.');
   }
 }
 
@@ -378,6 +427,8 @@ String _fastValueParse(DartType V, FieldContext c) {
   if (c.valueFromJson != null) {
     return "${c.valueFromJson!}(entry.value)";
   }
+  final rs = _richScalar(V);
+  if (rs != null) return _fastRich(rs, V, 'entry.value');
   final base = displayNonNull(V);
   final nullable = displayWithNull(V).endsWith('?');
   if (nullable) {
@@ -443,14 +494,23 @@ String _safeValueParse(DartType V, FieldContext c, {bool keyPath = false}) {
       V,
       nullable: displayWithNull(V).endsWith('?'),
       custom: c.itemFallback,
+    c: c,
+    param: 'itemFallback',
     );
     return "((){ try { return ${c.valueFromJson!}(entry.value); } catch(_){ return $fb; } })()";
+  }
+  final rs = _richScalar(V);
+  if (rs != null) {
+    return _safeRich(rs, V, 'entry.value', pathPrefix,
+        customFallback: c.itemFallback == null ? null : _customValueExpr(c.itemFallback!, V, c, 'itemFallback'));
   }
   final base = displayNonNull(V);
   final itemFb = _fallbackFor(
     V,
     nullable: displayWithNull(V).endsWith('?'),
     custom: c.itemFallback,
+    c: c,
+    param: 'itemFallback',
   );
   switch (base) {
     case 'int':
@@ -493,7 +553,34 @@ String _lcFirst(String s) =>
     s.isEmpty ? s : (s[0].toLowerCase() + s.substring(1));
 
 String _safeItemParseForSet(DartType item, FieldContext c) {
+  // Item null num Set de tipo não-nullable: null_not_allowed (o mesmo código
+  // que o validate usa), em vez do type_mismatch que cada ramo daria.
+  final body = _safeItemParseForSetBody(item, c);
+  if (displayWithNull(item).endsWith('?')) return body;
   final pathWithIdx = "${c.pathExpr} + '[' + entry.key.toString() + ']'";
+  return body.replaceFirst(
+    'final vv = entry.value;',
+    "final vv = entry.value; if (vv == null) { onIssue?.call(EasyIssue(path: $pathWithIdx, code: 'null_not_allowed', message: 'Null value not allowed.')); return null; }",
+  );
+}
+
+String _safeItemParseForSetBody(DartType item, FieldContext c) {
+  final pathWithIdx = "${c.pathExpr} + '[' + entry.key.toString() + ']'";
+
+  // Tipos ricos: inválido -> issue e descarta (null é filtrado do Set).
+  final rs = _richScalar(item);
+  if (rs != null) {
+    return """
+      (() {
+        final vv = entry.value;
+        if (vv == null) return null;
+        final r = ${rs.decoder}(vv);
+        if (r != null) return r;
+        onIssue?.call(${rs.issue('vv', pathWithIdx)});
+        return null;
+      })()
+    """;
+  }
 
   // EasyJson class
   if (isEasyJsonClass(item)) {

@@ -1,6 +1,69 @@
 // lib/src/runtime.dart
 library;
 
+import 'dart:convert';
+import 'dart:typed_data';
+
+import 'easy_issue.dart';
+
+/// Envolve [onIssue] para descartar issues repetidas (mesmo `path` e `code`).
+///
+/// Usado pelo `fromJsonSafe` gerado: o `validate` e o parse podem apontar o
+/// mesmo problema, e ele deve ser reportado uma vez só.
+void Function(EasyIssue)? dedupeIssues(void Function(EasyIssue)? onIssue) {
+  if (onIssue == null) return null;
+  final seen = <String>{};
+  return (issue) {
+    if (seen.add('${issue.path}\u0000${issue.code}')) onIssue(issue);
+  };
+}
+
+// ===== Decodificadores de valores "ricos" =====
+// Usados pelo código gerado quando esses tipos aparecem como item de
+// List/Set ou valor de Map (e na validação deles). Todos devolvem `null`
+// quando o valor não pode ser convertido — nunca lançam.
+
+/// `num`, ou uma String numérica (`"3.5"`).
+num? decodeNum(Object? v) =>
+    v is num ? v : (v is String ? num.tryParse(v) : null);
+
+/// String ISO-8601, ou milissegundos desde a epoch.
+DateTime? decodeDateTime(Object? v) {
+  if (v is String) return DateTime.tryParse(v);
+  if (v is num) return DateTime.fromMillisecondsSinceEpoch(v.toInt());
+  return null;
+}
+
+/// String com uma URI válida.
+Uri? decodeUri(Object? v) => v is String ? Uri.tryParse(v) : null;
+
+/// Número de microssegundos (ou String numérica).
+Duration? decodeDuration(Object? v) {
+  if (v is num) return Duration(microseconds: v.toInt());
+  if (v is String) {
+    final p = int.tryParse(v);
+    return p == null ? null : Duration(microseconds: p);
+  }
+  return null;
+}
+
+/// String decimal, ou um número inteiro.
+BigInt? decodeBigInt(Object? v) {
+  if (v is String) return BigInt.tryParse(v);
+  if (v is num) return BigInt.from(v.toInt());
+  return null;
+}
+
+/// String em Base64.
+Uint8List? decodeBytes(Object? v) {
+  if (v is! String) return null;
+  try {
+    return base64Decode(v);
+  } on FormatException {
+    return null;
+  }
+}
+
 /// Coerções básicas usadas no SAFE e no fast parse.
 /// Todas são "permissivas" e nunca lançam exceção.
 

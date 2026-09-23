@@ -56,6 +56,15 @@ List<EasyIssue> userValidate(Map<String, dynamic> json) {
       ),
     );
   }
+  if (json.containsKey('name') && json['name'] == null) {
+    issues.add(
+      EasyIssue(
+        path: 'name',
+        code: 'null_not_allowed',
+        message: 'Null value not allowed.',
+      ),
+    );
+  }
   if (json.containsKey('name')) {
     final v = json['name'];
     if (v != null && v is! String) {
@@ -77,13 +86,31 @@ List<EasyIssue> userValidate(Map<String, dynamic> json) {
       ),
     );
   }
+  if (json.containsKey('age') && json['age'] == null) {
+    issues.add(
+      EasyIssue(
+        path: 'age',
+        code: 'null_not_allowed',
+        message: 'Null value not allowed.',
+      ),
+    );
+  }
   if (json.containsKey('age')) {
     final v = json['age'];
-    if (v != null && v is! int) {
-      issues.add(
-        EasyIssue(path: 'age', code: 'type_mismatch', message: 'Expected int.'),
-      );
-    } else if (v != null) {}
+    if (v != null) {
+      final _n = v is int ? v : (v is String ? int.tryParse(v) : null);
+      if (_n == null) {
+        issues.add(
+          EasyIssue(
+            path: 'age',
+            code: 'type_mismatch',
+            message: 'Expected int.',
+          ),
+        );
+      } else {
+        final v = _n;
+      }
+    }
   }
   if (json.containsKey('email')) {
     final v = json['email'];
@@ -105,13 +132,12 @@ User userFromJsonSafe(
   void Function(EasyIssue)? onIssue,
   bool runValidate = true,
 }) {
-  if (runValidate) {
-    final _issues = userValidate(json);
-    if (onIssue != null) {
-      for (final i in _issues) onIssue(i);
-    }
+  // validate + parse podem apontar o mesmo problema: reporta uma vez só.
+  final _report = ej.dedupeIssues(onIssue);
+  if (runValidate && _report != null) {
+    for (final i in userValidate(json)) _report(i);
   }
-  return User(
+  return ((void Function(EasyIssue)? onIssue) => User(
     name: (() {
       final v = json['name'];
       return (v is String) ? v : '';
@@ -130,7 +156,7 @@ User userFromJsonSafe(
       final v = json['email'];
       return (v is String) ? v : null;
     })(),
-  );
+  ))(_report);
 }
 
 class UserJson {
@@ -208,6 +234,15 @@ List<EasyIssue> productValidate(Map<String, dynamic> json) {
       ),
     );
   }
+  if (json.containsKey('name') && json['name'] == null) {
+    issues.add(
+      EasyIssue(
+        path: 'name',
+        code: 'null_not_allowed',
+        message: 'Null value not allowed.',
+      ),
+    );
+  }
   if (json.containsKey('name')) {
     final v = json['name'];
     if (v != null && v is! String) {
@@ -239,10 +274,21 @@ List<EasyIssue> productValidate(Map<String, dynamic> json) {
       ),
     );
   }
+  if (json.containsKey('price') && json['price'] == null) {
+    issues.add(
+      EasyIssue(
+        path: 'price',
+        code: 'null_not_allowed',
+        message: 'Null value not allowed.',
+      ),
+    );
+  }
   if (json.containsKey('price')) {
     final v = json['price'];
     if (v != null) {
-      final _n = v is num ? v : (v is String ? double.tryParse(v) : null);
+      final _n = v is num
+          ? v.toDouble()
+          : (v is String ? double.tryParse(v) : null);
       if (_n == null) {
         issues.add(
           EasyIssue(
@@ -252,7 +298,7 @@ List<EasyIssue> productValidate(Map<String, dynamic> json) {
           ),
         );
       } else {
-        final v = _n.toDouble();
+        final v = _n;
       }
     }
   }
@@ -265,17 +311,31 @@ List<EasyIssue> productValidate(Map<String, dynamic> json) {
       ),
     );
   }
+  if (json.containsKey('stock') && json['stock'] == null) {
+    issues.add(
+      EasyIssue(
+        path: 'stock',
+        code: 'null_not_allowed',
+        message: 'Null value not allowed.',
+      ),
+    );
+  }
   if (json.containsKey('stock')) {
     final v = json['stock'];
-    if (v != null && v is! int) {
-      issues.add(
-        EasyIssue(
-          path: 'stock',
-          code: 'type_mismatch',
-          message: 'Expected int.',
-        ),
-      );
-    } else if (v != null) {}
+    if (v != null) {
+      final _n = v is int ? v : (v is String ? int.tryParse(v) : null);
+      if (_n == null) {
+        issues.add(
+          EasyIssue(
+            path: 'stock',
+            code: 'type_mismatch',
+            message: 'Expected int.',
+          ),
+        );
+      } else {
+        final v = _n;
+      }
+    }
   }
   return issues;
 }
@@ -285,13 +345,12 @@ Product productFromJsonSafe(
   void Function(EasyIssue)? onIssue,
   bool runValidate = true,
 }) {
-  if (runValidate) {
-    final _issues = productValidate(json);
-    if (onIssue != null) {
-      for (final i in _issues) onIssue(i);
-    }
+  // validate + parse podem apontar o mesmo problema: reporta uma vez só.
+  final _report = ej.dedupeIssues(onIssue);
+  if (runValidate && _report != null) {
+    for (final i in productValidate(json)) _report(i);
   }
-  return Product(
+  return ((void Function(EasyIssue)? onIssue) => Product(
     name: (() {
       final v = json['name'];
       return (v is String) ? v : '';
@@ -315,7 +374,7 @@ Product productFromJsonSafe(
       }
       return 0;
     })(),
-  );
+  ))(_report);
 }
 
 class ProductJson {
@@ -395,6 +454,15 @@ List<EasyIssue> signUpValidate(Map<String, dynamic> json) {
       ),
     );
   }
+  if (json.containsKey('name') && json['name'] == null) {
+    issues.add(
+      EasyIssue(
+        path: 'name',
+        code: 'null_not_allowed',
+        message: 'Null value not allowed.',
+      ),
+    );
+  }
   if (json.containsKey('name')) {
     final v = json['name'];
     if (v != null && v is! String) {
@@ -416,13 +484,31 @@ List<EasyIssue> signUpValidate(Map<String, dynamic> json) {
       ),
     );
   }
+  if (json.containsKey('age') && json['age'] == null) {
+    issues.add(
+      EasyIssue(
+        path: 'age',
+        code: 'null_not_allowed',
+        message: 'Null value not allowed.',
+      ),
+    );
+  }
   if (json.containsKey('age')) {
     final v = json['age'];
-    if (v != null && v is! int) {
-      issues.add(
-        EasyIssue(path: 'age', code: 'type_mismatch', message: 'Expected int.'),
-      );
-    } else if (v != null) {}
+    if (v != null) {
+      final _n = v is int ? v : (v is String ? int.tryParse(v) : null);
+      if (_n == null) {
+        issues.add(
+          EasyIssue(
+            path: 'age',
+            code: 'type_mismatch',
+            message: 'Expected int.',
+          ),
+        );
+      } else {
+        final v = _n;
+      }
+    }
   }
   if (!json.containsKey('email')) {
     issues.add(
@@ -430,6 +516,15 @@ List<EasyIssue> signUpValidate(Map<String, dynamic> json) {
         path: 'email',
         code: 'missing_required',
         message: 'Missing required field.',
+      ),
+    );
+  }
+  if (json.containsKey('email') && json['email'] == null) {
+    issues.add(
+      EasyIssue(
+        path: 'email',
+        code: 'null_not_allowed',
+        message: 'Null value not allowed.',
       ),
     );
   }
@@ -465,13 +560,12 @@ SignUp signUpFromJsonSafe(
   void Function(EasyIssue)? onIssue,
   bool runValidate = true,
 }) {
-  if (runValidate) {
-    final _issues = signUpValidate(json);
-    if (onIssue != null) {
-      for (final i in _issues) onIssue(i);
-    }
+  // validate + parse podem apontar o mesmo problema: reporta uma vez só.
+  final _report = ej.dedupeIssues(onIssue);
+  if (runValidate && _report != null) {
+    for (final i in signUpValidate(json)) _report(i);
   }
-  return SignUp(
+  return ((void Function(EasyIssue)? onIssue) => SignUp(
     name: (() {
       final v = json['name'];
       return (v is String) ? v : '';
@@ -490,7 +584,7 @@ SignUp signUpFromJsonSafe(
       final v = json['email'];
       return (v is String) ? v : '';
     })(),
-  );
+  ))(_report);
 }
 
 class SignUpJson {
@@ -578,6 +672,15 @@ List<EasyIssue> pageResponseValidate<T>(Map<String, dynamic> json) {
       ),
     );
   }
+  if (json.containsKey('items') && json['items'] == null) {
+    issues.add(
+      EasyIssue(
+        path: 'items',
+        code: 'null_not_allowed',
+        message: 'Null value not allowed.',
+      ),
+    );
+  }
   if (json.containsKey('items')) {
     final v = json['items'];
     if (v != null && v is! List) {
@@ -612,17 +715,31 @@ List<EasyIssue> pageResponseValidate<T>(Map<String, dynamic> json) {
       ),
     );
   }
+  if (json.containsKey('total') && json['total'] == null) {
+    issues.add(
+      EasyIssue(
+        path: 'total',
+        code: 'null_not_allowed',
+        message: 'Null value not allowed.',
+      ),
+    );
+  }
   if (json.containsKey('total')) {
     final v = json['total'];
-    if (v != null && v is! int) {
-      issues.add(
-        EasyIssue(
-          path: 'total',
-          code: 'type_mismatch',
-          message: 'Expected int.',
-        ),
-      );
-    } else if (v != null) {}
+    if (v != null) {
+      final _n = v is int ? v : (v is String ? int.tryParse(v) : null);
+      if (_n == null) {
+        issues.add(
+          EasyIssue(
+            path: 'total',
+            code: 'type_mismatch',
+            message: 'Expected int.',
+          ),
+        );
+      } else {
+        final v = _n;
+      }
+    }
   }
   return issues;
 }
@@ -633,13 +750,12 @@ PageResponse<T> pageResponseFromJsonSafe<T>(
   void Function(EasyIssue)? onIssue,
   bool runValidate = true,
 }) {
-  if (runValidate) {
-    final _issues = pageResponseValidate<T>(json);
-    if (onIssue != null) {
-      for (final i in _issues) onIssue(i);
-    }
+  // validate + parse podem apontar o mesmo problema: reporta uma vez só.
+  final _report = ej.dedupeIssues(onIssue);
+  if (runValidate && _report != null) {
+    for (final i in pageResponseValidate<T>(json)) _report(i);
   }
-  return PageResponse<T>(
+  return ((void Function(EasyIssue)? onIssue) => PageResponse<T>(
     items: (() {
       final _v = json['items'];
       if (_v is! List) return <T>[];
@@ -660,7 +776,7 @@ PageResponse<T> pageResponseFromJsonSafe<T>(
       }
       return 0;
     })(),
-  );
+  ))(_report);
 }
 
 class PageResponseJson {
@@ -769,22 +885,20 @@ Post postFromJsonSafe(
   void Function(EasyIssue)? onIssue,
   bool runValidate = true,
 }) {
-  if (runValidate) {
-    final _issues = postValidate(json);
-    if (onIssue != null) {
-      for (final i in _issues) onIssue(i);
-    }
+  final _report = ej.dedupeIssues(onIssue);
+  if (runValidate && _report != null) {
+    for (final i in postValidate(json)) _report(i);
   }
   final d = json['type'];
   switch (d) {
     case 'text':
-      return textPostFromJsonSafe(json, onIssue: onIssue, runValidate: false);
+      return textPostFromJsonSafe(json, onIssue: _report, runValidate: false);
     case 'video':
-      return videoPostFromJsonSafe(json, onIssue: onIssue, runValidate: false);
+      return videoPostFromJsonSafe(json, onIssue: _report, runValidate: false);
     default:
       return unknownPostFromJsonSafe(
         json,
-        onIssue: onIssue,
+        onIssue: _report,
         runValidate: false,
       );
   }
@@ -857,6 +971,15 @@ List<EasyIssue> textPostValidate(Map<String, dynamic> json) {
       ),
     );
   }
+  if (json.containsKey('content') && json['content'] == null) {
+    issues.add(
+      EasyIssue(
+        path: 'content',
+        code: 'null_not_allowed',
+        message: 'Null value not allowed.',
+      ),
+    );
+  }
   if (json.containsKey('content')) {
     final v = json['content'];
     if (v != null && v is! String) {
@@ -877,18 +1000,17 @@ TextPost textPostFromJsonSafe(
   void Function(EasyIssue)? onIssue,
   bool runValidate = true,
 }) {
-  if (runValidate) {
-    final _issues = textPostValidate(json);
-    if (onIssue != null) {
-      for (final i in _issues) onIssue(i);
-    }
+  // validate + parse podem apontar o mesmo problema: reporta uma vez só.
+  final _report = ej.dedupeIssues(onIssue);
+  if (runValidate && _report != null) {
+    for (final i in textPostValidate(json)) _report(i);
   }
-  return TextPost(
+  return ((void Function(EasyIssue)? onIssue) => TextPost(
     content: (() {
       final v = json['content'];
       return (v is String) ? v : '';
     })(),
-  );
+  ))(_report);
 }
 
 class TextPostJson {
@@ -962,6 +1084,15 @@ List<EasyIssue> videoPostValidate(Map<String, dynamic> json) {
       ),
     );
   }
+  if (json.containsKey('url') && json['url'] == null) {
+    issues.add(
+      EasyIssue(
+        path: 'url',
+        code: 'null_not_allowed',
+        message: 'Null value not allowed.',
+      ),
+    );
+  }
   if (json.containsKey('url')) {
     final v = json['url'];
     if (v != null && v is! String) {
@@ -982,18 +1113,17 @@ VideoPost videoPostFromJsonSafe(
   void Function(EasyIssue)? onIssue,
   bool runValidate = true,
 }) {
-  if (runValidate) {
-    final _issues = videoPostValidate(json);
-    if (onIssue != null) {
-      for (final i in _issues) onIssue(i);
-    }
+  // validate + parse podem apontar o mesmo problema: reporta uma vez só.
+  final _report = ej.dedupeIssues(onIssue);
+  if (runValidate && _report != null) {
+    for (final i in videoPostValidate(json)) _report(i);
   }
-  return VideoPost(
+  return ((void Function(EasyIssue)? onIssue) => VideoPost(
     url: (() {
       final v = json['url'];
       return (v is String) ? v : '';
     })(),
-  );
+  ))(_report);
 }
 
 class VideoPostJson {
@@ -1066,13 +1196,12 @@ UnknownPost unknownPostFromJsonSafe(
   void Function(EasyIssue)? onIssue,
   bool runValidate = true,
 }) {
-  if (runValidate) {
-    final _issues = unknownPostValidate(json);
-    if (onIssue != null) {
-      for (final i in _issues) onIssue(i);
-    }
+  // validate + parse podem apontar o mesmo problema: reporta uma vez só.
+  final _report = ej.dedupeIssues(onIssue);
+  if (runValidate && _report != null) {
+    for (final i in unknownPostValidate(json)) _report(i);
   }
-  return UnknownPost();
+  return ((void Function(EasyIssue)? onIssue) => UnknownPost())(_report);
 }
 
 class UnknownPostJson {
@@ -1172,6 +1301,15 @@ List<EasyIssue> orderValidate(Map<String, dynamic> json) {
       ),
     );
   }
+  if (json.containsKey('_id') && json['_id'] == null) {
+    issues.add(
+      EasyIssue(
+        path: '_id',
+        code: 'null_not_allowed',
+        message: 'Null value not allowed.',
+      ),
+    );
+  }
   if (json.containsKey('_id')) {
     final v = json['_id'];
     if (v != null && v is! String) {
@@ -1190,6 +1328,15 @@ List<EasyIssue> orderValidate(Map<String, dynamic> json) {
         path: 'customer_name',
         code: 'missing_required',
         message: 'Missing required field.',
+      ),
+    );
+  }
+  if (json.containsKey('customer_name') && json['customer_name'] == null) {
+    issues.add(
+      EasyIssue(
+        path: 'customer_name',
+        code: 'null_not_allowed',
+        message: 'Null value not allowed.',
       ),
     );
   }
@@ -1235,6 +1382,15 @@ List<EasyIssue> orderValidate(Map<String, dynamic> json) {
       ),
     );
   }
+  if (json.containsKey('quantities') && json['quantities'] == null) {
+    issues.add(
+      EasyIssue(
+        path: 'quantities',
+        code: 'null_not_allowed',
+        message: 'Null value not allowed.',
+      ),
+    );
+  }
   if (json.containsKey('quantities')) {
     final v = json['quantities'];
     if (v != null && v is! Map) {
@@ -1265,7 +1421,15 @@ List<EasyIssue> orderValidate(Map<String, dynamic> json) {
 
       for (final e in v.entries) {
         final val = e.value;
-        if (val != null && val is! int) {
+        if (val == null) {
+          issues.add(
+            EasyIssue(
+              path: 'quantities' + '.' + e.key.toString(),
+              code: 'null_not_allowed',
+              message: 'Null value not allowed.',
+            ),
+          );
+        } else if (val is! int) {
           issues.add(
             EasyIssue(
               path: 'quantities' + '.' + e.key.toString(),
@@ -1285,13 +1449,12 @@ Order orderFromJsonSafe(
   void Function(EasyIssue)? onIssue,
   bool runValidate = true,
 }) {
-  if (runValidate) {
-    final _issues = orderValidate(json);
-    if (onIssue != null) {
-      for (final i in _issues) onIssue(i);
-    }
+  // validate + parse podem apontar o mesmo problema: reporta uma vez só.
+  final _report = ej.dedupeIssues(onIssue);
+  if (runValidate && _report != null) {
+    for (final i in orderValidate(json)) _report(i);
   }
-  return Order(
+  return ((void Function(EasyIssue)? onIssue) => Order(
     id: (() {
       final v = json['_id'];
       return (v is String) ? v : '';
@@ -1376,7 +1539,7 @@ Order orderFromJsonSafe(
       }
       return _out;
     })(),
-  );
+  ))(_report);
 }
 
 class OrderJson {
@@ -1446,6 +1609,15 @@ List<EasyIssue> userModelValidate(Map<String, dynamic> json) {
       ),
     );
   }
+  if (json.containsKey('email_address') && json['email_address'] == null) {
+    issues.add(
+      EasyIssue(
+        path: 'email_address',
+        code: 'null_not_allowed',
+        message: 'Null value not allowed.',
+      ),
+    );
+  }
   if (json.containsKey('email_address')) {
     final v = json['email_address'];
     if (v != null && v is! String) {
@@ -1466,18 +1638,17 @@ UserModel userModelFromJsonSafe(
   void Function(EasyIssue)? onIssue,
   bool runValidate = true,
 }) {
-  if (runValidate) {
-    final _issues = userModelValidate(json);
-    if (onIssue != null) {
-      for (final i in _issues) onIssue(i);
-    }
+  // validate + parse podem apontar o mesmo problema: reporta uma vez só.
+  final _report = ej.dedupeIssues(onIssue);
+  if (runValidate && _report != null) {
+    for (final i in userModelValidate(json)) _report(i);
   }
-  return UserModel(
+  return ((void Function(EasyIssue)? onIssue) => UserModel(
     emailAddress: (() {
       final v = json['email_address'];
       return (v is String) ? v : '';
     })(),
-  );
+  ))(_report);
 }
 
 class UserModelJson {
@@ -1541,6 +1712,15 @@ List<EasyIssue> loginResponseValidate(Map<String, dynamic> json) {
       ),
     );
   }
+  if (json.containsKey('token') && json['token'] == null) {
+    issues.add(
+      EasyIssue(
+        path: 'token',
+        code: 'null_not_allowed',
+        message: 'Null value not allowed.',
+      ),
+    );
+  }
   if (json.containsKey('token')) {
     final v = json['token'];
     if (v != null && v is! String) {
@@ -1561,18 +1741,17 @@ LoginResponse loginResponseFromJsonSafe(
   void Function(EasyIssue)? onIssue,
   bool runValidate = true,
 }) {
-  if (runValidate) {
-    final _issues = loginResponseValidate(json);
-    if (onIssue != null) {
-      for (final i in _issues) onIssue(i);
-    }
+  // validate + parse podem apontar o mesmo problema: reporta uma vez só.
+  final _report = ej.dedupeIssues(onIssue);
+  if (runValidate && _report != null) {
+    for (final i in loginResponseValidate(json)) _report(i);
   }
-  return LoginResponse(
+  return ((void Function(EasyIssue)? onIssue) => LoginResponse(
     token: (() {
       final v = json['token'];
       return (v is String) ? v : '';
     })(),
-  );
+  ))(_report);
 }
 
 class LoginResponseJson {
@@ -1671,6 +1850,15 @@ List<EasyIssue> accountValidate(Map<String, dynamic> json) {
       ),
     );
   }
+  if (json.containsKey('username') && json['username'] == null) {
+    issues.add(
+      EasyIssue(
+        path: 'username',
+        code: 'null_not_allowed',
+        message: 'Null value not allowed.',
+      ),
+    );
+  }
   if (json.containsKey('username')) {
     final v = json['username'];
     if (v != null && v is! String) {
@@ -1720,6 +1908,15 @@ List<EasyIssue> accountValidate(Map<String, dynamic> json) {
       ),
     );
   }
+  if (json.containsKey('email') && json['email'] == null) {
+    issues.add(
+      EasyIssue(
+        path: 'email',
+        code: 'null_not_allowed',
+        message: 'Null value not allowed.',
+      ),
+    );
+  }
   if (json.containsKey('email')) {
     final v = json['email'];
     if (v != null && v is! String) {
@@ -1753,30 +1950,47 @@ List<EasyIssue> accountValidate(Map<String, dynamic> json) {
       ),
     );
   }
+  if (json.containsKey('age') && json['age'] == null) {
+    issues.add(
+      EasyIssue(
+        path: 'age',
+        code: 'null_not_allowed',
+        message: 'Null value not allowed.',
+      ),
+    );
+  }
   if (json.containsKey('age')) {
     final v = json['age'];
-    if (v != null && v is! int) {
-      issues.add(
-        EasyIssue(path: 'age', code: 'type_mismatch', message: 'Expected int.'),
-      );
-    } else if (v != null) {
-      if ((v as num) < 18) {
+    if (v != null) {
+      final _n = v is int ? v : (v is String ? int.tryParse(v) : null);
+      if (_n == null) {
         issues.add(
           EasyIssue(
             path: 'age',
-            code: 'min_value',
-            message: 'The minimum value is 18.',
+            code: 'type_mismatch',
+            message: 'Expected int.',
           ),
         );
-      }
-      if ((v as num) > 120) {
-        issues.add(
-          EasyIssue(
-            path: 'age',
-            code: 'max_value',
-            message: 'The maximum value is 120.',
-          ),
-        );
+      } else {
+        final v = _n;
+        if ((v as num) < 18) {
+          issues.add(
+            EasyIssue(
+              path: 'age',
+              code: 'min_value',
+              message: 'The minimum value is 18.',
+            ),
+          );
+        }
+        if ((v as num) > 120) {
+          issues.add(
+            EasyIssue(
+              path: 'age',
+              code: 'max_value',
+              message: 'The maximum value is 120.',
+            ),
+          );
+        }
       }
     }
   }
@@ -1786,6 +2000,15 @@ List<EasyIssue> accountValidate(Map<String, dynamic> json) {
         path: 'birthDate',
         code: 'missing_required',
         message: 'Missing required field.',
+      ),
+    );
+  }
+  if (json.containsKey('birthDate') && json['birthDate'] == null) {
+    issues.add(
+      EasyIssue(
+        path: 'birthDate',
+        code: 'null_not_allowed',
+        message: 'Null value not allowed.',
       ),
     );
   }
@@ -1831,25 +2054,38 @@ List<EasyIssue> accountValidate(Map<String, dynamic> json) {
       ),
     );
   }
+  if (json.containsKey('luckyNumber') && json['luckyNumber'] == null) {
+    issues.add(
+      EasyIssue(
+        path: 'luckyNumber',
+        code: 'null_not_allowed',
+        message: 'Null value not allowed.',
+      ),
+    );
+  }
   if (json.containsKey('luckyNumber')) {
     final v = json['luckyNumber'];
-    if (v != null && v is! int) {
-      issues.add(
-        EasyIssue(
-          path: 'luckyNumber',
-          code: 'type_mismatch',
-          message: 'Expected int.',
-        ),
-      );
-    } else if (v != null) {
-      if (!(Rules.isEven(v as int))) {
+    if (v != null) {
+      final _n = v is int ? v : (v is String ? int.tryParse(v) : null);
+      if (_n == null) {
         issues.add(
           EasyIssue(
             path: 'luckyNumber',
-            code: 'custom_validation_failed',
-            message: 'Custom validation failed.',
+            code: 'type_mismatch',
+            message: 'Expected int.',
           ),
         );
+      } else {
+        final v = _n;
+        if (!(Rules.isEven(v as int))) {
+          issues.add(
+            EasyIssue(
+              path: 'luckyNumber',
+              code: 'custom_validation_failed',
+              message: 'Custom validation failed.',
+            ),
+          );
+        }
       }
     }
   }
@@ -1861,13 +2097,12 @@ Account accountFromJsonSafe(
   void Function(EasyIssue)? onIssue,
   bool runValidate = true,
 }) {
-  if (runValidate) {
-    final _issues = accountValidate(json);
-    if (onIssue != null) {
-      for (final i in _issues) onIssue(i);
-    }
+  // validate + parse podem apontar o mesmo problema: reporta uma vez só.
+  final _report = ej.dedupeIssues(onIssue);
+  if (runValidate && _report != null) {
+    for (final i in accountValidate(json)) _report(i);
   }
-  return Account(
+  return ((void Function(EasyIssue)? onIssue) => Account(
     username: (() {
       final v = json['username'];
       return (v is String) ? v : '';
@@ -1925,7 +2160,7 @@ Account accountFromJsonSafe(
       }
       return 0;
     })(),
-  );
+  ))(_report);
 }
 
 class AccountJson {
@@ -2015,6 +2250,15 @@ List<EasyIssue> intKeyedValidate(Map<String, dynamic> json) {
       ),
     );
   }
+  if (json.containsKey('names') && json['names'] == null) {
+    issues.add(
+      EasyIssue(
+        path: 'names',
+        code: 'null_not_allowed',
+        message: 'Null value not allowed.',
+      ),
+    );
+  }
   if (json.containsKey('names')) {
     final v = json['names'];
     if (v != null && v is! Map) {
@@ -2045,7 +2289,15 @@ List<EasyIssue> intKeyedValidate(Map<String, dynamic> json) {
 
       for (final e in v.entries) {
         final val = e.value;
-        if (val != null && val is! String) {
+        if (val == null) {
+          issues.add(
+            EasyIssue(
+              path: 'names' + '.' + e.key.toString(),
+              code: 'null_not_allowed',
+              message: 'Null value not allowed.',
+            ),
+          );
+        } else if (val is! String) {
           issues.add(
             EasyIssue(
               path: 'names' + '.' + e.key.toString(),
@@ -2065,13 +2317,12 @@ IntKeyed intKeyedFromJsonSafe(
   void Function(EasyIssue)? onIssue,
   bool runValidate = true,
 }) {
-  if (runValidate) {
-    final _issues = intKeyedValidate(json);
-    if (onIssue != null) {
-      for (final i in _issues) onIssue(i);
-    }
+  // validate + parse podem apontar o mesmo problema: reporta uma vez só.
+  final _report = ej.dedupeIssues(onIssue);
+  if (runValidate && _report != null) {
+    for (final i in intKeyedValidate(json)) _report(i);
   }
-  return IntKeyed(
+  return ((void Function(EasyIssue)? onIssue) => IntKeyed(
     names: (() {
       final _v = json['names'];
       if (_v is! Map) return const <int, String>{};
@@ -2106,7 +2357,7 @@ IntKeyed intKeyedFromJsonSafe(
       }
       return _out;
     })(),
-  );
+  ))(_report);
 }
 
 class IntKeyedJson {

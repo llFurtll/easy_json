@@ -87,6 +87,15 @@ List<EasyIssue> episodeValidate(Map<String, dynamic> json) {
       ),
     );
   }
+  if (json.containsKey('uid') && json['uid'] == null) {
+    issues.add(
+      EasyIssue(
+        path: 'uid',
+        code: 'null_not_allowed',
+        message: 'Null value not allowed.',
+      ),
+    );
+  }
   if (json.containsKey('uid')) {
     final v = json['uid'];
     if (v != null && v is! String) {
@@ -105,6 +114,15 @@ List<EasyIssue> episodeValidate(Map<String, dynamic> json) {
         path: 'title',
         code: 'missing_required',
         message: 'Missing required field.',
+      ),
+    );
+  }
+  if (json.containsKey('title') && json['title'] == null) {
+    issues.add(
+      EasyIssue(
+        path: 'title',
+        code: 'null_not_allowed',
+        message: 'Null value not allowed.',
       ),
     );
   }
@@ -165,6 +183,15 @@ List<EasyIssue> episodeValidate(Map<String, dynamic> json) {
       ),
     );
   }
+  if (json.containsKey('series') && json['series'] == null) {
+    issues.add(
+      EasyIssue(
+        path: 'series',
+        code: 'null_not_allowed',
+        message: 'Null value not allowed.',
+      ),
+    );
+  }
   if (json.containsKey('series')) {
     final v = json['series'];
     if (v != null && v is! Map) {
@@ -194,6 +221,15 @@ List<EasyIssue> episodeValidate(Map<String, dynamic> json) {
         path: 'season',
         code: 'missing_required',
         message: 'Missing required field.',
+      ),
+    );
+  }
+  if (json.containsKey('season') && json['season'] == null) {
+    issues.add(
+      EasyIssue(
+        path: 'season',
+        code: 'null_not_allowed',
+        message: 'Null value not allowed.',
       ),
     );
   }
@@ -229,17 +265,31 @@ List<EasyIssue> episodeValidate(Map<String, dynamic> json) {
       ),
     );
   }
+  if (json.containsKey('seasonNumber') && json['seasonNumber'] == null) {
+    issues.add(
+      EasyIssue(
+        path: 'seasonNumber',
+        code: 'null_not_allowed',
+        message: 'Null value not allowed.',
+      ),
+    );
+  }
   if (json.containsKey('seasonNumber')) {
     final v = json['seasonNumber'];
-    if (v != null && v is! int) {
-      issues.add(
-        EasyIssue(
-          path: 'seasonNumber',
-          code: 'type_mismatch',
-          message: 'Expected int.',
-        ),
-      );
-    } else if (v != null) {}
+    if (v != null) {
+      final _n = v is int ? v : (v is String ? int.tryParse(v) : null);
+      if (_n == null) {
+        issues.add(
+          EasyIssue(
+            path: 'seasonNumber',
+            code: 'type_mismatch',
+            message: 'Expected int.',
+          ),
+        );
+      } else {
+        final v = _n;
+      }
+    }
   }
   if (!json.containsKey('episodeNumber')) {
     issues.add(
@@ -250,17 +300,31 @@ List<EasyIssue> episodeValidate(Map<String, dynamic> json) {
       ),
     );
   }
+  if (json.containsKey('episodeNumber') && json['episodeNumber'] == null) {
+    issues.add(
+      EasyIssue(
+        path: 'episodeNumber',
+        code: 'null_not_allowed',
+        message: 'Null value not allowed.',
+      ),
+    );
+  }
   if (json.containsKey('episodeNumber')) {
     final v = json['episodeNumber'];
-    if (v != null && v is! int) {
-      issues.add(
-        EasyIssue(
-          path: 'episodeNumber',
-          code: 'type_mismatch',
-          message: 'Expected int.',
-        ),
-      );
-    } else if (v != null) {}
+    if (v != null) {
+      final _n = v is int ? v : (v is String ? int.tryParse(v) : null);
+      if (_n == null) {
+        issues.add(
+          EasyIssue(
+            path: 'episodeNumber',
+            code: 'type_mismatch',
+            message: 'Expected int.',
+          ),
+        );
+      } else {
+        final v = _n;
+      }
+    }
   }
   if (json.containsKey('productionSerialNumber')) {
     final v = json['productionSerialNumber'];
@@ -289,7 +353,9 @@ List<EasyIssue> episodeValidate(Map<String, dynamic> json) {
   if (json.containsKey('stardateFrom')) {
     final v = json['stardateFrom'];
     if (v != null) {
-      final _n = v is num ? v : (v is String ? double.tryParse(v) : null);
+      final _n = v is num
+          ? v.toDouble()
+          : (v is String ? double.tryParse(v) : null);
       if (_n == null) {
         issues.add(
           EasyIssue(
@@ -299,14 +365,16 @@ List<EasyIssue> episodeValidate(Map<String, dynamic> json) {
           ),
         );
       } else {
-        final v = _n.toDouble();
+        final v = _n;
       }
     }
   }
   if (json.containsKey('stardateTo')) {
     final v = json['stardateTo'];
     if (v != null) {
-      final _n = v is num ? v : (v is String ? double.tryParse(v) : null);
+      final _n = v is num
+          ? v.toDouble()
+          : (v is String ? double.tryParse(v) : null);
       if (_n == null) {
         issues.add(
           EasyIssue(
@@ -316,33 +384,43 @@ List<EasyIssue> episodeValidate(Map<String, dynamic> json) {
           ),
         );
       } else {
-        final v = _n.toDouble();
+        final v = _n;
       }
     }
   }
   if (json.containsKey('yearFrom')) {
     final v = json['yearFrom'];
-    if (v != null && v is! int) {
-      issues.add(
-        EasyIssue(
-          path: 'yearFrom',
-          code: 'type_mismatch',
-          message: 'Expected int.',
-        ),
-      );
-    } else if (v != null) {}
+    if (v != null) {
+      final _n = v is int ? v : (v is String ? int.tryParse(v) : null);
+      if (_n == null) {
+        issues.add(
+          EasyIssue(
+            path: 'yearFrom',
+            code: 'type_mismatch',
+            message: 'Expected int.',
+          ),
+        );
+      } else {
+        final v = _n;
+      }
+    }
   }
   if (json.containsKey('yearTo')) {
     final v = json['yearTo'];
-    if (v != null && v is! int) {
-      issues.add(
-        EasyIssue(
-          path: 'yearTo',
-          code: 'type_mismatch',
-          message: 'Expected int.',
-        ),
-      );
-    } else if (v != null) {}
+    if (v != null) {
+      final _n = v is int ? v : (v is String ? int.tryParse(v) : null);
+      if (_n == null) {
+        issues.add(
+          EasyIssue(
+            path: 'yearTo',
+            code: 'type_mismatch',
+            message: 'Expected int.',
+          ),
+        );
+      } else {
+        final v = _n;
+      }
+    }
   }
   if (json.containsKey('usAirDate')) {
     final v = json['usAirDate'];
@@ -388,13 +466,12 @@ Episode episodeFromJsonSafe(
   void Function(EasyIssue)? onIssue,
   bool runValidate = true,
 }) {
-  if (runValidate) {
-    final _issues = episodeValidate(json);
-    if (onIssue != null) {
-      for (final i in _issues) onIssue(i);
-    }
+  // validate + parse podem apontar o mesmo problema: reporta uma vez só.
+  final _report = ej.dedupeIssues(onIssue);
+  if (runValidate && _report != null) {
+    for (final i in episodeValidate(json)) _report(i);
   }
-  return Episode(
+  return ((void Function(EasyIssue)? onIssue) => Episode(
     uid: (() {
       final v = json['uid'];
       return (v is String) ? v : '';
@@ -519,7 +596,7 @@ Episode episodeFromJsonSafe(
     })(),
     featureLength: (() {
       final v = json['featureLength'];
-      return (v is bool) ? v : false;
+      return (v is bool) ? v : null;
     })(),
     stardateFrom: (() {
       final v = json['stardateFrom'];
@@ -528,7 +605,7 @@ Episode episodeFromJsonSafe(
         final p = double.tryParse(v);
         if (p != null) return p;
       }
-      return 0.0;
+      return null;
     })(),
     stardateTo: (() {
       final v = json['stardateTo'];
@@ -537,7 +614,7 @@ Episode episodeFromJsonSafe(
         final p = double.tryParse(v);
         if (p != null) return p;
       }
-      return 0.0;
+      return null;
     })(),
     yearFrom: (() {
       final v = json['yearFrom'];
@@ -547,7 +624,7 @@ Episode episodeFromJsonSafe(
         final p = int.tryParse(v);
         if (p != null) return p;
       }
-      return 0;
+      return null;
     })(),
     yearTo: (() {
       final v = json['yearTo'];
@@ -557,7 +634,7 @@ Episode episodeFromJsonSafe(
         final p = int.tryParse(v);
         if (p != null) return p;
       }
-      return 0;
+      return null;
     })(),
     usAirDate: (() {
       final v = json['usAirDate'];
@@ -592,7 +669,7 @@ Episode episodeFromJsonSafe(
       final v = json['finalScriptDate'];
       return (v is String) ? v : null;
     })(),
-  );
+  ))(_report);
 }
 
 class EpisodeJson {

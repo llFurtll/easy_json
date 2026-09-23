@@ -50,6 +50,15 @@ List<EasyIssue> seasonResponseValidate(Map<String, dynamic> json) {
       ),
     );
   }
+  if (json.containsKey('season') && json['season'] == null) {
+    issues.add(
+      EasyIssue(
+        path: 'season',
+        code: 'null_not_allowed',
+        message: 'Null value not allowed.',
+      ),
+    );
+  }
   if (json.containsKey('season')) {
     final v = json['season'];
     if (v != null && v is! Map) {
@@ -81,13 +90,12 @@ SeasonResponse seasonResponseFromJsonSafe(
   void Function(EasyIssue)? onIssue,
   bool runValidate = true,
 }) {
-  if (runValidate) {
-    final _issues = seasonResponseValidate(json);
-    if (onIssue != null) {
-      for (final i in _issues) onIssue(i);
-    }
+  // validate + parse podem apontar o mesmo problema: reporta uma vez só.
+  final _report = ej.dedupeIssues(onIssue);
+  if (runValidate && _report != null) {
+    for (final i in seasonResponseValidate(json)) _report(i);
   }
-  return SeasonResponse(
+  return ((void Function(EasyIssue)? onIssue) => SeasonResponse(
     season: (() {
       final _v = json['season'];
       if (_v == null)
@@ -127,7 +135,7 @@ SeasonResponse seasonResponseFromJsonSafe(
         runValidate: false,
       );
     })(),
-  );
+  ))(_report);
 }
 
 class SeasonResponseJson {

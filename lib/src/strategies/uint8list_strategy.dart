@@ -17,12 +17,16 @@ class Uint8ListStrategy implements TypeStrategy {
 
   @override
   String fromJsonSafe(FieldContext c) {
-    final nfb = c.isNullable ? 'null' : 'Uint8List(0)';
+    // null num campo nullable continua null; valor inválido usa o
+    // @EasyKey(fallback:) se houver.
+    final custom = _fieldFallbackExpr(c);
+    final onNull = c.isNullable ? 'null' : (custom ?? 'Uint8List(0)');
+    final nfb = custom ?? (c.isNullable ? 'null' : 'Uint8List(0)');
     final code =
         """
       (() {
         final v = ${c.jsonAccessor};
-        if (v == null) return $nfb;
+        if (v == null) return $onNull;
         if (v is String) {
           try {
             return base64Decode(v);

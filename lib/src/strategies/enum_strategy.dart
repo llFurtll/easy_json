@@ -60,9 +60,14 @@ class EnumStrategy implements TypeStrategy {
   void validate(FieldContext c, StringBuffer out) {
     final en = displayNonNull(c.type);
 
+    // Mesmas regras do fromJsonSafe: nome (String) ou índice (int).
     final check =
       """
-        if (v != null && v is! String) {
+        if (v is int) {
+          if (v < 0 || v >= $en.values.length) {
+            issues.add(EasyIssue(path: ${c.pathExpr}, code: 'invalid_enum_index', message: 'Enum index out of range.'));
+          }
+        } else if (v != null && v is! String) {
           issues.add(EasyIssue(path: ${c.pathExpr}, code: 'type_mismatch', message: 'Expected String with the enum name.'));
         } else if (v != null) {
           final ok = $en.values.any((e) => e.name == v);

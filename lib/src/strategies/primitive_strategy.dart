@@ -52,6 +52,7 @@ class PrimitiveStrategy implements TypeStrategy {
       c.type,
       nullable: c.isNullable,
       custom: c.fieldFallback,
+      c: c,
     );
 
     // 2. Constrói a Lógica NATIVA Robusta (Standard Logic)
@@ -60,26 +61,29 @@ class PrimitiveStrategy implements TypeStrategy {
     String standardLogic;
 
     if (isExactlyDateTime(c.type)) {
-      final nfb = c.isNullable
-          ? 'null'
-          : 'DateTime.fromMillisecondsSinceEpoch(0)';
+      // null num campo nullable continua null; valor inválido usa o
+      // @EasyKey(fallback:) se houver.
+      final custom = _fieldFallbackExpr(c);
+      const epoch = 'DateTime.fromMillisecondsSinceEpoch(0)';
+      final onNull = c.isNullable ? 'null' : (custom ?? epoch);
+      final onBad = custom ?? (c.isNullable ? 'null' : epoch);
       // Lógica nativa poderosa para DateTime
       standardLogic =
           """
         (() {
           final v = ${c.jsonAccessor};
-          if (v == null) return $nfb;
+          if (v == null) return $onNull;
           if (v is DateTime) return v;
           if (v is int) return DateTime.fromMillisecondsSinceEpoch(v);
           if (v is num) return DateTime.fromMillisecondsSinceEpoch(v.toInt());
           if (v is String) {
             try { return DateTime.parse(v); } catch (_) {
               onIssue?.call(EasyIssue(path: ${c.pathExpr}, code: 'type_mismatch', message: 'Invalid DateTime format.'));
-              return $nfb; 
+              return $onBad;
             }
           }
           onIssue?.call(EasyIssue(path: ${c.pathExpr}, code: 'type_mismatch', message: 'Expected String/epoch/DateTime.'));
-          return $nfb;
+          return $onBad;
         })()
       """;
     } else {
@@ -94,14 +98,18 @@ class PrimitiveStrategy implements TypeStrategy {
           standardLogic =
               "((){ final v=${c.jsonAccessor}; if (v is num) return v.toDouble(); if (v is String) { final p = double.tryParse(v); if(p!=null) return p;} return $fb; })()";
           break;
+        case 'num':
+          standardLogic =
+              "((){ final v=ej.decodeNum(${c.jsonAccessor}); return v ?? $fb; })()";
+          break;
         case 'bool':
           standardLogic =
               "((){ final v=${c.jsonAccessor}; return (v is bool)?v:$fb; })()";
           break;
         case 'String':
-          standardLogic = c.isNullable
-              ? "((){ final v=${c.jsonAccessor}; return (v is String) ? v : null; })()"
-              : "((){ final v=${c.jsonAccessor}; return (v is String) ? v : ''; })()";
+          // Usa o fallback (inclusive o de @EasyKey(fallback:)), não um '' fixo.
+          standardLogic =
+              "((){ final v=${c.jsonAccessor}; return (v is String) ? v : $fb; })()";
           break;
         default:
           standardLogic = "${c.jsonAccessor} as ${displayWithNull(c.type)}";
@@ -153,17 +161,23 @@ class PrimitiveStrategy implements TypeStrategy {
           }
         }
       """;
-    } else if (t == 'double') {
-      // Aceita num ou String numérica (o parse safe converte "3.5"); qualquer
-      // outra coisa — inclusive String não numérica — é type_mismatch. As
-      // regras do @EasyValidate (min/max/custom) rodam sobre o número já
-      // convertido, que sombreia `v` dentro do bloco.
+    } else if (t == 'double' || t == 'int' || t == 'num') {
+      // Aceita o número ou uma String numérica ("5", "3.5") — o mesmo que o
+      // parse safe aceita; qualquer outra coisa é type_mismatch. As regras do
+      // @EasyValidate (min/max/custom) rodam sobre o número já convertido, que
+      // sombreia `v` dentro do bloco.
+      final parse = switch (t) {
+        'double' => 'v is num ? v.toDouble() : (v is String ? double.tryParse(v) : null)',
+        'int' => 'v is int ? v : (v is String ? int.tryParse(v) : null)',
+        _ => 'ej.decodeNum(v)',
+      };
+      final expected = t == 'int' ? 'Expected int.' : 'Expected number.';
       final sb = StringBuffer(
         "if (v != null) { "
-        "  final _n = v is num ? v : (v is String ? double.tryParse(v) : null); "
+        "  final _n = $parse; "
         "  if (_n == null) { "
-        "    issues.add(EasyIssue(path: ${c.pathExpr}, code: 'type_mismatch', message: 'Expected number.')); "
-        "  } else { final v = _n.toDouble(); ",
+        "    issues.add(EasyIssue(path: ${c.pathExpr}, code: 'type_mismatch', message: '$expected')); "
+        "  } else { final v = _n; ",
       );
       _generateValidationChecks(c, sb);
       sb.write('} }');

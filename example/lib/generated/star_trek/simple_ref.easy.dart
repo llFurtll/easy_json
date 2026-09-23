@@ -49,6 +49,15 @@ List<EasyIssue> simpleRefValidate(Map<String, dynamic> json) {
       ),
     );
   }
+  if (json.containsKey('uid') && json['uid'] == null) {
+    issues.add(
+      EasyIssue(
+        path: 'uid',
+        code: 'null_not_allowed',
+        message: 'Null value not allowed.',
+      ),
+    );
+  }
   if (json.containsKey('uid')) {
     final v = json['uid'];
     if (v != null && v is! String) {
@@ -67,6 +76,15 @@ List<EasyIssue> simpleRefValidate(Map<String, dynamic> json) {
         path: 'title',
         code: 'missing_required',
         message: 'Missing required field.',
+      ),
+    );
+  }
+  if (json.containsKey('title') && json['title'] == null) {
+    issues.add(
+      EasyIssue(
+        path: 'title',
+        code: 'null_not_allowed',
+        message: 'Null value not allowed.',
       ),
     );
   }
@@ -90,13 +108,12 @@ SimpleRef simpleRefFromJsonSafe(
   void Function(EasyIssue)? onIssue,
   bool runValidate = true,
 }) {
-  if (runValidate) {
-    final _issues = simpleRefValidate(json);
-    if (onIssue != null) {
-      for (final i in _issues) onIssue(i);
-    }
+  // validate + parse podem apontar o mesmo problema: reporta uma vez só.
+  final _report = ej.dedupeIssues(onIssue);
+  if (runValidate && _report != null) {
+    for (final i in simpleRefValidate(json)) _report(i);
   }
-  return SimpleRef(
+  return ((void Function(EasyIssue)? onIssue) => SimpleRef(
     uid: (() {
       final v = json['uid'];
       return (v is String) ? v : '';
@@ -105,7 +122,7 @@ SimpleRef simpleRefFromJsonSafe(
       final v = json['title'];
       return (v is String) ? v : '';
     })(),
-  );
+  ))(_report);
 }
 
 class SimpleRefJson {

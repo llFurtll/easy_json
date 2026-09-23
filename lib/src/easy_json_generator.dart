@@ -177,6 +177,8 @@ class EasyJsonGenerator extends Generator {
     final generics = _Generics(clazz);
     for (final c in contexts) {
       _checkGenericSupport(c, generics);
+      // fallback / itemFallback / enumFallback inválidos viram erro de build.
+      checkEasyKeyValues(c);
     }
     // `ApiResponse<T>` para classes genéricas, `User` para as demais.
     final classRef = '$className${generics.args}';
@@ -313,13 +315,14 @@ class EasyJsonGenerator extends Generator {
           ),
         ])
         ..body = Code("""
-        if (runValidate) {
-          final _issues = ${varName}Validate${generics.args}(json);
-          if (onIssue != null) { for (final i in _issues) onIssue(i); }
+        // validate + parse podem apontar o mesmo problema: reporta uma vez só.
+        final _report = ej.dedupeIssues(onIssue);
+        if (runValidate && _report != null) {
+          for (final i in ${varName}Validate${generics.args}(json)) _report(i);
         }
-        return $classRef(
+        return ((void Function(EasyIssue)? onIssue) => $classRef(
           $fromJsonSafeBody
-        );
+        ))(_report);
       """),
     );
 
@@ -462,20 +465,20 @@ class EasyJsonGenerator extends Generator {
 
     // fromJsonSafe
     final fromJsonSafeBuf = StringBuffer();
-    fromJsonSafeBuf.writeln("if (runValidate) {");
-    fromJsonSafeBuf.writeln("  final _issues = ${varName}Validate(json);");
-    fromJsonSafeBuf.writeln("  if (onIssue != null) { for (final i in _issues) onIssue(i); }");
+    fromJsonSafeBuf.writeln("final _report = ej.dedupeIssues(onIssue);");
+    fromJsonSafeBuf.writeln("if (runValidate && _report != null) {");
+    fromJsonSafeBuf.writeln("  for (final i in ${varName}Validate(json)) _report(i);");
     fromJsonSafeBuf.writeln("}");
     fromJsonSafeBuf.writeln("final d = json['$discriminator'];");
     fromJsonSafeBuf.writeln("switch (d) {");
     for (final entry in mapping.entries) {
       final childVarName = _lcFirst(entry.value);
-      fromJsonSafeBuf.writeln("  case '${entry.key}': return ${childVarName}FromJsonSafe(json, onIssue: onIssue, runValidate: false);");
+      fromJsonSafeBuf.writeln("  case '${entry.key}': return ${childVarName}FromJsonSafe(json, onIssue: _report, runValidate: false);");
     }
     fromJsonSafeBuf.writeln("  default:");
     if (fallbackType != null) {
       final fbVarName = _lcFirst(fallbackType);
-      fromJsonSafeBuf.writeln("    return ${fbVarName}FromJsonSafe(json, onIssue: onIssue, runValidate: false);");
+      fromJsonSafeBuf.writeln("    return ${fbVarName}FromJsonSafe(json, onIssue: _report, runValidate: false);");
     } else {
       fromJsonSafeBuf.writeln("    throw Exception('Unknown union type: \\\$d. Provide a fallback in @EasyUnion to avoid crashes on unknown types.');");
     }

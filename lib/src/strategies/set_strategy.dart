@@ -64,7 +64,10 @@ class SetStrategy implements TypeStrategy {
           } else {
   """);
 
-    if (isEasyJsonClass(item)) {
+    final rs = _richScalar(item);
+    if (rs != null) {
+      sb.writeln(_validateRich(rs, 'e', "${c.pathExpr} + '[' + i.toString() + ']'"));
+    } else if (isEasyJsonClass(item)) {
       final cn = displayNonNull(item);
       final vn = _lcFirst(cn);
       sb.writeln("""
@@ -91,7 +94,7 @@ class SetStrategy implements TypeStrategy {
     """);
     } else {
       sb.writeln("""
-            if (e is! $itemBase) {
+            if (e is! ${itemBase == 'double' ? 'num' : itemBase}) {
               issues.add(EasyIssue(path: ${c.pathExpr} + '[' + i.toString() + ']', code: 'type_mismatch', message: 'Expected $itemBase.'));
             }
     """);
@@ -108,6 +111,10 @@ class SetStrategy implements TypeStrategy {
   @override
   String toJson(FieldContext c) {
     final item = c.setItemType!;
+    final rich = _richEncodeItem(item);
+    if (rich != null) {
+      return "${c.instanceAccess}${c.isNullable ? '?' : ''}.map((e)=>$rich).toList()";
+    }
     if (isEasyJsonClass(item)) {
       return "${c.instanceAccess}${c.isNullable ? '?' : ''}.map((e)=>e.toJson()).toList()";
     }

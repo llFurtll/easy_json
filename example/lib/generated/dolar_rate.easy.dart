@@ -60,6 +60,15 @@ List<EasyIssue> dollarRateValidate(Map<String, dynamic> json) {
       ),
     );
   }
+  if (json.containsKey('moneda') && json['moneda'] == null) {
+    issues.add(
+      EasyIssue(
+        path: 'moneda',
+        code: 'null_not_allowed',
+        message: 'Null value not allowed.',
+      ),
+    );
+  }
   if (json.containsKey('moneda')) {
     final v = json['moneda'];
     if (v != null && v is! String) {
@@ -78,6 +87,15 @@ List<EasyIssue> dollarRateValidate(Map<String, dynamic> json) {
         path: 'casa',
         code: 'missing_required',
         message: 'Missing required field.',
+      ),
+    );
+  }
+  if (json.containsKey('casa') && json['casa'] == null) {
+    issues.add(
+      EasyIssue(
+        path: 'casa',
+        code: 'null_not_allowed',
+        message: 'Null value not allowed.',
       ),
     );
   }
@@ -102,6 +120,15 @@ List<EasyIssue> dollarRateValidate(Map<String, dynamic> json) {
       ),
     );
   }
+  if (json.containsKey('nombre') && json['nombre'] == null) {
+    issues.add(
+      EasyIssue(
+        path: 'nombre',
+        code: 'null_not_allowed',
+        message: 'Null value not allowed.',
+      ),
+    );
+  }
   if (json.containsKey('nombre')) {
     final v = json['nombre'];
     if (v != null && v is! String) {
@@ -123,10 +150,21 @@ List<EasyIssue> dollarRateValidate(Map<String, dynamic> json) {
       ),
     );
   }
+  if (json.containsKey('compra') && json['compra'] == null) {
+    issues.add(
+      EasyIssue(
+        path: 'compra',
+        code: 'null_not_allowed',
+        message: 'Null value not allowed.',
+      ),
+    );
+  }
   if (json.containsKey('compra')) {
     final v = json['compra'];
     if (v != null) {
-      final _n = v is num ? v : (v is String ? double.tryParse(v) : null);
+      final _n = v is num
+          ? v.toDouble()
+          : (v is String ? double.tryParse(v) : null);
       if (_n == null) {
         issues.add(
           EasyIssue(
@@ -136,7 +174,7 @@ List<EasyIssue> dollarRateValidate(Map<String, dynamic> json) {
           ),
         );
       } else {
-        final v = _n.toDouble();
+        final v = _n;
       }
     }
   }
@@ -149,10 +187,21 @@ List<EasyIssue> dollarRateValidate(Map<String, dynamic> json) {
       ),
     );
   }
+  if (json.containsKey('venta') && json['venta'] == null) {
+    issues.add(
+      EasyIssue(
+        path: 'venta',
+        code: 'null_not_allowed',
+        message: 'Null value not allowed.',
+      ),
+    );
+  }
   if (json.containsKey('venta')) {
     final v = json['venta'];
     if (v != null) {
-      final _n = v is num ? v : (v is String ? double.tryParse(v) : null);
+      final _n = v is num
+          ? v.toDouble()
+          : (v is String ? double.tryParse(v) : null);
       if (_n == null) {
         issues.add(
           EasyIssue(
@@ -162,7 +211,7 @@ List<EasyIssue> dollarRateValidate(Map<String, dynamic> json) {
           ),
         );
       } else {
-        final v = _n.toDouble();
+        final v = _n;
       }
     }
   }
@@ -172,6 +221,16 @@ List<EasyIssue> dollarRateValidate(Map<String, dynamic> json) {
         path: 'fechaActualizacion',
         code: 'missing_required',
         message: 'Missing required field.',
+      ),
+    );
+  }
+  if (json.containsKey('fechaActualizacion') &&
+      json['fechaActualizacion'] == null) {
+    issues.add(
+      EasyIssue(
+        path: 'fechaActualizacion',
+        code: 'null_not_allowed',
+        message: 'Null value not allowed.',
       ),
     );
   }
@@ -207,13 +266,12 @@ DollarRate dollarRateFromJsonSafe(
   void Function(EasyIssue)? onIssue,
   bool runValidate = true,
 }) {
-  if (runValidate) {
-    final _issues = dollarRateValidate(json);
-    if (onIssue != null) {
-      for (final i in _issues) onIssue(i);
-    }
+  // validate + parse podem apontar o mesmo problema: reporta uma vez só.
+  final _report = ej.dedupeIssues(onIssue);
+  if (runValidate && _report != null) {
+    for (final i in dollarRateValidate(json)) _report(i);
   }
-  return DollarRate(
+  return ((void Function(EasyIssue)? onIssue) => DollarRate(
     currency: (() {
       final v = json['moneda'];
       return (v is String) ? v : '';
@@ -273,7 +331,7 @@ DollarRate dollarRateFromJsonSafe(
       );
       return DateTime.fromMillisecondsSinceEpoch(0);
     })(),
-  );
+  ))(_report);
 }
 
 class DollarRateJson {

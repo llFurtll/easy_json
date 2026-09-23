@@ -54,8 +54,11 @@ class ListStrategy implements TypeStrategy {
           } else {
   """);
 
+    final rs = _richScalar(item);
     if (item is TypeParameterType) {
       // O tipo real de `T` só é conhecido pelo conversor: nada a checar aqui.
+    } else if (rs != null) {
+      sb.writeln(_validateRich(rs, 'e', "${c.pathExpr} + '[' + i.toString() + ']'"));
     } else if (isEasyJsonClass(item)) {
       final cn = displayNonNull(item);
       final vn = _lcFirst(cn);
@@ -83,7 +86,7 @@ class ListStrategy implements TypeStrategy {
     """);
     } else {
       sb.writeln("""
-            if (e is! $itemBase) {
+            if (e is! ${itemBase == 'double' ? 'num' : itemBase}) {
               issues.add(EasyIssue(path: ${c.pathExpr} + '[' + i.toString() + ']', code: 'type_mismatch', message: 'Expected $itemBase.'));
             }
     """);
@@ -106,6 +109,10 @@ class ListStrategy implements TypeStrategy {
           ? "e == null ? null : toJson$t(e as $t)"
           : "toJson$t(e)";
       return "${c.instanceAccess}${c.isNullable ? '?' : ''}.map((e)=>$conv).toList()";
+    }
+    final rich = _richEncodeItem(item);
+    if (rich != null) {
+      return "${c.instanceAccess}${c.isNullable ? '?' : ''}.map((e)=>$rich).toList()";
     }
     if (isEasyJsonClass(item)) {
       return "${c.instanceAccess}${c.isNullable ? '?' : ''}.map((e)=>e.toJson()).toList()";

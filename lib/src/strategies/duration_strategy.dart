@@ -18,12 +18,16 @@ class DurationStrategy implements TypeStrategy {
 
   @override
   String fromJsonSafe(FieldContext c) {
-    final nfb = c.isNullable ? 'null' : 'Duration.zero';
+    // null num campo nullable continua null; valor inválido usa o
+    // @EasyKey(fallback:) se houver.
+    final custom = _fieldFallbackExpr(c);
+    final onNull = c.isNullable ? 'null' : (custom ?? 'Duration.zero');
+    final nfb = custom ?? (c.isNullable ? 'null' : 'Duration.zero');
     final code =
         """
       (() {
         final v = ${c.jsonAccessor};
-        if (v == null) return $nfb;
+        if (v == null) return $onNull;
         if (v is num) return Duration(microseconds: v.toInt());
         if (v is String) {
           final p = int.tryParse(v);
