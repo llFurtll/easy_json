@@ -48,6 +48,8 @@ print(user.toJson()); // {name: Ana, age: 30}
 
 Null fields are left out of `toJson` by default (see `includeIfNull`).
 
+**Optional:** add [`dart_easy_json_lints`](https://pub.dev/packages/dart_easy_json_lints) to catch annotation mistakes in your editor, before running `build_runner` — see [Catching mistakes in the editor](#catching-mistakes-in-the-editor).
+
 ## Why dart_easy_json?
 
 *   **Parsing that never throws.** `fromJsonSafe` builds the object even from broken data, using sensible fallbacks, and tells you what was wrong through `onIssue` — so one bad field in an API response doesn't take down the whole screen.
@@ -466,6 +468,15 @@ The generated files only import public libraries, so no analyzer configuration i
 analyzer:
   exclude:
     - "**.easy.dart"
+```
+
+### Catching mistakes in the editor
+
+[`dart_easy_json_lints`](https://pub.dev/packages/dart_easy_json_lints) is an analyzer plugin that flags annotations the generator can't honor, as warnings in your editor and in `dart analyze` — for example an `@EasyValidate(minLength: 3)` on an `int` (which would be silently ignored), or an `@EasyConvert` function whose signature doesn't fit the field. Requires Dart 3.10+ (Flutter 3.38+); add it to your `analysis_options.yaml` and restart the analysis server:
+
+```yaml
+plugins:
+  dart_easy_json_lints: ^0.1.0
 ```
 
 ## API stability
