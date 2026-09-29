@@ -44,9 +44,9 @@ class GenericStrategy implements TypeStrategy {
 
   @override
   void validate(FieldContext c, StringBuffer out) {
-    // O tipo real de `T` só é conhecido pelo conversor; aqui só dá pra
-    // checar presença (missing_required), feita pelo _validateField.
-    _validateField(c, out, '');
+    // Presença (missing_required) fica com o _validateField; o conteúdo de
+    // `T`, com o `validateT` recebido (se houver).
+    _validateField(c, out, 'if (v != null) { ${_cValidateNonNull(c.type, 'v', c.pathExpr)} }');
   }
 
   @override

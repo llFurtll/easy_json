@@ -1,6 +1,7 @@
 import 'package:dart_easy_json/easy_json.dart';
 import 'package:test/test.dart';
 
+import 'models/generic_models.easy.dart';
 import 'models/test_models.dart';
 import 'models/test_models.easy.dart';
 
@@ -119,6 +120,183 @@ void main() {
       expect(p.first, 'x');
       expect(p.second, 7);
       expect(p.toJson((a) => a, (b) => b), {'first': 'x', 'second': 7});
+    });
+  });
+
+  group('Set<T>, Map<String, T>, List<List<T>> (Box<T>)', () {
+    final json = {
+      'tags': [1, 2],
+      'byKey': {'a': 3},
+      'grid': [
+        [4, 5],
+        [6],
+      ],
+      'maybe': 7,
+    };
+
+    test('fromJson / toJson round trip with the converters', () {
+      final b = boxFromJson<int>(json, (o) => o as int);
+      expect(b.tags, {1, 2});
+      expect(b.byKey, {'a': 3});
+      expect(b.grid, [
+        [4, 5],
+        [6],
+      ]);
+      expect(b.maybe, 7);
+      expect(b.toJson((i) => i), json);
+    });
+
+    test('fromJsonSafe reports bad structure with the nested path', () {
+      final issues = <EasyIssue>[];
+      final b = boxFromJsonSafe<int>(
+        {'tags': [], 'byKey': {}, 'grid': [5, [1]]},
+        (o) => o as int,
+        onIssue: issues.add,
+      );
+      expect(b.grid, [<int>[], [1]]);
+      expect(issues.map((i) => (i.path, i.code)), [('grid[0]', 'type_mismatch')]);
+    });
+  });
+
+  group('Generic @EasyJson class as a field (Holder)', () {
+    final json = <String, dynamic>{
+      'box': {
+        'tags': [
+          {'n': 1},
+        ],
+        'byKey': {
+          'a': {'n': 2},
+        },
+        'grid': [
+          [
+            {'n': 3},
+          ],
+        ],
+      },
+      'nums': {
+        'tags': [1],
+        'byKey': <String, dynamic>{},
+        'grid': [
+          [1, 2],
+        ],
+      },
+      'many': [
+        {
+          'tags': ['x'],
+          'byKey': {'k': 'v'},
+          'grid': <dynamic>[],
+        },
+      ],
+      'named': {
+        'z': {'tags': <dynamic>[], 'byKey': <String, dynamic>{}, 'grid': <dynamic>[]},
+      },
+    };
+
+    test('the generator passes the converters (fromJson / toJson)', () {
+      final h = holderFromJson(json);
+      expect(h.box.grid.single.single.n, 3);
+      expect(h.nums?.grid.single, [1, 2]);
+      expect(h.many.single.byKey, {'k': 'v'});
+      expect(h.toJson(), json);
+    });
+
+    test('fromJsonSafe and validate agree on valid input', () {
+      final issues = <EasyIssue>[];
+      expect(holderFromJsonSafe(json, onIssue: issues.add).toJson(), json);
+      expect(issues, isEmpty);
+      expect(holderValidate(json), isEmpty);
+    });
+
+    test('junk: never throws, validate looks inside T, safe == validate', () {
+      final junk = <String, dynamic>{
+        'box': {
+          'tags': [5],
+          'byKey': [],
+          'grid': [
+            ['x'],
+          ],
+        },
+        'nums': {
+          'tags': ['a'],
+          'byKey': <String, dynamic>{},
+          'grid': <dynamic>[],
+        },
+        'many': 3,
+        'named': {'z': 'q'},
+      };
+      final issues = <EasyIssue>[];
+      final h = holderFromJsonSafe(junk, onIssue: issues.add);
+      expect(h.many, isEmpty);
+      final validated = holderValidate(junk).map((i) => (i.path, i.code)).toSet();
+      expect(validated, {
+        ('box.tags[0]', 'type_mismatch'),
+        ('box.byKey', 'type_mismatch'),
+        ('box.grid[0][0]', 'type_mismatch'),
+        ('nums.tags[0]', 'type_mismatch'),
+        ('many', 'type_mismatch'),
+        ('named.z', 'type_mismatch'),
+      });
+      expect(issues.map((i) => (i.path, i.code)).toSet(), validated);
+    });
+
+    test('@EasyValidate rules inside T are checked (and strict mode sees them)', () {
+      final issues = holderValidate({
+        ...json,
+        'box': {
+          'tags': [
+            {'n': -1},
+          ],
+          'byKey': <String, dynamic>{},
+          'grid': <dynamic>[],
+        },
+      });
+      expect(issues.map((i) => (i.path, i.code)), [('box.tags[0].n', 'min_value')]);
+    });
+
+    test('generic class inside a generic class (Wrapper<T>)', () {
+      final w = wrapperFromJson<int>({
+        'inner': {
+          'tags': [1],
+          'byKey': {'a': 2},
+          'grid': [
+            [3],
+          ],
+        },
+      }, (o) => o as int);
+      expect(w.inner.grid.single.single, 3);
+      expect(w.toJson((i) => i)['inner'], {
+        'tags': [1],
+        'byKey': {'a': 2},
+        'grid': [
+          [3],
+        ],
+      });
+    });
+  });
+
+  group('Fields inherited from a generic superclass (ItemPage)', () {
+    test('use the type argument of the subclass', () {
+      final json = {
+        'items': [
+          {'n': 1},
+        ],
+        'first': {'n': 1},
+        'total': 1,
+      };
+      final p = itemPageFromJson(json);
+      expect(p.items.single.n, 1);
+      expect(p.first?.n, 1);
+      expect(p.toJson(), json);
+    });
+
+    test('validate looks inside the inherited items', () {
+      final issues = itemPageValidate({
+        'items': [
+          {'n': 'x'},
+        ],
+        'total': 1,
+      });
+      expect(issues.map((i) => (i.path, i.code)), [('items[0].n', 'type_mismatch')]);
     });
   });
 }

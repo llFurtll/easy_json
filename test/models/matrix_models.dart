@@ -114,6 +114,7 @@ class Sets with SetsSerializer {
   final Set<Duration> du;
   final Set<BigInt> bi;
   final Set<Color> c;
+  final Set<int>? nullableSet;
 
   Sets({
     required this.i,
@@ -124,6 +125,7 @@ class Sets with SetsSerializer {
     required this.du,
     required this.bi,
     required this.c,
+    this.nullableSet,
   });
 }
 
@@ -142,6 +144,7 @@ class Maps with MapsSerializer {
   final Map<String, Inner> o;
   final Map<int, String> ik;
   final Map<String, int?> iN;
+  final Map<String, int>? nullableMap;
 
   Maps({
     required this.i,
@@ -157,6 +160,7 @@ class Maps with MapsSerializer {
     required this.o,
     required this.ik,
     required this.iN,
+    this.nullableMap,
   });
 }
 
@@ -208,5 +212,33 @@ class Fallbacks with FallbacksSerializer {
     required this.li,
     required this.ldt,
     required this.mu,
+  });
+}
+
+/// Coleções dentro de coleções (e nullables em cada nível).
+@EasyJson()
+class Nested with NestedSerializer {
+  final List<List<int>> li;
+  final List<List<int>?> lin;
+  final List<Set<String>> ls;
+  final Set<List<double>> sl;
+  final Map<String, List<int>> ml;
+  final List<Map<String, int>> lm;
+  final Map<String, Map<int, Color>> mm;
+  final List<List<Inner>> lo;
+  final List<List<DateTime?>> ldt;
+  final List<List<List<bool>>>? deep;
+
+  Nested({
+    required this.li,
+    required this.lin,
+    required this.ls,
+    required this.sl,
+    required this.ml,
+    required this.lm,
+    required this.mm,
+    required this.lo,
+    required this.ldt,
+    this.deep,
   });
 }

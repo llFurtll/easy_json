@@ -2828,6 +2828,13 @@ Sets setsFromJson(Map<String, dynamic> json) {
           return Color.values.byName(e as String);
         }).toSet()) ??
         const <Color>{},
+    nullableSet: (json['nullableSet'] as List?)?.asMap().entries.map<int>((
+      entry,
+    ) {
+      final i = entry.key;
+      final e = entry.value;
+      return (e as int?) ?? 0;
+    }).toSet(),
   );
 }
 
@@ -2841,6 +2848,8 @@ Map<String, dynamic> setsToJson(Sets instance) {
     'du': instance.du.map((e) => e.inMicroseconds).toList(),
     'bi': instance.bi.map((e) => e.toString()).toList(),
     'c': instance.c.map((e) => e.name).toList(),
+    if (instance.nullableSet != null)
+      'nullableSet': instance.nullableSet?.toList(),
   };
 }
 
@@ -3275,7 +3284,17 @@ List<EasyIssue> setsValidate(Map<String, dynamic> json) {
             ),
           );
         } else {
-          if (e is! String) {
+          if (e is int) {
+            if (e < 0 || e >= Color.values.length) {
+              issues.add(
+                EasyIssue(
+                  path: 'c' + '[' + i.toString() + ']',
+                  code: 'invalid_enum_index',
+                  message: 'Enum index out of range.',
+                ),
+              );
+            }
+          } else if (e is! String) {
             issues.add(
               EasyIssue(
                 path: 'c' + '[' + i.toString() + ']',
@@ -3294,6 +3313,41 @@ List<EasyIssue> setsValidate(Map<String, dynamic> json) {
                 ),
               );
             }
+          }
+        }
+      }
+    }
+  }
+  if (json.containsKey('nullableSet')) {
+    final v = json['nullableSet'];
+    if (v != null && v is! List) {
+      issues.add(
+        EasyIssue(
+          path: 'nullableSet',
+          code: 'type_mismatch',
+          message: 'Expected List for Set.',
+        ),
+      );
+    } else if (v is List) {
+      for (var i = 0; i < v.length; i++) {
+        final e = v[i];
+        if (e == null) {
+          issues.add(
+            EasyIssue(
+              path: 'nullableSet' + '[' + i.toString() + ']',
+              code: 'null_not_allowed',
+              message: 'Null value not allowed.',
+            ),
+          );
+        } else {
+          if (e is! int) {
+            issues.add(
+              EasyIssue(
+                path: 'nullableSet' + '[' + i.toString() + ']',
+                code: 'type_mismatch',
+                message: 'Expected int.',
+              ),
+            );
           }
         }
       }
@@ -3636,6 +3690,41 @@ Sets setsFromJsonSafe(
           .cast<Color>()
           .toSet();
     })(),
+    nullableSet: (() {
+      final _v = json['nullableSet'];
+      if (_v is! List) return null;
+      final _list = _v;
+      return _list
+          .asMap()
+          .entries
+          .map<int?>((entry) {
+            return (() {
+              final vv = entry.value;
+              if (vv == null) {
+                onIssue?.call(
+                  EasyIssue(
+                    path: 'nullableSet' + '[' + entry.key.toString() + ']',
+                    code: 'null_not_allowed',
+                    message: 'Null value not allowed.',
+                  ),
+                );
+                return null;
+              }
+              if (vv is int) return vv;
+              onIssue?.call(
+                EasyIssue(
+                  path: 'nullableSet' + '[' + entry.key.toString() + ']',
+                  code: 'type_mismatch',
+                  message: 'Expected int.',
+                ),
+              );
+              return null;
+            })();
+          })
+          .where((x) => x != null)
+          .cast<int>()
+          .toSet();
+    })(),
   ))(_report);
 }
 
@@ -3683,161 +3772,149 @@ List<Map<String, dynamic>> setsToJsonList(List<Sets> items) =>
 
 Maps mapsFromJson(Map<String, dynamic> json) {
   return Maps(
-    i: (Map<dynamic, dynamic>.from(json['i'] as Map)).entries.fold(
-      <String, int>{},
-      (acc, entry) {
-        final k = (entry.key is String
-            ? (entry.key as String)
-            : entry.key.toString());
-        final v = (entry.value as int?) ?? 0;
-        acc[k] = v;
-        return acc;
-      },
-    ),
-    d: (Map<dynamic, dynamic>.from(json['d'] as Map)).entries.fold(
-      <String, double>{},
-      (acc, entry) {
-        final k = (entry.key is String
-            ? (entry.key as String)
-            : entry.key.toString());
-        final v = (entry.value as num?)?.toDouble() ?? 0.0;
-        acc[k] = v;
-        return acc;
-      },
-    ),
-    b: (Map<dynamic, dynamic>.from(json['b'] as Map)).entries.fold(
-      <String, bool>{},
-      (acc, entry) {
-        final k = (entry.key is String
-            ? (entry.key as String)
-            : entry.key.toString());
-        final v = (entry.value as bool?) ?? false;
-        acc[k] = v;
-        return acc;
-      },
-    ),
-    s: (Map<dynamic, dynamic>.from(json['s'] as Map)).entries.fold(
-      <String, String>{},
-      (acc, entry) {
-        final k = (entry.key is String
-            ? (entry.key as String)
-            : entry.key.toString());
-        final v = (entry.value as String?) ?? '';
-        acc[k] = v;
-        return acc;
-      },
-    ),
-    dt: (Map<dynamic, dynamic>.from(json['dt'] as Map)).entries.fold(
-      <String, DateTime>{},
-      (acc, entry) {
-        final k = (entry.key is String
-            ? (entry.key as String)
-            : entry.key.toString());
-        final v =
-            (ej.decodeDateTime(entry.value) ??
-            (throw FormatException('Invalid DateTime value.')));
-        acc[k] = v;
-        return acc;
-      },
-    ),
-    u: (Map<dynamic, dynamic>.from(json['u'] as Map)).entries.fold(
-      <String, Uri>{},
-      (acc, entry) {
-        final k = (entry.key is String
-            ? (entry.key as String)
-            : entry.key.toString());
-        final v =
-            (ej.decodeUri(entry.value) ??
-            (throw FormatException('Invalid Uri value.')));
-        acc[k] = v;
-        return acc;
-      },
-    ),
-    du: (Map<dynamic, dynamic>.from(json['du'] as Map)).entries.fold(
-      <String, Duration>{},
-      (acc, entry) {
-        final k = (entry.key is String
-            ? (entry.key as String)
-            : entry.key.toString());
-        final v =
-            (ej.decodeDuration(entry.value) ??
-            (throw FormatException('Invalid Duration value.')));
-        acc[k] = v;
-        return acc;
-      },
-    ),
-    bi: (Map<dynamic, dynamic>.from(json['bi'] as Map)).entries.fold(
-      <String, BigInt>{},
-      (acc, entry) {
-        final k = (entry.key is String
-            ? (entry.key as String)
-            : entry.key.toString());
-        final v =
-            (ej.decodeBigInt(entry.value) ??
-            (throw FormatException('Invalid BigInt value.')));
-        acc[k] = v;
-        return acc;
-      },
-    ),
-    by: (Map<dynamic, dynamic>.from(json['by'] as Map)).entries.fold(
-      <String, Uint8List>{},
-      (acc, entry) {
-        final k = (entry.key is String
-            ? (entry.key as String)
-            : entry.key.toString());
-        final v =
-            (ej.decodeBytes(entry.value) ??
-            (throw FormatException('Invalid Uint8List value.')));
-        acc[k] = v;
-        return acc;
-      },
-    ),
-    c: (Map<dynamic, dynamic>.from(json['c'] as Map)).entries.fold(
-      <String, Color>{},
-      (acc, entry) {
-        final k = (entry.key is String
-            ? (entry.key as String)
-            : entry.key.toString());
-        final v = Color.values.byName(entry.value as String);
-        acc[k] = v;
-        return acc;
-      },
-    ),
-    o: (Map<dynamic, dynamic>.from(json['o'] as Map)).entries.fold(
-      <String, Inner>{},
-      (acc, entry) {
-        final k = (entry.key is String
-            ? (entry.key as String)
-            : entry.key.toString());
-        final v = innerFromJson(Map<String, dynamic>.from(entry.value as Map));
-        acc[k] = v;
-        return acc;
-      },
-    ),
-    ik: (Map<dynamic, dynamic>.from(json['ik'] as Map)).entries.fold(
-      <int, String>{},
-      (acc, entry) {
-        final k = (entry.key is int
-            ? (entry.key as int)
-            : (entry.key is num
-                  ? (entry.key as num).toInt()
-                  : int.parse(entry.key as String)));
-        final v = (entry.value as String?) ?? '';
-        acc[k] = v;
-        return acc;
-      },
-    ),
-    iN: (Map<dynamic, dynamic>.from(json['iN'] as Map)).entries.fold(
-      <String, int?>{},
-      (acc, entry) {
-        final k = (entry.key is String
-            ? (entry.key as String)
-            : entry.key.toString());
-        final v = (entry.value as int?);
-        acc[k] = v;
-        return acc;
-      },
-    ),
+    i: (Map<dynamic, dynamic>.from(json['i'] as Map)).entries
+        .fold<Map<String, int>>(<String, int>{}, (acc, entry) {
+          final k = (entry.key is String
+              ? (entry.key as String)
+              : entry.key.toString());
+          final v = (entry.value as int?) ?? 0;
+          acc[k] = v;
+          return acc;
+        }),
+    d: (Map<dynamic, dynamic>.from(json['d'] as Map)).entries
+        .fold<Map<String, double>>(<String, double>{}, (acc, entry) {
+          final k = (entry.key is String
+              ? (entry.key as String)
+              : entry.key.toString());
+          final v = (entry.value as num?)?.toDouble() ?? 0.0;
+          acc[k] = v;
+          return acc;
+        }),
+    b: (Map<dynamic, dynamic>.from(json['b'] as Map)).entries
+        .fold<Map<String, bool>>(<String, bool>{}, (acc, entry) {
+          final k = (entry.key is String
+              ? (entry.key as String)
+              : entry.key.toString());
+          final v = (entry.value as bool?) ?? false;
+          acc[k] = v;
+          return acc;
+        }),
+    s: (Map<dynamic, dynamic>.from(json['s'] as Map)).entries
+        .fold<Map<String, String>>(<String, String>{}, (acc, entry) {
+          final k = (entry.key is String
+              ? (entry.key as String)
+              : entry.key.toString());
+          final v = (entry.value as String?) ?? '';
+          acc[k] = v;
+          return acc;
+        }),
+    dt: (Map<dynamic, dynamic>.from(json['dt'] as Map)).entries
+        .fold<Map<String, DateTime>>(<String, DateTime>{}, (acc, entry) {
+          final k = (entry.key is String
+              ? (entry.key as String)
+              : entry.key.toString());
+          final v =
+              (ej.decodeDateTime(entry.value) ??
+              (throw FormatException('Invalid DateTime value.')));
+          acc[k] = v;
+          return acc;
+        }),
+    u: (Map<dynamic, dynamic>.from(json['u'] as Map)).entries
+        .fold<Map<String, Uri>>(<String, Uri>{}, (acc, entry) {
+          final k = (entry.key is String
+              ? (entry.key as String)
+              : entry.key.toString());
+          final v =
+              (ej.decodeUri(entry.value) ??
+              (throw FormatException('Invalid Uri value.')));
+          acc[k] = v;
+          return acc;
+        }),
+    du: (Map<dynamic, dynamic>.from(json['du'] as Map)).entries
+        .fold<Map<String, Duration>>(<String, Duration>{}, (acc, entry) {
+          final k = (entry.key is String
+              ? (entry.key as String)
+              : entry.key.toString());
+          final v =
+              (ej.decodeDuration(entry.value) ??
+              (throw FormatException('Invalid Duration value.')));
+          acc[k] = v;
+          return acc;
+        }),
+    bi: (Map<dynamic, dynamic>.from(json['bi'] as Map)).entries
+        .fold<Map<String, BigInt>>(<String, BigInt>{}, (acc, entry) {
+          final k = (entry.key is String
+              ? (entry.key as String)
+              : entry.key.toString());
+          final v =
+              (ej.decodeBigInt(entry.value) ??
+              (throw FormatException('Invalid BigInt value.')));
+          acc[k] = v;
+          return acc;
+        }),
+    by: (Map<dynamic, dynamic>.from(json['by'] as Map)).entries
+        .fold<Map<String, Uint8List>>(<String, Uint8List>{}, (acc, entry) {
+          final k = (entry.key is String
+              ? (entry.key as String)
+              : entry.key.toString());
+          final v =
+              (ej.decodeBytes(entry.value) ??
+              (throw FormatException('Invalid Uint8List value.')));
+          acc[k] = v;
+          return acc;
+        }),
+    c: (Map<dynamic, dynamic>.from(json['c'] as Map)).entries
+        .fold<Map<String, Color>>(<String, Color>{}, (acc, entry) {
+          final k = (entry.key is String
+              ? (entry.key as String)
+              : entry.key.toString());
+          final v = Color.values.byName(entry.value as String);
+          acc[k] = v;
+          return acc;
+        }),
+    o: (Map<dynamic, dynamic>.from(json['o'] as Map)).entries
+        .fold<Map<String, Inner>>(<String, Inner>{}, (acc, entry) {
+          final k = (entry.key is String
+              ? (entry.key as String)
+              : entry.key.toString());
+          final v = innerFromJson(
+            Map<String, dynamic>.from(entry.value as Map),
+          );
+          acc[k] = v;
+          return acc;
+        }),
+    ik: (Map<dynamic, dynamic>.from(json['ik'] as Map)).entries
+        .fold<Map<int, String>>(<int, String>{}, (acc, entry) {
+          final k = (entry.key is int
+              ? (entry.key as int)
+              : (entry.key is num
+                    ? (entry.key as num).toInt()
+                    : int.parse(entry.key as String)));
+          final v = (entry.value as String?) ?? '';
+          acc[k] = v;
+          return acc;
+        }),
+    iN: (Map<dynamic, dynamic>.from(json['iN'] as Map)).entries
+        .fold<Map<String, int?>>(<String, int?>{}, (acc, entry) {
+          final k = (entry.key is String
+              ? (entry.key as String)
+              : entry.key.toString());
+          final v = (entry.value as int?);
+          acc[k] = v;
+          return acc;
+        }),
+    nullableMap: json['nullableMap'] == null
+        ? null
+        : (Map<dynamic, dynamic>.from(
+            json['nullableMap'] as Map,
+          )).entries.fold<Map<String, int>>(<String, int>{}, (acc, entry) {
+            final k = (entry.key is String
+                ? (entry.key as String)
+                : entry.key.toString());
+            final v = (entry.value as int?) ?? 0;
+            acc[k] = v;
+            return acc;
+          }),
   );
 }
 
@@ -3856,6 +3933,7 @@ Map<String, dynamic> mapsToJson(Maps instance) {
     'o': instance.o.map((k, v) => MapEntry(k, v.toJson())),
     'ik': instance.ik.map((k, v) => MapEntry(k.toString(), v)),
     'iN': instance.iN,
+    if (instance.nullableMap != null) 'nullableMap': instance.nullableMap,
   };
 }
 
@@ -4522,6 +4600,39 @@ List<EasyIssue> mapsValidate(Map<String, dynamic> json) {
       }
     }
   }
+  if (json.containsKey('nullableMap')) {
+    final v = json['nullableMap'];
+    if (v != null && v is! Map) {
+      issues.add(
+        EasyIssue(
+          path: 'nullableMap',
+          code: 'type_mismatch',
+          message: 'Expected Map.',
+        ),
+      );
+    } else if (v is Map) {
+      for (final e in v.entries) {
+        final val = e.value;
+        if (val == null) {
+          issues.add(
+            EasyIssue(
+              path: 'nullableMap' + '.' + e.key.toString(),
+              code: 'null_not_allowed',
+              message: 'Null value not allowed.',
+            ),
+          );
+        } else if (val is! int) {
+          issues.add(
+            EasyIssue(
+              path: 'nullableMap' + '.' + e.key.toString(),
+              code: 'type_mismatch',
+              message: 'Expected int.',
+            ),
+          );
+        }
+      }
+    }
+  }
   return issues;
 }
 
@@ -5008,6 +5119,31 @@ Maps mapsFromJsonSafe(
       }
       return _out;
     })(),
+    nullableMap: (() {
+      final _v = json['nullableMap'];
+      if (_v is! Map) return null;
+      final _mapRaw = Map<dynamic, dynamic>.from(_v as Map);
+      final _out = <String, int>{};
+      for (final entry in _mapRaw.entries) {
+        final k = (entry.key is String) ? entry.key : (entry.key?.toString());
+        if (k == null) {
+          onIssue?.call(
+            EasyIssue(
+              path: 'nullableMap' + '.' + entry.key.toString(),
+              code: 'key_type_mismatch',
+              message: 'Incompatible key type for map.',
+            ),
+          );
+          continue;
+        }
+        final v = (() {
+          final v = entry.value;
+          return (v is int) ? v : 0;
+        })();
+        _out[k] = v;
+      }
+      return _out;
+    })(),
   ))(_report);
 }
 
@@ -5083,19 +5219,17 @@ Fallbacks fallbacksFromJson(Map<String, dynamic> json) {
               (throw FormatException('Invalid DateTime value.')));
         }).toList()) ??
         const <DateTime>[],
-    mu: (Map<dynamic, dynamic>.from(json['mu'] as Map)).entries.fold(
-      <String, Uri>{},
-      (acc, entry) {
-        final k = (entry.key is String
-            ? (entry.key as String)
-            : entry.key.toString());
-        final v =
-            (ej.decodeUri(entry.value) ??
-            (throw FormatException('Invalid Uri value.')));
-        acc[k] = v;
-        return acc;
-      },
-    ),
+    mu: (Map<dynamic, dynamic>.from(json['mu'] as Map)).entries
+        .fold<Map<String, Uri>>(<String, Uri>{}, (acc, entry) {
+          final k = (entry.key is String
+              ? (entry.key as String)
+              : entry.key.toString());
+          final v =
+              (ej.decodeUri(entry.value) ??
+              (throw FormatException('Invalid Uri value.')));
+          acc[k] = v;
+          return acc;
+        }),
   );
 }
 
@@ -5990,3 +6124,1994 @@ List<Fallbacks> fallbacksFromJsonSafeList(
 
 List<Map<String, dynamic>> fallbacksToJsonList(List<Fallbacks> items) =>
     items.map((e) => fallbacksToJson(e)).toList();
+
+Nested nestedFromJson(Map<String, dynamic> json) {
+  return Nested(
+    li:
+        ((json['li'] as List?)?.asMap().entries.map<List<int>>((entry) {
+          final i = entry.key;
+          final e = entry.value;
+          return <int>[for (final e0 in (e as List)) (e0 as int)];
+        }).toList()) ??
+        const <List<int>>[],
+    lin:
+        ((json['lin'] as List?)?.asMap().entries.map<List<int>?>((entry) {
+          final i = entry.key;
+          final e = entry.value;
+          return (e == null
+              ? null
+              : <int>[for (final e0 in (e as List)) (e0 as int)]);
+        }).toList()) ??
+        const <List<int>?>[],
+    ls:
+        ((json['ls'] as List?)?.asMap().entries.map<Set<String>>((entry) {
+          final i = entry.key;
+          final e = entry.value;
+          return <String>{for (final e0 in (e as List)) (e0 as String)};
+        }).toList()) ??
+        const <Set<String>>[],
+    sl:
+        ((json['sl'] as List?)?.asMap().entries.map<List<double>>((entry) {
+          final i = entry.key;
+          final e = entry.value;
+          return <double>[for (final e0 in (e as List)) (e0 as num).toDouble()];
+        }).toSet()) ??
+        const <List<double>>{},
+    ml: (Map<dynamic, dynamic>.from(json['ml'] as Map)).entries
+        .fold<Map<String, List<int>>>(<String, List<int>>{}, (acc, entry) {
+          final k = (entry.key is String
+              ? (entry.key as String)
+              : entry.key.toString());
+          final v = <int>[for (final e0 in (entry.value as List)) (e0 as int)];
+          acc[k] = v;
+          return acc;
+        }),
+    lm:
+        ((json['lm'] as List?)?.asMap().entries.map<Map<String, int>>((entry) {
+          final i = entry.key;
+          final e = entry.value;
+          return <String, int>{
+            for (final m0 in (e as Map).entries)
+              m0.key.toString(): (m0.value as int),
+          };
+        }).toList()) ??
+        const <Map<String, int>>[],
+    mm: (Map<dynamic, dynamic>.from(json['mm'] as Map)).entries
+        .fold<Map<String, Map<int, Color>>>(<String, Map<int, Color>>{}, (
+          acc,
+          entry,
+        ) {
+          final k = (entry.key is String
+              ? (entry.key as String)
+              : entry.key.toString());
+          final v = <int, Color>{
+            for (final m0 in (entry.value as Map).entries)
+              (m0.key is num
+                  ? (m0.key as num).toInt()
+                  : int.parse(m0.key as String)): Color.values.byName(
+                m0.value as String,
+              ),
+          };
+          acc[k] = v;
+          return acc;
+        }),
+    lo:
+        ((json['lo'] as List?)?.asMap().entries.map<List<Inner>>((entry) {
+          final i = entry.key;
+          final e = entry.value;
+          return <Inner>[
+            for (final e0 in (e as List))
+              innerFromJson(Map<String, dynamic>.from(e0 as Map)),
+          ];
+        }).toList()) ??
+        const <List<Inner>>[],
+    ldt:
+        ((json['ldt'] as List?)?.asMap().entries.map<List<DateTime?>>((entry) {
+          final i = entry.key;
+          final e = entry.value;
+          return <DateTime?>[
+            for (final e0 in (e as List))
+              (e0 == null
+                  ? null
+                  : (ej.decodeDateTime(e0) ??
+                        (throw FormatException('Invalid DateTime value.')))),
+          ];
+        }).toList()) ??
+        const <List<DateTime?>>[],
+    deep: (json['deep'] as List?)?.asMap().entries.map<List<List<bool>>>((
+      entry,
+    ) {
+      final i = entry.key;
+      final e = entry.value;
+      return <List<bool>>[
+        for (final e0 in (e as List))
+          <bool>[for (final e1 in (e0 as List)) (e1 as bool)],
+      ];
+    }).toList(),
+  );
+}
+
+Map<String, dynamic> nestedToJson(Nested instance) {
+  return <String, dynamic>{
+    'li': instance.li,
+    'lin': instance.lin,
+    'ls': instance.ls.map((e) => e.map((e0) => e0).toList()).toList(),
+    'sl': instance.sl.map((e) => e).toList(),
+    'ml': instance.ml,
+    'lm': instance.lm,
+    'mm': instance.mm.map(
+      (k, v) =>
+          MapEntry(k, v.map((k0, e0) => MapEntry(k0.toString(), e0.name))),
+    ),
+    'lo': instance.lo.map((e) => e.map((e0) => e0.toJson()).toList()).toList(),
+    'ldt': instance.ldt
+        .map(
+          (e) => e
+              .map((e0) => (e0 == null ? null : e0.toIso8601String()))
+              .toList(),
+        )
+        .toList(),
+    if (instance.deep != null) 'deep': instance.deep,
+  };
+}
+
+mixin NestedSerializer {
+  Map<String, dynamic> toJson() {
+    return nestedToJson(this as Nested);
+  }
+}
+
+List<EasyIssue> nestedValidate(Map<String, dynamic> json) {
+  final issues = <EasyIssue>[];
+  if (!json.containsKey('li')) {
+    issues.add(
+      EasyIssue(
+        path: 'li',
+        code: 'missing_required',
+        message: 'Missing required field.',
+      ),
+    );
+  }
+  if (json.containsKey('li') && json['li'] == null) {
+    issues.add(
+      EasyIssue(
+        path: 'li',
+        code: 'null_not_allowed',
+        message: 'Null value not allowed.',
+      ),
+    );
+  }
+  if (json.containsKey('li')) {
+    final v = json['li'];
+    if (v != null && v is! List) {
+      issues.add(
+        EasyIssue(path: 'li', code: 'type_mismatch', message: 'Expected List.'),
+      );
+    } else if (v is List) {
+      for (var i = 0; i < v.length; i++) {
+        final e = v[i];
+        if (e == null) {
+          issues.add(
+            EasyIssue(
+              path: 'li' + '[' + i.toString() + ']',
+              code: 'null_not_allowed',
+              message: 'Null value not allowed.',
+            ),
+          );
+        } else {
+          if (e is! List) {
+            issues.add(
+              EasyIssue(
+                path: 'li' + '[' + i.toString() + ']',
+                code: 'type_mismatch',
+                message: 'Expected List.',
+              ),
+            );
+          } else {
+            for (var i0 = 0; i0 < e.length; i0++) {
+              {
+                final x1 = e[i0];
+                if (x1 == null) {
+                  issues.add(
+                    EasyIssue(
+                      path:
+                          'li' +
+                          '[' +
+                          i.toString() +
+                          ']' +
+                          '[' +
+                          i0.toString() +
+                          ']',
+                      code: 'null_not_allowed',
+                      message: 'Null value not allowed.',
+                    ),
+                  );
+                } else {
+                  if (x1 is! int) {
+                    issues.add(
+                      EasyIssue(
+                        path:
+                            'li' +
+                            '[' +
+                            i.toString() +
+                            ']' +
+                            '[' +
+                            i0.toString() +
+                            ']',
+                        code: 'type_mismatch',
+                        message: 'Expected int.',
+                      ),
+                    );
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+  if (!json.containsKey('lin')) {
+    issues.add(
+      EasyIssue(
+        path: 'lin',
+        code: 'missing_required',
+        message: 'Missing required field.',
+      ),
+    );
+  }
+  if (json.containsKey('lin') && json['lin'] == null) {
+    issues.add(
+      EasyIssue(
+        path: 'lin',
+        code: 'null_not_allowed',
+        message: 'Null value not allowed.',
+      ),
+    );
+  }
+  if (json.containsKey('lin')) {
+    final v = json['lin'];
+    if (v != null && v is! List) {
+      issues.add(
+        EasyIssue(
+          path: 'lin',
+          code: 'type_mismatch',
+          message: 'Expected List.',
+        ),
+      );
+    } else if (v is List) {
+      for (var i = 0; i < v.length; i++) {
+        final e = v[i];
+        if (e == null) {
+        } else {
+          if (e is! List) {
+            issues.add(
+              EasyIssue(
+                path: 'lin' + '[' + i.toString() + ']',
+                code: 'type_mismatch',
+                message: 'Expected List.',
+              ),
+            );
+          } else {
+            for (var i0 = 0; i0 < e.length; i0++) {
+              {
+                final x1 = e[i0];
+                if (x1 == null) {
+                  issues.add(
+                    EasyIssue(
+                      path:
+                          'lin' +
+                          '[' +
+                          i.toString() +
+                          ']' +
+                          '[' +
+                          i0.toString() +
+                          ']',
+                      code: 'null_not_allowed',
+                      message: 'Null value not allowed.',
+                    ),
+                  );
+                } else {
+                  if (x1 is! int) {
+                    issues.add(
+                      EasyIssue(
+                        path:
+                            'lin' +
+                            '[' +
+                            i.toString() +
+                            ']' +
+                            '[' +
+                            i0.toString() +
+                            ']',
+                        code: 'type_mismatch',
+                        message: 'Expected int.',
+                      ),
+                    );
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+  if (!json.containsKey('ls')) {
+    issues.add(
+      EasyIssue(
+        path: 'ls',
+        code: 'missing_required',
+        message: 'Missing required field.',
+      ),
+    );
+  }
+  if (json.containsKey('ls') && json['ls'] == null) {
+    issues.add(
+      EasyIssue(
+        path: 'ls',
+        code: 'null_not_allowed',
+        message: 'Null value not allowed.',
+      ),
+    );
+  }
+  if (json.containsKey('ls')) {
+    final v = json['ls'];
+    if (v != null && v is! List) {
+      issues.add(
+        EasyIssue(path: 'ls', code: 'type_mismatch', message: 'Expected List.'),
+      );
+    } else if (v is List) {
+      for (var i = 0; i < v.length; i++) {
+        final e = v[i];
+        if (e == null) {
+          issues.add(
+            EasyIssue(
+              path: 'ls' + '[' + i.toString() + ']',
+              code: 'null_not_allowed',
+              message: 'Null value not allowed.',
+            ),
+          );
+        } else {
+          if (e is! List) {
+            issues.add(
+              EasyIssue(
+                path: 'ls' + '[' + i.toString() + ']',
+                code: 'type_mismatch',
+                message: 'Expected List for Set.',
+              ),
+            );
+          } else {
+            for (var i0 = 0; i0 < e.length; i0++) {
+              {
+                final x1 = e[i0];
+                if (x1 == null) {
+                  issues.add(
+                    EasyIssue(
+                      path:
+                          'ls' +
+                          '[' +
+                          i.toString() +
+                          ']' +
+                          '[' +
+                          i0.toString() +
+                          ']',
+                      code: 'null_not_allowed',
+                      message: 'Null value not allowed.',
+                    ),
+                  );
+                } else {
+                  if (x1 is! String) {
+                    issues.add(
+                      EasyIssue(
+                        path:
+                            'ls' +
+                            '[' +
+                            i.toString() +
+                            ']' +
+                            '[' +
+                            i0.toString() +
+                            ']',
+                        code: 'type_mismatch',
+                        message: 'Expected String.',
+                      ),
+                    );
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+  if (!json.containsKey('sl')) {
+    issues.add(
+      EasyIssue(
+        path: 'sl',
+        code: 'missing_required',
+        message: 'Missing required field.',
+      ),
+    );
+  }
+  if (json.containsKey('sl') && json['sl'] == null) {
+    issues.add(
+      EasyIssue(
+        path: 'sl',
+        code: 'null_not_allowed',
+        message: 'Null value not allowed.',
+      ),
+    );
+  }
+  if (json.containsKey('sl')) {
+    final v = json['sl'];
+    if (v != null && v is! List) {
+      issues.add(
+        EasyIssue(
+          path: 'sl',
+          code: 'type_mismatch',
+          message: 'Expected List for Set.',
+        ),
+      );
+    } else if (v is List) {
+      for (var i = 0; i < v.length; i++) {
+        final e = v[i];
+        if (e == null) {
+          issues.add(
+            EasyIssue(
+              path: 'sl' + '[' + i.toString() + ']',
+              code: 'null_not_allowed',
+              message: 'Null value not allowed.',
+            ),
+          );
+        } else {
+          if (e is! List) {
+            issues.add(
+              EasyIssue(
+                path: 'sl' + '[' + i.toString() + ']',
+                code: 'type_mismatch',
+                message: 'Expected List.',
+              ),
+            );
+          } else {
+            for (var i0 = 0; i0 < e.length; i0++) {
+              {
+                final x1 = e[i0];
+                if (x1 == null) {
+                  issues.add(
+                    EasyIssue(
+                      path:
+                          'sl' +
+                          '[' +
+                          i.toString() +
+                          ']' +
+                          '[' +
+                          i0.toString() +
+                          ']',
+                      code: 'null_not_allowed',
+                      message: 'Null value not allowed.',
+                    ),
+                  );
+                } else {
+                  if (x1 is! num) {
+                    issues.add(
+                      EasyIssue(
+                        path:
+                            'sl' +
+                            '[' +
+                            i.toString() +
+                            ']' +
+                            '[' +
+                            i0.toString() +
+                            ']',
+                        code: 'type_mismatch',
+                        message: 'Expected double.',
+                      ),
+                    );
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+  if (!json.containsKey('ml')) {
+    issues.add(
+      EasyIssue(
+        path: 'ml',
+        code: 'missing_required',
+        message: 'Missing required field.',
+      ),
+    );
+  }
+  if (json.containsKey('ml') && json['ml'] == null) {
+    issues.add(
+      EasyIssue(
+        path: 'ml',
+        code: 'null_not_allowed',
+        message: 'Null value not allowed.',
+      ),
+    );
+  }
+  if (json.containsKey('ml')) {
+    final v = json['ml'];
+    if (v != null && v is! Map) {
+      issues.add(
+        EasyIssue(path: 'ml', code: 'type_mismatch', message: 'Expected Map.'),
+      );
+    } else if (v is Map) {
+      for (final e in v.entries) {
+        {
+          final x0 = e.value;
+          if (x0 == null) {
+            issues.add(
+              EasyIssue(
+                path: 'ml' + '.' + e.key.toString(),
+                code: 'null_not_allowed',
+                message: 'Null value not allowed.',
+              ),
+            );
+          } else {
+            if (x0 is! List) {
+              issues.add(
+                EasyIssue(
+                  path: 'ml' + '.' + e.key.toString(),
+                  code: 'type_mismatch',
+                  message: 'Expected List.',
+                ),
+              );
+            } else {
+              for (var i0 = 0; i0 < x0.length; i0++) {
+                {
+                  final x1 = x0[i0];
+                  if (x1 == null) {
+                    issues.add(
+                      EasyIssue(
+                        path:
+                            'ml' +
+                            '.' +
+                            e.key.toString() +
+                            '[' +
+                            i0.toString() +
+                            ']',
+                        code: 'null_not_allowed',
+                        message: 'Null value not allowed.',
+                      ),
+                    );
+                  } else {
+                    if (x1 is! int) {
+                      issues.add(
+                        EasyIssue(
+                          path:
+                              'ml' +
+                              '.' +
+                              e.key.toString() +
+                              '[' +
+                              i0.toString() +
+                              ']',
+                          code: 'type_mismatch',
+                          message: 'Expected int.',
+                        ),
+                      );
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+  if (!json.containsKey('lm')) {
+    issues.add(
+      EasyIssue(
+        path: 'lm',
+        code: 'missing_required',
+        message: 'Missing required field.',
+      ),
+    );
+  }
+  if (json.containsKey('lm') && json['lm'] == null) {
+    issues.add(
+      EasyIssue(
+        path: 'lm',
+        code: 'null_not_allowed',
+        message: 'Null value not allowed.',
+      ),
+    );
+  }
+  if (json.containsKey('lm')) {
+    final v = json['lm'];
+    if (v != null && v is! List) {
+      issues.add(
+        EasyIssue(path: 'lm', code: 'type_mismatch', message: 'Expected List.'),
+      );
+    } else if (v is List) {
+      for (var i = 0; i < v.length; i++) {
+        final e = v[i];
+        if (e == null) {
+          issues.add(
+            EasyIssue(
+              path: 'lm' + '[' + i.toString() + ']',
+              code: 'null_not_allowed',
+              message: 'Null value not allowed.',
+            ),
+          );
+        } else {
+          if (e is! Map) {
+            issues.add(
+              EasyIssue(
+                path: 'lm' + '[' + i.toString() + ']',
+                code: 'type_mismatch',
+                message: 'Expected Map.',
+              ),
+            );
+          } else {
+            for (final m0 in e.entries) {
+              {
+                final x1 = m0.value;
+                if (x1 == null) {
+                  issues.add(
+                    EasyIssue(
+                      path:
+                          'lm' +
+                          '[' +
+                          i.toString() +
+                          ']' +
+                          '.' +
+                          m0.key.toString(),
+                      code: 'null_not_allowed',
+                      message: 'Null value not allowed.',
+                    ),
+                  );
+                } else {
+                  if (x1 is! int) {
+                    issues.add(
+                      EasyIssue(
+                        path:
+                            'lm' +
+                            '[' +
+                            i.toString() +
+                            ']' +
+                            '.' +
+                            m0.key.toString(),
+                        code: 'type_mismatch',
+                        message: 'Expected int.',
+                      ),
+                    );
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+  if (!json.containsKey('mm')) {
+    issues.add(
+      EasyIssue(
+        path: 'mm',
+        code: 'missing_required',
+        message: 'Missing required field.',
+      ),
+    );
+  }
+  if (json.containsKey('mm') && json['mm'] == null) {
+    issues.add(
+      EasyIssue(
+        path: 'mm',
+        code: 'null_not_allowed',
+        message: 'Null value not allowed.',
+      ),
+    );
+  }
+  if (json.containsKey('mm')) {
+    final v = json['mm'];
+    if (v != null && v is! Map) {
+      issues.add(
+        EasyIssue(path: 'mm', code: 'type_mismatch', message: 'Expected Map.'),
+      );
+    } else if (v is Map) {
+      for (final e in v.entries) {
+        {
+          final x0 = e.value;
+          if (x0 == null) {
+            issues.add(
+              EasyIssue(
+                path: 'mm' + '.' + e.key.toString(),
+                code: 'null_not_allowed',
+                message: 'Null value not allowed.',
+              ),
+            );
+          } else {
+            if (x0 is! Map) {
+              issues.add(
+                EasyIssue(
+                  path: 'mm' + '.' + e.key.toString(),
+                  code: 'type_mismatch',
+                  message: 'Expected Map.',
+                ),
+              );
+            } else {
+              for (final m0 in x0.entries) {
+                if (!(m0.key is num ||
+                    (m0.key is String &&
+                        num.tryParse(m0.key as String) != null))) {
+                  issues.add(
+                    EasyIssue(
+                      path:
+                          'mm' +
+                          '.' +
+                          e.key.toString() +
+                          '.' +
+                          m0.key.toString(),
+                      code: 'key_type_mismatch',
+                      message: 'Incompatible key type for map.',
+                    ),
+                  );
+                }
+                {
+                  final x1 = m0.value;
+                  if (x1 == null) {
+                    issues.add(
+                      EasyIssue(
+                        path:
+                            'mm' +
+                            '.' +
+                            e.key.toString() +
+                            '.' +
+                            m0.key.toString(),
+                        code: 'null_not_allowed',
+                        message: 'Null value not allowed.',
+                      ),
+                    );
+                  } else {
+                    if (x1 is! String) {
+                      issues.add(
+                        EasyIssue(
+                          path:
+                              'mm' +
+                              '.' +
+                              e.key.toString() +
+                              '.' +
+                              m0.key.toString(),
+                          code: 'type_mismatch',
+                          message: 'Expected String with enum name.',
+                        ),
+                      );
+                    } else if (!Color.values.any((z) => z.name == x1)) {
+                      issues.add(
+                        EasyIssue(
+                          path:
+                              'mm' +
+                              '.' +
+                              e.key.toString() +
+                              '.' +
+                              m0.key.toString(),
+                          code: 'invalid_enum',
+                          message: "Value '$x1' does not match Color.",
+                        ),
+                      );
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+  if (!json.containsKey('lo')) {
+    issues.add(
+      EasyIssue(
+        path: 'lo',
+        code: 'missing_required',
+        message: 'Missing required field.',
+      ),
+    );
+  }
+  if (json.containsKey('lo') && json['lo'] == null) {
+    issues.add(
+      EasyIssue(
+        path: 'lo',
+        code: 'null_not_allowed',
+        message: 'Null value not allowed.',
+      ),
+    );
+  }
+  if (json.containsKey('lo')) {
+    final v = json['lo'];
+    if (v != null && v is! List) {
+      issues.add(
+        EasyIssue(path: 'lo', code: 'type_mismatch', message: 'Expected List.'),
+      );
+    } else if (v is List) {
+      for (var i = 0; i < v.length; i++) {
+        final e = v[i];
+        if (e == null) {
+          issues.add(
+            EasyIssue(
+              path: 'lo' + '[' + i.toString() + ']',
+              code: 'null_not_allowed',
+              message: 'Null value not allowed.',
+            ),
+          );
+        } else {
+          if (e is! List) {
+            issues.add(
+              EasyIssue(
+                path: 'lo' + '[' + i.toString() + ']',
+                code: 'type_mismatch',
+                message: 'Expected List.',
+              ),
+            );
+          } else {
+            for (var i0 = 0; i0 < e.length; i0++) {
+              {
+                final x1 = e[i0];
+                if (x1 == null) {
+                  issues.add(
+                    EasyIssue(
+                      path:
+                          'lo' +
+                          '[' +
+                          i.toString() +
+                          ']' +
+                          '[' +
+                          i0.toString() +
+                          ']',
+                      code: 'null_not_allowed',
+                      message: 'Null value not allowed.',
+                    ),
+                  );
+                } else {
+                  if (x1 is! Map) {
+                    issues.add(
+                      EasyIssue(
+                        path:
+                            'lo' +
+                            '[' +
+                            i.toString() +
+                            ']' +
+                            '[' +
+                            i0.toString() +
+                            ']',
+                        code: 'type_mismatch',
+                        message: 'Expected Map for Inner.',
+                      ),
+                    );
+                  } else {
+                    for (final n1 in innerValidate(
+                      Map<String, dynamic>.from(x1),
+                    )) {
+                      issues.add(
+                        EasyIssue(
+                          path:
+                              'lo' +
+                              '[' +
+                              i.toString() +
+                              ']' +
+                              '[' +
+                              i0.toString() +
+                              ']' +
+                              '.' +
+                              n1.path,
+                          code: n1.code,
+                          message: n1.message,
+                        ),
+                      );
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+  if (!json.containsKey('ldt')) {
+    issues.add(
+      EasyIssue(
+        path: 'ldt',
+        code: 'missing_required',
+        message: 'Missing required field.',
+      ),
+    );
+  }
+  if (json.containsKey('ldt') && json['ldt'] == null) {
+    issues.add(
+      EasyIssue(
+        path: 'ldt',
+        code: 'null_not_allowed',
+        message: 'Null value not allowed.',
+      ),
+    );
+  }
+  if (json.containsKey('ldt')) {
+    final v = json['ldt'];
+    if (v != null && v is! List) {
+      issues.add(
+        EasyIssue(
+          path: 'ldt',
+          code: 'type_mismatch',
+          message: 'Expected List.',
+        ),
+      );
+    } else if (v is List) {
+      for (var i = 0; i < v.length; i++) {
+        final e = v[i];
+        if (e == null) {
+          issues.add(
+            EasyIssue(
+              path: 'ldt' + '[' + i.toString() + ']',
+              code: 'null_not_allowed',
+              message: 'Null value not allowed.',
+            ),
+          );
+        } else {
+          if (e is! List) {
+            issues.add(
+              EasyIssue(
+                path: 'ldt' + '[' + i.toString() + ']',
+                code: 'type_mismatch',
+                message: 'Expected List.',
+              ),
+            );
+          } else {
+            for (var i0 = 0; i0 < e.length; i0++) {
+              {
+                final x1 = e[i0];
+                if (x1 == null) {
+                } else {
+                  if (ej.decodeDateTime(x1) == null) {
+                    issues.add(
+                      EasyIssue(
+                        path:
+                            'ldt' +
+                            '[' +
+                            i.toString() +
+                            ']' +
+                            '[' +
+                            i0.toString() +
+                            ']',
+                        code: 'type_mismatch',
+                        message:
+                            'Expected ISO-8601 String or epoch milliseconds.',
+                      ),
+                    );
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+  if (json.containsKey('deep')) {
+    final v = json['deep'];
+    if (v != null && v is! List) {
+      issues.add(
+        EasyIssue(
+          path: 'deep',
+          code: 'type_mismatch',
+          message: 'Expected List.',
+        ),
+      );
+    } else if (v is List) {
+      for (var i = 0; i < v.length; i++) {
+        final e = v[i];
+        if (e == null) {
+          issues.add(
+            EasyIssue(
+              path: 'deep' + '[' + i.toString() + ']',
+              code: 'null_not_allowed',
+              message: 'Null value not allowed.',
+            ),
+          );
+        } else {
+          if (e is! List) {
+            issues.add(
+              EasyIssue(
+                path: 'deep' + '[' + i.toString() + ']',
+                code: 'type_mismatch',
+                message: 'Expected List.',
+              ),
+            );
+          } else {
+            for (var i0 = 0; i0 < e.length; i0++) {
+              {
+                final x1 = e[i0];
+                if (x1 == null) {
+                  issues.add(
+                    EasyIssue(
+                      path:
+                          'deep' +
+                          '[' +
+                          i.toString() +
+                          ']' +
+                          '[' +
+                          i0.toString() +
+                          ']',
+                      code: 'null_not_allowed',
+                      message: 'Null value not allowed.',
+                    ),
+                  );
+                } else {
+                  if (x1 is! List) {
+                    issues.add(
+                      EasyIssue(
+                        path:
+                            'deep' +
+                            '[' +
+                            i.toString() +
+                            ']' +
+                            '[' +
+                            i0.toString() +
+                            ']',
+                        code: 'type_mismatch',
+                        message: 'Expected List.',
+                      ),
+                    );
+                  } else {
+                    for (var i1 = 0; i1 < x1.length; i1++) {
+                      {
+                        final x2 = x1[i1];
+                        if (x2 == null) {
+                          issues.add(
+                            EasyIssue(
+                              path:
+                                  'deep' +
+                                  '[' +
+                                  i.toString() +
+                                  ']' +
+                                  '[' +
+                                  i0.toString() +
+                                  ']' +
+                                  '[' +
+                                  i1.toString() +
+                                  ']',
+                              code: 'null_not_allowed',
+                              message: 'Null value not allowed.',
+                            ),
+                          );
+                        } else {
+                          if (x2 is! bool) {
+                            issues.add(
+                              EasyIssue(
+                                path:
+                                    'deep' +
+                                    '[' +
+                                    i.toString() +
+                                    ']' +
+                                    '[' +
+                                    i0.toString() +
+                                    ']' +
+                                    '[' +
+                                    i1.toString() +
+                                    ']',
+                                code: 'type_mismatch',
+                                message: 'Expected bool.',
+                              ),
+                            );
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+  return issues;
+}
+
+Nested nestedFromJsonSafe(
+  Map<String, dynamic> json, {
+  void Function(EasyIssue)? onIssue,
+  bool runValidate = true,
+}) {
+  // validate + parse podem apontar o mesmo problema: reporta uma vez só.
+  final _report = ej.dedupeIssues(onIssue);
+  if (runValidate && _report != null) {
+    for (final i in nestedValidate(json)) _report(i);
+  }
+  return ((void Function(EasyIssue)? onIssue) => Nested(
+    li: (() {
+      final _v = json['li'];
+      if (_v is! List) return const <List<int>>[];
+      final _list = _v;
+      return _list.asMap().entries.map<List<int>>((entry) {
+        final idx = entry.key;
+        final elem = entry.value;
+        return (() {
+          final x0 = entry.value;
+          if (x0 == null) {
+            onIssue?.call(
+              EasyIssue(
+                path: 'li' + '[' + entry.key.toString() + ']',
+                code: 'null_not_allowed',
+                message: 'Null value not allowed.',
+              ),
+            );
+            return <int>[];
+          }
+          if (x0 is! List) {
+            onIssue?.call(
+              EasyIssue(
+                path: 'li' + '[' + entry.key.toString() + ']',
+                code: 'type_mismatch',
+                message: 'Expected List.',
+              ),
+            );
+            return <int>[];
+          }
+          return <int>[
+            for (var i0 = 0; i0 < x0.length; i0++)
+              (() {
+                final x1 = x0[i0];
+                if (x1 == null) {
+                  onIssue?.call(
+                    EasyIssue(
+                      path:
+                          'li' +
+                          '[' +
+                          entry.key.toString() +
+                          ']' +
+                          '[' +
+                          i0.toString() +
+                          ']',
+                      code: 'null_not_allowed',
+                      message: 'Null value not allowed.',
+                    ),
+                  );
+                  return 0;
+                }
+                if (x1 is int) return x1;
+                onIssue?.call(
+                  EasyIssue(
+                    path:
+                        'li' +
+                        '[' +
+                        entry.key.toString() +
+                        ']' +
+                        '[' +
+                        i0.toString() +
+                        ']',
+                    code: 'type_mismatch',
+                    message: 'Expected int.',
+                  ),
+                );
+                return 0;
+              })(),
+          ];
+        })();
+      }).toList();
+    })(),
+    lin: (() {
+      final _v = json['lin'];
+      if (_v is! List) return const <List<int>?>[];
+      final _list = _v;
+      return _list.asMap().entries.map<List<int>?>((entry) {
+        final idx = entry.key;
+        final elem = entry.value;
+        return (() {
+          final x0 = entry.value;
+          if (x0 == null) {
+            return null;
+          }
+          if (x0 is! List) {
+            onIssue?.call(
+              EasyIssue(
+                path: 'lin' + '[' + entry.key.toString() + ']',
+                code: 'type_mismatch',
+                message: 'Expected List.',
+              ),
+            );
+            return null;
+          }
+          return <int>[
+            for (var i0 = 0; i0 < x0.length; i0++)
+              (() {
+                final x1 = x0[i0];
+                if (x1 == null) {
+                  onIssue?.call(
+                    EasyIssue(
+                      path:
+                          'lin' +
+                          '[' +
+                          entry.key.toString() +
+                          ']' +
+                          '[' +
+                          i0.toString() +
+                          ']',
+                      code: 'null_not_allowed',
+                      message: 'Null value not allowed.',
+                    ),
+                  );
+                  return 0;
+                }
+                if (x1 is int) return x1;
+                onIssue?.call(
+                  EasyIssue(
+                    path:
+                        'lin' +
+                        '[' +
+                        entry.key.toString() +
+                        ']' +
+                        '[' +
+                        i0.toString() +
+                        ']',
+                    code: 'type_mismatch',
+                    message: 'Expected int.',
+                  ),
+                );
+                return 0;
+              })(),
+          ];
+        })();
+      }).toList();
+    })(),
+    ls: (() {
+      final _v = json['ls'];
+      if (_v is! List) return const <Set<String>>[];
+      final _list = _v;
+      return _list.asMap().entries.map<Set<String>>((entry) {
+        final idx = entry.key;
+        final elem = entry.value;
+        return (() {
+          final x0 = entry.value;
+          if (x0 == null) {
+            onIssue?.call(
+              EasyIssue(
+                path: 'ls' + '[' + entry.key.toString() + ']',
+                code: 'null_not_allowed',
+                message: 'Null value not allowed.',
+              ),
+            );
+            return <String>{};
+          }
+          if (x0 is! List) {
+            onIssue?.call(
+              EasyIssue(
+                path: 'ls' + '[' + entry.key.toString() + ']',
+                code: 'type_mismatch',
+                message: 'Expected List for Set.',
+              ),
+            );
+            return <String>{};
+          }
+          return <String>{
+            for (var i0 = 0; i0 < x0.length; i0++)
+              (() {
+                final x1 = x0[i0];
+                if (x1 == null) {
+                  onIssue?.call(
+                    EasyIssue(
+                      path:
+                          'ls' +
+                          '[' +
+                          entry.key.toString() +
+                          ']' +
+                          '[' +
+                          i0.toString() +
+                          ']',
+                      code: 'null_not_allowed',
+                      message: 'Null value not allowed.',
+                    ),
+                  );
+                  return '';
+                }
+                if (x1 is String) return x1;
+                onIssue?.call(
+                  EasyIssue(
+                    path:
+                        'ls' +
+                        '[' +
+                        entry.key.toString() +
+                        ']' +
+                        '[' +
+                        i0.toString() +
+                        ']',
+                    code: 'type_mismatch',
+                    message: 'Expected String.',
+                  ),
+                );
+                return '';
+              })(),
+          };
+        })();
+      }).toList();
+    })(),
+    sl: (() {
+      final _v = json['sl'];
+      if (_v is! List) return const <List<double>>{};
+      final _list = _v;
+      return _list
+          .asMap()
+          .entries
+          .map<List<double>?>((entry) {
+            return (() {
+              final x0 = entry.value;
+              if (x0 == null) {
+                onIssue?.call(
+                  EasyIssue(
+                    path: 'sl' + '[' + entry.key.toString() + ']',
+                    code: 'null_not_allowed',
+                    message: 'Null value not allowed.',
+                  ),
+                );
+                return <double>[];
+              }
+              if (x0 is! List) {
+                onIssue?.call(
+                  EasyIssue(
+                    path: 'sl' + '[' + entry.key.toString() + ']',
+                    code: 'type_mismatch',
+                    message: 'Expected List.',
+                  ),
+                );
+                return <double>[];
+              }
+              return <double>[
+                for (var i0 = 0; i0 < x0.length; i0++)
+                  (() {
+                    final x1 = x0[i0];
+                    if (x1 == null) {
+                      onIssue?.call(
+                        EasyIssue(
+                          path:
+                              'sl' +
+                              '[' +
+                              entry.key.toString() +
+                              ']' +
+                              '[' +
+                              i0.toString() +
+                              ']',
+                          code: 'null_not_allowed',
+                          message: 'Null value not allowed.',
+                        ),
+                      );
+                      return 0.0;
+                    }
+                    if (x1 is num) return x1.toDouble();
+                    onIssue?.call(
+                      EasyIssue(
+                        path:
+                            'sl' +
+                            '[' +
+                            entry.key.toString() +
+                            ']' +
+                            '[' +
+                            i0.toString() +
+                            ']',
+                        code: 'type_mismatch',
+                        message: 'Expected number (int/double).',
+                      ),
+                    );
+                    return 0.0;
+                  })(),
+              ];
+            })();
+          })
+          .where((x) => x != null)
+          .cast<List<double>>()
+          .toSet();
+    })(),
+    ml: (() {
+      final _v = json['ml'];
+      if (_v is! Map) return const <String, List<int>>{};
+      final _mapRaw = Map<dynamic, dynamic>.from(_v as Map);
+      final _out = <String, List<int>>{};
+      for (final entry in _mapRaw.entries) {
+        final k = (entry.key is String) ? entry.key : (entry.key?.toString());
+        if (k == null) {
+          onIssue?.call(
+            EasyIssue(
+              path: 'ml' + '.' + entry.key.toString(),
+              code: 'key_type_mismatch',
+              message: 'Incompatible key type for map.',
+            ),
+          );
+          continue;
+        }
+        final v = (() {
+          final x0 = entry.value;
+          if (x0 == null) {
+            onIssue?.call(
+              EasyIssue(
+                path: 'ml' + '.' + k.toString(),
+                code: 'null_not_allowed',
+                message: 'Null value not allowed.',
+              ),
+            );
+            return <int>[];
+          }
+          if (x0 is! List) {
+            onIssue?.call(
+              EasyIssue(
+                path: 'ml' + '.' + k.toString(),
+                code: 'type_mismatch',
+                message: 'Expected List.',
+              ),
+            );
+            return <int>[];
+          }
+          return <int>[
+            for (var i0 = 0; i0 < x0.length; i0++)
+              (() {
+                final x1 = x0[i0];
+                if (x1 == null) {
+                  onIssue?.call(
+                    EasyIssue(
+                      path:
+                          'ml' + '.' + k.toString() + '[' + i0.toString() + ']',
+                      code: 'null_not_allowed',
+                      message: 'Null value not allowed.',
+                    ),
+                  );
+                  return 0;
+                }
+                if (x1 is int) return x1;
+                onIssue?.call(
+                  EasyIssue(
+                    path: 'ml' + '.' + k.toString() + '[' + i0.toString() + ']',
+                    code: 'type_mismatch',
+                    message: 'Expected int.',
+                  ),
+                );
+                return 0;
+              })(),
+          ];
+        })();
+        _out[k] = v;
+      }
+      return _out;
+    })(),
+    lm: (() {
+      final _v = json['lm'];
+      if (_v is! List) return const <Map<String, int>>[];
+      final _list = _v;
+      return _list.asMap().entries.map<Map<String, int>>((entry) {
+        final idx = entry.key;
+        final elem = entry.value;
+        return (() {
+          final x0 = entry.value;
+          if (x0 == null) {
+            onIssue?.call(
+              EasyIssue(
+                path: 'lm' + '[' + entry.key.toString() + ']',
+                code: 'null_not_allowed',
+                message: 'Null value not allowed.',
+              ),
+            );
+            return <String, int>{};
+          }
+          if (x0 is! Map) {
+            onIssue?.call(
+              EasyIssue(
+                path: 'lm' + '[' + entry.key.toString() + ']',
+                code: 'type_mismatch',
+                message: 'Expected Map.',
+              ),
+            );
+            return <String, int>{};
+          }
+          final o0 = <String, int>{};
+          for (final m0 in x0.entries) {
+            final k0 = (m0.key is String) ? m0.key : (m0.key?.toString());
+            if (k0 == null) {
+              onIssue?.call(
+                EasyIssue(
+                  path:
+                      'lm' +
+                      '[' +
+                      entry.key.toString() +
+                      ']' +
+                      '.' +
+                      m0.key.toString(),
+                  code: 'key_type_mismatch',
+                  message: 'Incompatible key type for map.',
+                ),
+              );
+              continue;
+            }
+            o0[k0] = (() {
+              final x1 = m0.value;
+              if (x1 == null) {
+                onIssue?.call(
+                  EasyIssue(
+                    path:
+                        'lm' +
+                        '[' +
+                        entry.key.toString() +
+                        ']' +
+                        '.' +
+                        m0.key.toString(),
+                    code: 'null_not_allowed',
+                    message: 'Null value not allowed.',
+                  ),
+                );
+                return 0;
+              }
+              if (x1 is int) return x1;
+              onIssue?.call(
+                EasyIssue(
+                  path:
+                      'lm' +
+                      '[' +
+                      entry.key.toString() +
+                      ']' +
+                      '.' +
+                      m0.key.toString(),
+                  code: 'type_mismatch',
+                  message: 'Expected int.',
+                ),
+              );
+              return 0;
+            })();
+          }
+          return o0;
+        })();
+      }).toList();
+    })(),
+    mm: (() {
+      final _v = json['mm'];
+      if (_v is! Map) return const <String, Map<int, Color>>{};
+      final _mapRaw = Map<dynamic, dynamic>.from(_v as Map);
+      final _out = <String, Map<int, Color>>{};
+      for (final entry in _mapRaw.entries) {
+        final k = (entry.key is String) ? entry.key : (entry.key?.toString());
+        if (k == null) {
+          onIssue?.call(
+            EasyIssue(
+              path: 'mm' + '.' + entry.key.toString(),
+              code: 'key_type_mismatch',
+              message: 'Incompatible key type for map.',
+            ),
+          );
+          continue;
+        }
+        final v = (() {
+          final x0 = entry.value;
+          if (x0 == null) {
+            onIssue?.call(
+              EasyIssue(
+                path: 'mm' + '.' + k.toString(),
+                code: 'null_not_allowed',
+                message: 'Null value not allowed.',
+              ),
+            );
+            return <int, Color>{};
+          }
+          if (x0 is! Map) {
+            onIssue?.call(
+              EasyIssue(
+                path: 'mm' + '.' + k.toString(),
+                code: 'type_mismatch',
+                message: 'Expected Map.',
+              ),
+            );
+            return <int, Color>{};
+          }
+          final o0 = <int, Color>{};
+          for (final m0 in x0.entries) {
+            final k0 = (() {
+              final _k = m0.key;
+              if (_k is int) return _k;
+              if (_k is num) return _k.toInt();
+              if (_k is String) {
+                final n = num.tryParse(_k);
+                if (n != null) return n.toInt();
+              }
+              return null;
+            })();
+            if (k0 == null) {
+              onIssue?.call(
+                EasyIssue(
+                  path: 'mm' + '.' + k.toString() + '.' + m0.key.toString(),
+                  code: 'key_type_mismatch',
+                  message: 'Incompatible key type for map.',
+                ),
+              );
+              continue;
+            }
+            o0[k0] = (() {
+              final x1 = m0.value;
+              if (x1 == null) {
+                onIssue?.call(
+                  EasyIssue(
+                    path: 'mm' + '.' + k.toString() + '.' + m0.key.toString(),
+                    code: 'null_not_allowed',
+                    message: 'Null value not allowed.',
+                  ),
+                );
+                return Color.values.first;
+              }
+              if (x1 is String) {
+                for (final z1 in Color.values) {
+                  if (z1.name == x1) return z1;
+                }
+                onIssue?.call(
+                  EasyIssue(
+                    path: 'mm' + '.' + k.toString() + '.' + m0.key.toString(),
+                    code: 'invalid_enum',
+                    message: "Value '$x1' does not match Color.",
+                  ),
+                );
+                return Color.values.first;
+              }
+              onIssue?.call(
+                EasyIssue(
+                  path: 'mm' + '.' + k.toString() + '.' + m0.key.toString(),
+                  code: 'type_mismatch',
+                  message: 'Expected String with enum name.',
+                ),
+              );
+              return Color.values.first;
+            })();
+          }
+          return o0;
+        })();
+        _out[k] = v;
+      }
+      return _out;
+    })(),
+    lo: (() {
+      final _v = json['lo'];
+      if (_v is! List) return const <List<Inner>>[];
+      final _list = _v;
+      return _list.asMap().entries.map<List<Inner>>((entry) {
+        final idx = entry.key;
+        final elem = entry.value;
+        return (() {
+          final x0 = entry.value;
+          if (x0 == null) {
+            onIssue?.call(
+              EasyIssue(
+                path: 'lo' + '[' + entry.key.toString() + ']',
+                code: 'null_not_allowed',
+                message: 'Null value not allowed.',
+              ),
+            );
+            return <Inner>[];
+          }
+          if (x0 is! List) {
+            onIssue?.call(
+              EasyIssue(
+                path: 'lo' + '[' + entry.key.toString() + ']',
+                code: 'type_mismatch',
+                message: 'Expected List.',
+              ),
+            );
+            return <Inner>[];
+          }
+          return <Inner>[
+            for (var i0 = 0; i0 < x0.length; i0++)
+              (() {
+                final x1 = x0[i0];
+                if (x1 == null) {
+                  onIssue?.call(
+                    EasyIssue(
+                      path:
+                          'lo' +
+                          '[' +
+                          entry.key.toString() +
+                          ']' +
+                          '[' +
+                          i0.toString() +
+                          ']',
+                      code: 'null_not_allowed',
+                      message: 'Null value not allowed.',
+                    ),
+                  );
+                  return innerFromJsonSafe(
+                    const <String, dynamic>{},
+                    onIssue: (n1) => onIssue?.call(
+                      EasyIssue(
+                        path:
+                            'lo' +
+                            '[' +
+                            entry.key.toString() +
+                            ']' +
+                            '[' +
+                            i0.toString() +
+                            ']' +
+                            '.' +
+                            n1.path,
+                        code: n1.code,
+                        message: n1.message,
+                      ),
+                    ),
+                    runValidate: false,
+                  );
+                }
+                if (x1 is! Map) {
+                  onIssue?.call(
+                    EasyIssue(
+                      path:
+                          'lo' +
+                          '[' +
+                          entry.key.toString() +
+                          ']' +
+                          '[' +
+                          i0.toString() +
+                          ']',
+                      code: 'type_mismatch',
+                      message: 'Expected Map for Inner.',
+                    ),
+                  );
+                  return innerFromJsonSafe(
+                    const <String, dynamic>{},
+                    onIssue: (n1) => onIssue?.call(
+                      EasyIssue(
+                        path:
+                            'lo' +
+                            '[' +
+                            entry.key.toString() +
+                            ']' +
+                            '[' +
+                            i0.toString() +
+                            ']' +
+                            '.' +
+                            n1.path,
+                        code: n1.code,
+                        message: n1.message,
+                      ),
+                    ),
+                    runValidate: false,
+                  );
+                }
+                return innerFromJsonSafe(
+                  Map<String, dynamic>.from(x1),
+                  onIssue: (n1) => onIssue?.call(
+                    EasyIssue(
+                      path:
+                          'lo' +
+                          '[' +
+                          entry.key.toString() +
+                          ']' +
+                          '[' +
+                          i0.toString() +
+                          ']' +
+                          '.' +
+                          n1.path,
+                      code: n1.code,
+                      message: n1.message,
+                    ),
+                  ),
+                  runValidate: false,
+                );
+              })(),
+          ];
+        })();
+      }).toList();
+    })(),
+    ldt: (() {
+      final _v = json['ldt'];
+      if (_v is! List) return const <List<DateTime?>>[];
+      final _list = _v;
+      return _list.asMap().entries.map<List<DateTime?>>((entry) {
+        final idx = entry.key;
+        final elem = entry.value;
+        return (() {
+          final x0 = entry.value;
+          if (x0 == null) {
+            onIssue?.call(
+              EasyIssue(
+                path: 'ldt' + '[' + entry.key.toString() + ']',
+                code: 'null_not_allowed',
+                message: 'Null value not allowed.',
+              ),
+            );
+            return <DateTime?>[];
+          }
+          if (x0 is! List) {
+            onIssue?.call(
+              EasyIssue(
+                path: 'ldt' + '[' + entry.key.toString() + ']',
+                code: 'type_mismatch',
+                message: 'Expected List.',
+              ),
+            );
+            return <DateTime?>[];
+          }
+          return <DateTime?>[
+            for (var i0 = 0; i0 < x0.length; i0++)
+              (() {
+                final x1 = x0[i0];
+                if (x1 == null) {
+                  return null;
+                }
+                final r1 = ej.decodeDateTime(x1);
+                if (r1 != null) return r1;
+                onIssue?.call(
+                  EasyIssue(
+                    path:
+                        'ldt' +
+                        '[' +
+                        entry.key.toString() +
+                        ']' +
+                        '[' +
+                        i0.toString() +
+                        ']',
+                    code: 'type_mismatch',
+                    message: 'Expected ISO-8601 String or epoch milliseconds.',
+                  ),
+                );
+                return null;
+              })(),
+          ];
+        })();
+      }).toList();
+    })(),
+    deep: (() {
+      final _v = json['deep'];
+      if (_v is! List) return null;
+      final _list = _v;
+      return _list.asMap().entries.map<List<List<bool>>>((entry) {
+        final idx = entry.key;
+        final elem = entry.value;
+        return (() {
+          final x0 = entry.value;
+          if (x0 == null) {
+            onIssue?.call(
+              EasyIssue(
+                path: 'deep' + '[' + entry.key.toString() + ']',
+                code: 'null_not_allowed',
+                message: 'Null value not allowed.',
+              ),
+            );
+            return <List<bool>>[];
+          }
+          if (x0 is! List) {
+            onIssue?.call(
+              EasyIssue(
+                path: 'deep' + '[' + entry.key.toString() + ']',
+                code: 'type_mismatch',
+                message: 'Expected List.',
+              ),
+            );
+            return <List<bool>>[];
+          }
+          return <List<bool>>[
+            for (var i0 = 0; i0 < x0.length; i0++)
+              (() {
+                final x1 = x0[i0];
+                if (x1 == null) {
+                  onIssue?.call(
+                    EasyIssue(
+                      path:
+                          'deep' +
+                          '[' +
+                          entry.key.toString() +
+                          ']' +
+                          '[' +
+                          i0.toString() +
+                          ']',
+                      code: 'null_not_allowed',
+                      message: 'Null value not allowed.',
+                    ),
+                  );
+                  return <bool>[];
+                }
+                if (x1 is! List) {
+                  onIssue?.call(
+                    EasyIssue(
+                      path:
+                          'deep' +
+                          '[' +
+                          entry.key.toString() +
+                          ']' +
+                          '[' +
+                          i0.toString() +
+                          ']',
+                      code: 'type_mismatch',
+                      message: 'Expected List.',
+                    ),
+                  );
+                  return <bool>[];
+                }
+                return <bool>[
+                  for (var i1 = 0; i1 < x1.length; i1++)
+                    (() {
+                      final x2 = x1[i1];
+                      if (x2 == null) {
+                        onIssue?.call(
+                          EasyIssue(
+                            path:
+                                'deep' +
+                                '[' +
+                                entry.key.toString() +
+                                ']' +
+                                '[' +
+                                i0.toString() +
+                                ']' +
+                                '[' +
+                                i1.toString() +
+                                ']',
+                            code: 'null_not_allowed',
+                            message: 'Null value not allowed.',
+                          ),
+                        );
+                        return false;
+                      }
+                      if (x2 is bool) return x2;
+                      onIssue?.call(
+                        EasyIssue(
+                          path:
+                              'deep' +
+                              '[' +
+                              entry.key.toString() +
+                              ']' +
+                              '[' +
+                              i0.toString() +
+                              ']' +
+                              '[' +
+                              i1.toString() +
+                              ']',
+                          code: 'type_mismatch',
+                          message: 'Expected bool.',
+                        ),
+                      );
+                      return false;
+                    })(),
+                ];
+              })(),
+          ];
+        })();
+      }).toList();
+    })(),
+  ))(_report);
+}
+
+class NestedJson {
+  const NestedJson();
+
+  static Nested fromJson(Map<String, dynamic> json) {
+    return nestedFromJson(json);
+  }
+
+  static Nested fromJsonSafe(
+    Map<String, dynamic> json, {
+    void Function(EasyIssue)? onIssue,
+    bool runValidate = true,
+  }) {
+    return nestedFromJsonSafe(json, onIssue: onIssue, runValidate: runValidate);
+  }
+
+  static List<EasyIssue> validate(Map<String, dynamic> json) {
+    return nestedValidate(json);
+  }
+}
+
+List<Nested> nestedFromJsonList(List<dynamic> json) =>
+    json.map((e) => nestedFromJson(e as Map<String, dynamic>)).toList();
+
+List<Nested> nestedFromJsonSafeList(
+  List<dynamic> json, {
+  void Function(int index, EasyIssue issue)? onIssue,
+  bool runValidate = true,
+}) => json
+    .asMap()
+    .entries
+    .map(
+      (entry) => nestedFromJsonSafe(
+        entry.value as Map<String, dynamic>,
+        onIssue: onIssue == null ? null : (i) => onIssue(entry.key, i),
+        runValidate: runValidate,
+      ),
+    )
+    .toList();
+
+List<Map<String, dynamic>> nestedToJsonList(List<Nested> items) =>
+    items.map((e) => nestedToJson(e)).toList();

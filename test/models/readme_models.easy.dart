@@ -17,6 +17,7 @@ import 'readme_models.dart';
 import 'package:dart_easy_json/runtime.dart';
 
 import 'readme_models.dart';
+import 'readme_models.easy.dart';
 
 import 'dart:convert';
 import 'dart:typed_data';
@@ -661,7 +662,10 @@ mixin PageResponseSerializer<T> {
   }
 }
 
-List<EasyIssue> pageResponseValidate<T>(Map<String, dynamic> json) {
+List<EasyIssue> pageResponseValidate<T>(
+  Map<String, dynamic> json, {
+  List<EasyIssue> Function(Object? json)? validateT,
+}) {
   final issues = <EasyIssue>[];
   if (!json.containsKey('items')) {
     issues.add(
@@ -702,7 +706,19 @@ List<EasyIssue> pageResponseValidate<T>(Map<String, dynamic> json) {
               message: 'Null value not allowed.',
             ),
           );
-        } else {}
+        } else {
+          if (validateT != null) {
+            for (final n0 in validateT(e)) {
+              issues.add(
+                EasyIssue(
+                  path: 'items' + '[' + i.toString() + ']' + n0.path,
+                  code: n0.code,
+                  message: n0.message,
+                ),
+              );
+            }
+          }
+        }
       }
     }
   }
@@ -837,6 +853,864 @@ List<Map<String, dynamic>> pageResponseToJsonList<T>(
   List<PageResponse<T>> items,
   Object? Function(T value) toJsonT,
 ) => items.map((e) => pageResponseToJson<T>(e, toJsonT)).toList();
+
+UserSearch userSearchFromJson(Map<String, dynamic> json) {
+  return UserSearch(
+    results: pageResponseFromJson<User>(
+      Map<String, dynamic>.from(json['results'] as Map),
+      (Object? e0) => userFromJson(Map<String, dynamic>.from(e0 as Map)),
+    ),
+    byTeam: (Map<dynamic, dynamic>.from(json['byTeam'] as Map)).entries
+        .fold<Map<String, List<User>>>(<String, List<User>>{}, (acc, entry) {
+          final k = (entry.key is String
+              ? (entry.key as String)
+              : entry.key.toString());
+          final v = <User>[
+            for (final e0 in (entry.value as List))
+              userFromJson(Map<String, dynamic>.from(e0 as Map)),
+          ];
+          acc[k] = v;
+          return acc;
+        }),
+  );
+}
+
+Map<String, dynamic> userSearchToJson(UserSearch instance) {
+  return <String, dynamic>{
+    'results': instance.results.toJson((e0) => e0.toJson()),
+    'byTeam': instance.byTeam.map(
+      (k, v) => MapEntry(k, v.map((e0) => e0.toJson()).toList()),
+    ),
+  };
+}
+
+mixin UserSearchSerializer {
+  Map<String, dynamic> toJson() {
+    return userSearchToJson(this as UserSearch);
+  }
+}
+
+List<EasyIssue> userSearchValidate(Map<String, dynamic> json) {
+  final issues = <EasyIssue>[];
+  if (!json.containsKey('results')) {
+    issues.add(
+      EasyIssue(
+        path: 'results',
+        code: 'missing_required',
+        message: 'Missing required field.',
+      ),
+    );
+  }
+  if (json.containsKey('results') && json['results'] == null) {
+    issues.add(
+      EasyIssue(
+        path: 'results',
+        code: 'null_not_allowed',
+        message: 'Null value not allowed.',
+      ),
+    );
+  }
+  if (json.containsKey('results')) {
+    final v = json['results'];
+    if (v != null) {
+      if (v is! Map) {
+        issues.add(
+          EasyIssue(
+            path: 'results',
+            code: 'type_mismatch',
+            message: 'Expected Map for PageResponse.',
+          ),
+        );
+      } else {
+        for (final n0 in pageResponseValidate<User>(
+          Map<String, dynamic>.from(v),
+          validateT: (Object? e0) {
+            final issues = <EasyIssue>[];
+            {
+              final x1 = e0;
+              if (x1 == null) {
+                issues.add(
+                  EasyIssue(
+                    path: '',
+                    code: 'null_not_allowed',
+                    message: 'Null value not allowed.',
+                  ),
+                );
+              } else {
+                if (x1 is! Map) {
+                  issues.add(
+                    EasyIssue(
+                      path: '',
+                      code: 'type_mismatch',
+                      message: 'Expected Map for User.',
+                    ),
+                  );
+                } else {
+                  for (final n1 in userValidate(
+                    Map<String, dynamic>.from(x1),
+                  )) {
+                    issues.add(
+                      EasyIssue(
+                        path: '' + '.' + n1.path,
+                        code: n1.code,
+                        message: n1.message,
+                      ),
+                    );
+                  }
+                }
+              }
+            }
+            return issues;
+          },
+        )) {
+          issues.add(
+            EasyIssue(
+              path: 'results' + '.' + n0.path,
+              code: n0.code,
+              message: n0.message,
+            ),
+          );
+        }
+      }
+    }
+  }
+  if (!json.containsKey('byTeam')) {
+    issues.add(
+      EasyIssue(
+        path: 'byTeam',
+        code: 'missing_required',
+        message: 'Missing required field.',
+      ),
+    );
+  }
+  if (json.containsKey('byTeam') && json['byTeam'] == null) {
+    issues.add(
+      EasyIssue(
+        path: 'byTeam',
+        code: 'null_not_allowed',
+        message: 'Null value not allowed.',
+      ),
+    );
+  }
+  if (json.containsKey('byTeam')) {
+    final v = json['byTeam'];
+    if (v != null && v is! Map) {
+      issues.add(
+        EasyIssue(
+          path: 'byTeam',
+          code: 'type_mismatch',
+          message: 'Expected Map.',
+        ),
+      );
+    } else if (v is Map) {
+      for (final e in v.entries) {
+        {
+          final x0 = e.value;
+          if (x0 == null) {
+            issues.add(
+              EasyIssue(
+                path: 'byTeam' + '.' + e.key.toString(),
+                code: 'null_not_allowed',
+                message: 'Null value not allowed.',
+              ),
+            );
+          } else {
+            if (x0 is! List) {
+              issues.add(
+                EasyIssue(
+                  path: 'byTeam' + '.' + e.key.toString(),
+                  code: 'type_mismatch',
+                  message: 'Expected List.',
+                ),
+              );
+            } else {
+              for (var i0 = 0; i0 < x0.length; i0++) {
+                {
+                  final x1 = x0[i0];
+                  if (x1 == null) {
+                    issues.add(
+                      EasyIssue(
+                        path:
+                            'byTeam' +
+                            '.' +
+                            e.key.toString() +
+                            '[' +
+                            i0.toString() +
+                            ']',
+                        code: 'null_not_allowed',
+                        message: 'Null value not allowed.',
+                      ),
+                    );
+                  } else {
+                    if (x1 is! Map) {
+                      issues.add(
+                        EasyIssue(
+                          path:
+                              'byTeam' +
+                              '.' +
+                              e.key.toString() +
+                              '[' +
+                              i0.toString() +
+                              ']',
+                          code: 'type_mismatch',
+                          message: 'Expected Map for User.',
+                        ),
+                      );
+                    } else {
+                      for (final n1 in userValidate(
+                        Map<String, dynamic>.from(x1),
+                      )) {
+                        issues.add(
+                          EasyIssue(
+                            path:
+                                'byTeam' +
+                                '.' +
+                                e.key.toString() +
+                                '[' +
+                                i0.toString() +
+                                ']' +
+                                '.' +
+                                n1.path,
+                            code: n1.code,
+                            message: n1.message,
+                          ),
+                        );
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+  return issues;
+}
+
+UserSearch userSearchFromJsonSafe(
+  Map<String, dynamic> json, {
+  void Function(EasyIssue)? onIssue,
+  bool runValidate = true,
+}) {
+  // validate + parse podem apontar o mesmo problema: reporta uma vez só.
+  final _report = ej.dedupeIssues(onIssue);
+  if (runValidate && _report != null) {
+    for (final i in userSearchValidate(json)) _report(i);
+  }
+  return ((void Function(EasyIssue)? onIssue) => UserSearch(
+    results: (() {
+      final x0 = json['results'];
+      if (x0 == null)
+        return pageResponseFromJsonSafe<User>(
+          const <String, dynamic>{},
+          (Object? e0) => ((void Function(EasyIssue)? onIssue) => (() {
+            final x1 = e0;
+            if (x1 == null) {
+              onIssue?.call(
+                EasyIssue(
+                  path: 'results',
+                  code: 'null_not_allowed',
+                  message: 'Null value not allowed.',
+                ),
+              );
+              return userFromJsonSafe(
+                const <String, dynamic>{},
+                onIssue: (n1) => onIssue?.call(
+                  EasyIssue(
+                    path: 'results' + '.' + n1.path,
+                    code: n1.code,
+                    message: n1.message,
+                  ),
+                ),
+                runValidate: false,
+              );
+            }
+            if (x1 is! Map) {
+              onIssue?.call(
+                EasyIssue(
+                  path: 'results',
+                  code: 'type_mismatch',
+                  message: 'Expected Map for User.',
+                ),
+              );
+              return userFromJsonSafe(
+                const <String, dynamic>{},
+                onIssue: (n1) => onIssue?.call(
+                  EasyIssue(
+                    path: 'results' + '.' + n1.path,
+                    code: n1.code,
+                    message: n1.message,
+                  ),
+                ),
+                runValidate: false,
+              );
+            }
+            return userFromJsonSafe(
+              Map<String, dynamic>.from(x1),
+              onIssue: (n1) => onIssue?.call(
+                EasyIssue(
+                  path: 'results' + '.' + n1.path,
+                  code: n1.code,
+                  message: n1.message,
+                ),
+              ),
+              runValidate: false,
+            );
+          })())(null),
+          onIssue: (n0) => onIssue?.call(
+            EasyIssue(
+              path: 'results' + '.' + n0.path,
+              code: n0.code,
+              message: n0.message,
+            ),
+          ),
+          runValidate: false,
+        );
+      if (x0 is! Map) {
+        onIssue?.call(
+          EasyIssue(
+            path: 'results',
+            code: 'type_mismatch',
+            message: 'Expected Map for PageResponse.',
+          ),
+        );
+        return pageResponseFromJsonSafe<User>(
+          const <String, dynamic>{},
+          (Object? e0) => ((void Function(EasyIssue)? onIssue) => (() {
+            final x1 = e0;
+            if (x1 == null) {
+              onIssue?.call(
+                EasyIssue(
+                  path: 'results',
+                  code: 'null_not_allowed',
+                  message: 'Null value not allowed.',
+                ),
+              );
+              return userFromJsonSafe(
+                const <String, dynamic>{},
+                onIssue: (n1) => onIssue?.call(
+                  EasyIssue(
+                    path: 'results' + '.' + n1.path,
+                    code: n1.code,
+                    message: n1.message,
+                  ),
+                ),
+                runValidate: false,
+              );
+            }
+            if (x1 is! Map) {
+              onIssue?.call(
+                EasyIssue(
+                  path: 'results',
+                  code: 'type_mismatch',
+                  message: 'Expected Map for User.',
+                ),
+              );
+              return userFromJsonSafe(
+                const <String, dynamic>{},
+                onIssue: (n1) => onIssue?.call(
+                  EasyIssue(
+                    path: 'results' + '.' + n1.path,
+                    code: n1.code,
+                    message: n1.message,
+                  ),
+                ),
+                runValidate: false,
+              );
+            }
+            return userFromJsonSafe(
+              Map<String, dynamic>.from(x1),
+              onIssue: (n1) => onIssue?.call(
+                EasyIssue(
+                  path: 'results' + '.' + n1.path,
+                  code: n1.code,
+                  message: n1.message,
+                ),
+              ),
+              runValidate: false,
+            );
+          })())(null),
+          onIssue: (n0) => onIssue?.call(
+            EasyIssue(
+              path: 'results' + '.' + n0.path,
+              code: n0.code,
+              message: n0.message,
+            ),
+          ),
+          runValidate: false,
+        );
+      }
+      return pageResponseFromJsonSafe<User>(
+        Map<String, dynamic>.from(x0),
+        (Object? e0) => ((void Function(EasyIssue)? onIssue) => (() {
+          final x1 = e0;
+          if (x1 == null) {
+            onIssue?.call(
+              EasyIssue(
+                path: 'results',
+                code: 'null_not_allowed',
+                message: 'Null value not allowed.',
+              ),
+            );
+            return userFromJsonSafe(
+              const <String, dynamic>{},
+              onIssue: (n1) => onIssue?.call(
+                EasyIssue(
+                  path: 'results' + '.' + n1.path,
+                  code: n1.code,
+                  message: n1.message,
+                ),
+              ),
+              runValidate: false,
+            );
+          }
+          if (x1 is! Map) {
+            onIssue?.call(
+              EasyIssue(
+                path: 'results',
+                code: 'type_mismatch',
+                message: 'Expected Map for User.',
+              ),
+            );
+            return userFromJsonSafe(
+              const <String, dynamic>{},
+              onIssue: (n1) => onIssue?.call(
+                EasyIssue(
+                  path: 'results' + '.' + n1.path,
+                  code: n1.code,
+                  message: n1.message,
+                ),
+              ),
+              runValidate: false,
+            );
+          }
+          return userFromJsonSafe(
+            Map<String, dynamic>.from(x1),
+            onIssue: (n1) => onIssue?.call(
+              EasyIssue(
+                path: 'results' + '.' + n1.path,
+                code: n1.code,
+                message: n1.message,
+              ),
+            ),
+            runValidate: false,
+          );
+        })())(null),
+        onIssue: (n0) => onIssue?.call(
+          EasyIssue(
+            path: 'results' + '.' + n0.path,
+            code: n0.code,
+            message: n0.message,
+          ),
+        ),
+        runValidate: false,
+      );
+    })(),
+    byTeam: (() {
+      final _v = json['byTeam'];
+      if (_v is! Map) return const <String, List<User>>{};
+      final _mapRaw = Map<dynamic, dynamic>.from(_v as Map);
+      final _out = <String, List<User>>{};
+      for (final entry in _mapRaw.entries) {
+        final k = (entry.key is String) ? entry.key : (entry.key?.toString());
+        if (k == null) {
+          onIssue?.call(
+            EasyIssue(
+              path: 'byTeam' + '.' + entry.key.toString(),
+              code: 'key_type_mismatch',
+              message: 'Incompatible key type for map.',
+            ),
+          );
+          continue;
+        }
+        final v = (() {
+          final x0 = entry.value;
+          if (x0 == null) {
+            onIssue?.call(
+              EasyIssue(
+                path: 'byTeam' + '.' + k.toString(),
+                code: 'null_not_allowed',
+                message: 'Null value not allowed.',
+              ),
+            );
+            return <User>[];
+          }
+          if (x0 is! List) {
+            onIssue?.call(
+              EasyIssue(
+                path: 'byTeam' + '.' + k.toString(),
+                code: 'type_mismatch',
+                message: 'Expected List.',
+              ),
+            );
+            return <User>[];
+          }
+          return <User>[
+            for (var i0 = 0; i0 < x0.length; i0++)
+              (() {
+                final x1 = x0[i0];
+                if (x1 == null) {
+                  onIssue?.call(
+                    EasyIssue(
+                      path:
+                          'byTeam' +
+                          '.' +
+                          k.toString() +
+                          '[' +
+                          i0.toString() +
+                          ']',
+                      code: 'null_not_allowed',
+                      message: 'Null value not allowed.',
+                    ),
+                  );
+                  return userFromJsonSafe(
+                    const <String, dynamic>{},
+                    onIssue: (n1) => onIssue?.call(
+                      EasyIssue(
+                        path:
+                            'byTeam' +
+                            '.' +
+                            k.toString() +
+                            '[' +
+                            i0.toString() +
+                            ']' +
+                            '.' +
+                            n1.path,
+                        code: n1.code,
+                        message: n1.message,
+                      ),
+                    ),
+                    runValidate: false,
+                  );
+                }
+                if (x1 is! Map) {
+                  onIssue?.call(
+                    EasyIssue(
+                      path:
+                          'byTeam' +
+                          '.' +
+                          k.toString() +
+                          '[' +
+                          i0.toString() +
+                          ']',
+                      code: 'type_mismatch',
+                      message: 'Expected Map for User.',
+                    ),
+                  );
+                  return userFromJsonSafe(
+                    const <String, dynamic>{},
+                    onIssue: (n1) => onIssue?.call(
+                      EasyIssue(
+                        path:
+                            'byTeam' +
+                            '.' +
+                            k.toString() +
+                            '[' +
+                            i0.toString() +
+                            ']' +
+                            '.' +
+                            n1.path,
+                        code: n1.code,
+                        message: n1.message,
+                      ),
+                    ),
+                    runValidate: false,
+                  );
+                }
+                return userFromJsonSafe(
+                  Map<String, dynamic>.from(x1),
+                  onIssue: (n1) => onIssue?.call(
+                    EasyIssue(
+                      path:
+                          'byTeam' +
+                          '.' +
+                          k.toString() +
+                          '[' +
+                          i0.toString() +
+                          ']' +
+                          '.' +
+                          n1.path,
+                      code: n1.code,
+                      message: n1.message,
+                    ),
+                  ),
+                  runValidate: false,
+                );
+              })(),
+          ];
+        })();
+        _out[k] = v;
+      }
+      return _out;
+    })(),
+  ))(_report);
+}
+
+class UserSearchJson {
+  const UserSearchJson();
+
+  static UserSearch fromJson(Map<String, dynamic> json) {
+    return userSearchFromJson(json);
+  }
+
+  static UserSearch fromJsonSafe(
+    Map<String, dynamic> json, {
+    void Function(EasyIssue)? onIssue,
+    bool runValidate = true,
+  }) {
+    return userSearchFromJsonSafe(
+      json,
+      onIssue: onIssue,
+      runValidate: runValidate,
+    );
+  }
+
+  static List<EasyIssue> validate(Map<String, dynamic> json) {
+    return userSearchValidate(json);
+  }
+}
+
+List<UserSearch> userSearchFromJsonList(List<dynamic> json) =>
+    json.map((e) => userSearchFromJson(e as Map<String, dynamic>)).toList();
+
+List<UserSearch> userSearchFromJsonSafeList(
+  List<dynamic> json, {
+  void Function(int index, EasyIssue issue)? onIssue,
+  bool runValidate = true,
+}) => json
+    .asMap()
+    .entries
+    .map(
+      (entry) => userSearchFromJsonSafe(
+        entry.value as Map<String, dynamic>,
+        onIssue: onIssue == null ? null : (i) => onIssue(entry.key, i),
+        runValidate: runValidate,
+      ),
+    )
+    .toList();
+
+List<Map<String, dynamic>> userSearchToJsonList(List<UserSearch> items) =>
+    items.map((e) => userSearchToJson(e)).toList();
+
+UserPage userPageFromJson(Map<String, dynamic> json) {
+  return UserPage(
+    items:
+        ((json['items'] as List?)?.asMap().entries.map<User>((entry) {
+          final i = entry.key;
+          final e = entry.value;
+          return userFromJson(Map<String, dynamic>.from(e as Map));
+        }).toList()) ??
+        const <User>[],
+  );
+}
+
+Map<String, dynamic> userPageToJson(UserPage instance) {
+  return <String, dynamic>{
+    'items': instance.items.map((e) => e.toJson()).toList(),
+  };
+}
+
+mixin UserPageSerializer {
+  Map<String, dynamic> toJson() {
+    return userPageToJson(this as UserPage);
+  }
+}
+
+List<EasyIssue> userPageValidate(Map<String, dynamic> json) {
+  final issues = <EasyIssue>[];
+  if (!json.containsKey('items')) {
+    issues.add(
+      EasyIssue(
+        path: 'items',
+        code: 'missing_required',
+        message: 'Missing required field.',
+      ),
+    );
+  }
+  if (json.containsKey('items') && json['items'] == null) {
+    issues.add(
+      EasyIssue(
+        path: 'items',
+        code: 'null_not_allowed',
+        message: 'Null value not allowed.',
+      ),
+    );
+  }
+  if (json.containsKey('items')) {
+    final v = json['items'];
+    if (v != null && v is! List) {
+      issues.add(
+        EasyIssue(
+          path: 'items',
+          code: 'type_mismatch',
+          message: 'Expected List.',
+        ),
+      );
+    } else if (v is List) {
+      for (var i = 0; i < v.length; i++) {
+        final e = v[i];
+        if (e == null) {
+          issues.add(
+            EasyIssue(
+              path: 'items' + '[' + i.toString() + ']',
+              code: 'null_not_allowed',
+              message: 'Null value not allowed.',
+            ),
+          );
+        } else {
+          if (e is! Map) {
+            issues.add(
+              EasyIssue(
+                path: 'items' + '[' + i.toString() + ']',
+                code: 'type_mismatch',
+                message: 'Expected Map for User.',
+              ),
+            );
+          } else {
+            final child = userValidate(Map<String, dynamic>.from(e as Map));
+            for (final ci in child) {
+              issues.add(
+                EasyIssue(
+                  path: 'items' + '[' + i.toString() + '].' + ci.path,
+                  code: ci.code,
+                  message: ci.message,
+                ),
+              );
+            }
+          }
+        }
+      }
+    }
+  }
+  return issues;
+}
+
+UserPage userPageFromJsonSafe(
+  Map<String, dynamic> json, {
+  void Function(EasyIssue)? onIssue,
+  bool runValidate = true,
+}) {
+  // validate + parse podem apontar o mesmo problema: reporta uma vez só.
+  final _report = ej.dedupeIssues(onIssue);
+  if (runValidate && _report != null) {
+    for (final i in userPageValidate(json)) _report(i);
+  }
+  return ((void Function(EasyIssue)? onIssue) => UserPage(
+    items: (() {
+      final _v = json['items'];
+      if (_v is! List) return const <User>[];
+      final _list = _v;
+      return _list.asMap().entries.map<User>((entry) {
+        final idx = entry.key;
+        final elem = entry.value;
+        return (() {
+          final _v = entry.value;
+          if (_v == null) {
+            onIssue?.call(
+              EasyIssue(
+                path: 'items' + '[' + entry.key.toString() + ']',
+                code: 'null_not_allowed',
+                message: 'Null value not allowed.',
+              ),
+            );
+            return userFromJsonSafe(
+              const <String, dynamic>{},
+              onIssue: (i) => onIssue?.call(
+                EasyIssue(
+                  path:
+                      'items' + '[' + entry.key.toString() + ']' + '.' + i.path,
+                  code: i.code,
+                  message: i.message,
+                ),
+              ),
+              runValidate: false,
+            );
+          }
+          if (_v is Map) {
+            return userFromJsonSafe(
+              Map<String, dynamic>.from(_v as Map),
+              onIssue: (i) => onIssue?.call(
+                EasyIssue(
+                  path:
+                      'items' + '[' + entry.key.toString() + ']' + '.' + i.path,
+                  code: i.code,
+                  message: i.message,
+                ),
+              ),
+              runValidate: false,
+            );
+          }
+          onIssue?.call(
+            EasyIssue(
+              path: 'items' + '[' + entry.key.toString() + ']',
+              code: 'type_mismatch',
+              message: 'Expected Map for User.',
+            ),
+          );
+          return userFromJsonSafe(
+            const <String, dynamic>{},
+            onIssue: (i) => onIssue?.call(
+              EasyIssue(
+                path: "'items' + '[' + entry.key.toString() + ']'." + i.path,
+                code: i.code,
+                message: i.message,
+              ),
+            ),
+            runValidate: false,
+          );
+        })();
+      }).toList();
+    })(),
+  ))(_report);
+}
+
+class UserPageJson {
+  const UserPageJson();
+
+  static UserPage fromJson(Map<String, dynamic> json) {
+    return userPageFromJson(json);
+  }
+
+  static UserPage fromJsonSafe(
+    Map<String, dynamic> json, {
+    void Function(EasyIssue)? onIssue,
+    bool runValidate = true,
+  }) {
+    return userPageFromJsonSafe(
+      json,
+      onIssue: onIssue,
+      runValidate: runValidate,
+    );
+  }
+
+  static List<EasyIssue> validate(Map<String, dynamic> json) {
+    return userPageValidate(json);
+  }
+}
+
+List<UserPage> userPageFromJsonList(List<dynamic> json) =>
+    json.map((e) => userPageFromJson(e as Map<String, dynamic>)).toList();
+
+List<UserPage> userPageFromJsonSafeList(
+  List<dynamic> json, {
+  void Function(int index, EasyIssue issue)? onIssue,
+  bool runValidate = true,
+}) => json
+    .asMap()
+    .entries
+    .map(
+      (entry) => userPageFromJsonSafe(
+        entry.value as Map<String, dynamic>,
+        onIssue: onIssue == null ? null : (i) => onIssue(entry.key, i),
+        runValidate: runValidate,
+      ),
+    )
+    .toList();
+
+List<Map<String, dynamic>> userPageToJsonList(List<UserPage> items) =>
+    items.map((e) => userPageToJson(e)).toList();
 
 Post postFromJson(Map<String, dynamic> json) {
   final d = json['type'];
@@ -1260,7 +2134,7 @@ Order orderFromJson(Map<String, dynamic> json) {
         '',
     createdAt: EpochMs.fromJson(json['created_at']),
     quantities: (Map<dynamic, dynamic>.from(json['quantities'] as Map)).entries
-        .fold(<int, int>{}, (acc, entry) {
+        .fold<Map<int, int>>(<int, int>{}, (acc, entry) {
           final k = (entry.key is int
               ? (entry.key as int)
               : (entry.key is num
@@ -2211,19 +3085,17 @@ List<Map<String, dynamic>> accountToJsonList(List<Account> items) =>
 
 IntKeyed intKeyedFromJson(Map<String, dynamic> json) {
   return IntKeyed(
-    names: (Map<dynamic, dynamic>.from(json['names'] as Map)).entries.fold(
-      <int, String>{},
-      (acc, entry) {
-        final k = (entry.key is int
-            ? (entry.key as int)
-            : (entry.key is num
-                  ? (entry.key as num).toInt()
-                  : int.parse(entry.key as String)));
-        final v = (entry.value as String?) ?? '';
-        acc[k] = v;
-        return acc;
-      },
-    ),
+    names: (Map<dynamic, dynamic>.from(json['names'] as Map)).entries
+        .fold<Map<int, String>>(<int, String>{}, (acc, entry) {
+          final k = (entry.key is int
+              ? (entry.key as int)
+              : (entry.key is num
+                    ? (entry.key as num).toInt()
+                    : int.parse(entry.key as String)));
+          final v = (entry.value as String?) ?? '';
+          acc[k] = v;
+          return acc;
+        }),
   );
 }
 

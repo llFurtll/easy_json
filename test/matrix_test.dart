@@ -95,7 +95,7 @@ final _models = [
     samples: [
       {
         'i': [1, 2], 'd': [2.5], 's': ['x'], 'dt': [_iso], 'u': [_uri],
-        'du': [1], 'bi': [_big], 'c': ['red'],
+        'du': [1], 'bi': [_big], 'c': ['red'], 'nullableSet': [1],
       },
     ],
   ),
@@ -110,11 +110,51 @@ final _models = [
         'i': {'a': 1}, 'd': {'a': 2.5}, 'b': {'a': true}, 's': {'a': 'x'},
         'dt': {'a': _iso}, 'u': {'a': _uri}, 'du': {'a': 5}, 'bi': {'a': _big},
         'by': {'a': _bytes}, 'c': {'a': 'red'}, 'o': {'a': {'n': 1}},
-        'ik': {'10': 'x'}, 'iN': {'a': 1, 'b': null},
+        'ik': {'10': 'x'}, 'iN': {'a': 1, 'b': null}, 'nullableMap': {'a': 1},
+      },
+    ],
+  ),
+  _Model(
+    'Nested',
+    fromJson: nestedFromJson,
+    fromJsonSafe: nestedFromJsonSafe,
+    validate: nestedValidate,
+    toJson: (o) => nestedToJson(o as dynamic),
+    samples: [
+      {
+        'li': [[1, 2], <Object?>[]], 'lin': [[1], null], 'ls': [['a', 'b']],
+        'sl': [[2.5]], 'ml': {'a': [1, 2]}, 'lm': [{'a': 1}],
+        'mm': {'x': {'1': 'red'}}, 'lo': [[{'n': 1}]], 'ldt': [[_iso, null]],
+        'deep': [[[true]]],
+      },
+      {
+        'li': <Object?>[], 'lin': <Object?>[], 'ls': <Object?>[], 'sl': <Object?>[],
+        'ml': <String, Object?>{}, 'lm': <Object?>[], 'mm': <String, Object?>{},
+        'lo': <Object?>[], 'ldt': <Object?>[],
       },
     ],
   ),
 ];
+
+/// Cópias de [base] com [junk] no primeiro item/valor de cada nível de
+/// coleção dentro de `base[key]` (ex.: `grid[0]`, `grid[0][0]`).
+Iterable<(String, _Json)> _inner(_Json base, String key, Object? junk) sync* {
+  Object? replaceAt(Object? v, int depth) {
+    if (depth == 0) return junk;
+    if (v is List && v.isNotEmpty) return [replaceAt(v.first, depth - 1), ...v.skip(1)];
+    if (v is Map && v.isNotEmpty) {
+      final k = v.keys.first;
+      return {...v, k: replaceAt(v[k], depth - 1)};
+    }
+    return null;
+  }
+
+  var v = base[key];
+  for (var depth = 1; (v is List && v.isNotEmpty) || (v is Map && v.isNotEmpty); depth++) {
+    yield ('$key${'[0]' * depth}=${_show(junk)}', {...base, key: replaceAt(base[key], depth)});
+    v = v is List ? v.first : (v as Map).values.first;
+  }
+}
 
 /// Valores inválidos jogados em cada campo. `_missing` = remover a chave.
 const _missing = #missing;
@@ -139,8 +179,9 @@ String _show(Object? v) => v == _missing ? '<missing>' : jsonEncode(v);
 const _nullableKeys = {
   'Scalars': {'iN', 'dN', 'nN', 'bN', 'sN', 'dtN', 'uN', 'duN', 'biN', 'byN', 'cN', 'oN'},
   'Lists': {'nullableList'},
-  'Sets': <String>{},
-  'Maps': <String>{},
+  'Sets': {'nullableSet'},
+  'Maps': {'nullableMap'},
+  'Nested': {'deep'},
 };
 
 void main() {
@@ -226,15 +267,21 @@ void main() {
       test('junk in every field: never throws, no duplicates, validate == safe', () {
         final problems = <String>[];
         final base = m.samples.first;
-        for (final key in base.keys) {
-          for (final junk in _junk) {
-            final j = {...base};
-            if (junk == _missing) {
-              j.remove(key);
-            } else {
-              j[key] = junk;
-            }
-            final where = '$key=${_show(junk)}';
+        // Cada caso troca um valor por lixo: o campo inteiro ou, em
+        // coleções, o primeiro item/valor de cada nível (aninhados inclusos).
+        final cases = [
+          for (final key in base.keys)
+            for (final junk in _junk) ...[
+              (junk == _missing ? '$key' : '$key=${_show(junk)}', {
+                ...base,
+                key: junk,
+              }..removeWhere((k, v) => k == key && v == _missing)),
+              if (junk != _missing)
+                for (final (path, j) in _inner(base, key, junk)) (path, j),
+            ],
+        ];
+        for (final (where, j) in cases) {
+          {
 
             List<EasyIssue> validated;
             try {

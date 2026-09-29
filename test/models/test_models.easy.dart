@@ -371,23 +371,21 @@ Order orderFromJson(Map<String, dynamic> json) {
     createdAt: TmDateMs.fromJson(json['createdAt']),
     buyerRole: TmRole.values.byName(json['buyerRole'] as String),
     shipping: addressFromJson(json['shipping'] as Map<String, dynamic>),
-    items: (Map<dynamic, dynamic>.from(json['items'] as Map)).entries.fold(
-      <int, Product>{},
-      (acc, entry) {
-        final k = (entry.key is int
-            ? (entry.key as int)
-            : (entry.key is num
-                  ? (entry.key as num).toInt()
-                  : int.parse(entry.key as String)));
-        final v = productFromJson(
-          Map<String, dynamic>.from(entry.value as Map),
-        );
-        acc[k] = v;
-        return acc;
-      },
-    ),
+    items: (Map<dynamic, dynamic>.from(json['items'] as Map)).entries
+        .fold<Map<int, Product>>(<int, Product>{}, (acc, entry) {
+          final k = (entry.key is int
+              ? (entry.key as int)
+              : (entry.key is num
+                    ? (entry.key as num).toInt()
+                    : int.parse(entry.key as String)));
+          final v = productFromJson(
+            Map<String, dynamic>.from(entry.value as Map),
+          );
+          acc[k] = v;
+          return acc;
+        }),
     quantities: (Map<dynamic, dynamic>.from(json['quantities'] as Map)).entries
-        .fold(<String, int>{}, (acc, entry) {
+        .fold<Map<String, int>>(<String, int>{}, (acc, entry) {
           final k = (entry.key is String
               ? (entry.key as String)
               : entry.key.toString());
@@ -411,7 +409,7 @@ Order orderFromJson(Map<String, dynamic> json) {
         const <String>{},
     statusHistory: (Map<dynamic, dynamic>.from(json['statusHistory'] as Map))
         .entries
-        .fold(<String, TmStatus>{}, (acc, entry) {
+        .fold<Map<String, TmStatus>>(<String, TmStatus>{}, (acc, entry) {
           final k = (entry.key is String
               ? (entry.key as String)
               : entry.key.toString());
@@ -419,17 +417,15 @@ Order orderFromJson(Map<String, dynamic> json) {
           acc[k] = v;
           return acc;
         }),
-    scores: (Map<dynamic, dynamic>.from(json['scores'] as Map)).entries.fold(
-      <String, int>{},
-      (acc, entry) {
-        final k = (entry.key is String
-            ? (entry.key as String)
-            : entry.key.toString());
-        final v = TmIntAny.fromJson(entry.value);
-        acc[k] = v;
-        return acc;
-      },
-    ),
+    scores: (Map<dynamic, dynamic>.from(json['scores'] as Map)).entries
+        .fold<Map<String, int>>(<String, int>{}, (acc, entry) {
+          final k = (entry.key is String
+              ? (entry.key as String)
+              : entry.key.toString());
+          final v = TmIntAny.fromJson(entry.value);
+          acc[k] = v;
+          return acc;
+        }),
   );
 }
 
@@ -4035,7 +4031,10 @@ mixin ApiResponseSerializer<T> {
   }
 }
 
-List<EasyIssue> apiResponseValidate<T>(Map<String, dynamic> json) {
+List<EasyIssue> apiResponseValidate<T>(
+  Map<String, dynamic> json, {
+  List<EasyIssue> Function(Object? json)? validateT,
+}) {
   final issues = <EasyIssue>[];
   if (!json.containsKey('data')) {
     issues.add(
@@ -4048,6 +4047,19 @@ List<EasyIssue> apiResponseValidate<T>(Map<String, dynamic> json) {
   }
   if (json.containsKey('data')) {
     final v = json['data'];
+    if (v != null) {
+      if (validateT != null) {
+        for (final n0 in validateT(v)) {
+          issues.add(
+            EasyIssue(
+              path: 'data' + n0.path,
+              code: n0.code,
+              message: n0.message,
+            ),
+          );
+        }
+      }
+    }
   }
   if (!json.containsKey('statusCode')) {
     issues.add(
@@ -4225,7 +4237,10 @@ mixin PageResponseSerializer<T> {
   }
 }
 
-List<EasyIssue> pageResponseValidate<T>(Map<String, dynamic> json) {
+List<EasyIssue> pageResponseValidate<T>(
+  Map<String, dynamic> json, {
+  List<EasyIssue> Function(Object? json)? validateT,
+}) {
   final issues = <EasyIssue>[];
   if (!json.containsKey('items')) {
     issues.add(
@@ -4266,7 +4281,19 @@ List<EasyIssue> pageResponseValidate<T>(Map<String, dynamic> json) {
               message: 'Null value not allowed.',
             ),
           );
-        } else {}
+        } else {
+          if (validateT != null) {
+            for (final n0 in validateT(e)) {
+              issues.add(
+                EasyIssue(
+                  path: 'items' + '[' + i.toString() + ']' + n0.path,
+                  code: n0.code,
+                  message: n0.message,
+                ),
+              );
+            }
+          }
+        }
       }
     }
   }
@@ -4307,6 +4334,19 @@ List<EasyIssue> pageResponseValidate<T>(Map<String, dynamic> json) {
   }
   if (json.containsKey('highlight')) {
     final v = json['highlight'];
+    if (v != null) {
+      if (validateT != null) {
+        for (final n0 in validateT(v)) {
+          issues.add(
+            EasyIssue(
+              path: 'highlight' + n0.path,
+              code: n0.code,
+              message: n0.message,
+            ),
+          );
+        }
+      }
+    }
   }
   return issues;
 }
@@ -4452,7 +4492,11 @@ mixin PairSerializer<A, B extends Object> {
   }
 }
 
-List<EasyIssue> pairValidate<A, B extends Object>(Map<String, dynamic> json) {
+List<EasyIssue> pairValidate<A, B extends Object>(
+  Map<String, dynamic> json, {
+  List<EasyIssue> Function(Object? json)? validateA,
+  List<EasyIssue> Function(Object? json)? validateB,
+}) {
   final issues = <EasyIssue>[];
   if (!json.containsKey('first')) {
     issues.add(
@@ -4465,6 +4509,19 @@ List<EasyIssue> pairValidate<A, B extends Object>(Map<String, dynamic> json) {
   }
   if (json.containsKey('first')) {
     final v = json['first'];
+    if (v != null) {
+      if (validateA != null) {
+        for (final n0 in validateA(v)) {
+          issues.add(
+            EasyIssue(
+              path: 'first' + n0.path,
+              code: n0.code,
+              message: n0.message,
+            ),
+          );
+        }
+      }
+    }
   }
   if (!json.containsKey('second')) {
     issues.add(
@@ -4477,6 +4534,19 @@ List<EasyIssue> pairValidate<A, B extends Object>(Map<String, dynamic> json) {
   }
   if (json.containsKey('second')) {
     final v = json['second'];
+    if (v != null) {
+      if (validateB != null) {
+        for (final n0 in validateB(v)) {
+          issues.add(
+            EasyIssue(
+              path: 'second' + n0.path,
+              code: n0.code,
+              message: n0.message,
+            ),
+          );
+        }
+      }
+    }
   }
   return issues;
 }
@@ -5266,7 +5336,10 @@ mixin StrictEnvelopeSerializer<T> {
   }
 }
 
-List<EasyIssue> strictEnvelopeValidate<T>(Map<String, dynamic> json) {
+List<EasyIssue> strictEnvelopeValidate<T>(
+  Map<String, dynamic> json, {
+  List<EasyIssue> Function(Object? json)? validateT,
+}) {
   final issues = <EasyIssue>[];
   if (!json.containsKey('payload')) {
     issues.add(
@@ -5279,6 +5352,19 @@ List<EasyIssue> strictEnvelopeValidate<T>(Map<String, dynamic> json) {
   }
   if (json.containsKey('payload')) {
     final v = json['payload'];
+    if (v != null) {
+      if (validateT != null) {
+        for (final n0 in validateT(v)) {
+          issues.add(
+            EasyIssue(
+              path: 'payload' + n0.path,
+              code: n0.code,
+              message: n0.message,
+            ),
+          );
+        }
+      }
+    }
   }
   if (!json.containsKey('version')) {
     issues.add(

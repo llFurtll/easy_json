@@ -42,7 +42,7 @@ class MapStrategy implements TypeStrategy {
         .replaceAll('{KEY_PARSE_FAST}', keyFast)
         .replaceAll('{VAL_PARSE}', valParse);
 
-    return code;
+    return c.isNullable ? '${c.jsonAccessor} == null ? null : $code' : code;
   }
 
   @override
@@ -53,7 +53,7 @@ class MapStrategy implements TypeStrategy {
     final kT = displayNonNull(K);
     final vT = displayWithNull(V);
 
-    final typedEmpty = 'const <$kT, $vT>{}';
+    final typedEmpty = '${_constFor(V)}<$kT, $vT>{}';
     final fb = c.isNullable ? 'null' : typedEmpty;
 
     // Conversor de CAMPO no modo safe
@@ -106,7 +106,11 @@ class MapStrategy implements TypeStrategy {
 
     // Se há conversor de valor, não validamos tipo de valor (terceirizamos).
     if (c.valueFromJson == null) {
-      if (isEasyJsonClass(V)) {
+      if (_viaCodec(V)) {
+        sb.writeln(
+          "for (final e in v.entries) { ${_cValidate(V, 'e.value', "${c.pathExpr} + '.' + e.key.toString()")} }",
+        );
+      } else if (isEasyJsonClass(V)) {
         final cn = displayNonNull(V);
         final vn = _lcFirst(cn);
         sb.writeln("""
@@ -185,6 +189,13 @@ class MapStrategy implements TypeStrategy {
     final k = stringKeys ? 'k' : 'k.toString()';
     final q = c.isNullable ? '?' : '';
 
+    if (c.valueToJson == null && _viaCodec(V)) {
+      final enc = _cEncode(V, 'v');
+      return stringKeys && enc == 'v'
+          ? c.instanceAccess
+          : "${c.instanceAccess}$q.map((k,v)=>MapEntry($k, $enc))";
+    }
+
     if (isEasyJsonClass(V)) {
       final vConv = c.valueToJson != null
           ? "(k,v)=>MapEntry($k, ${c.valueToJson!}(v.toJson()))"
@@ -218,12 +229,7 @@ class MapStrategy implements TypeStrategy {
 
 // ====== Parsers auxiliares (itens/valores) ======
 String _fastItemParse(DartType item) {
-  if (item is TypeParameterType) {
-    final t = displayNonNull(item);
-    return displayWithNull(item).endsWith('?')
-        ? "e == null ? null : fromJson$t(e)"
-        : "fromJson$t(e)";
-  }
+  if (_viaCodec(item)) return _cFast(item, 'e');
   final rs = _richScalar(item);
   if (rs != null) return _fastRich(rs, item, 'e');
   if (isEasyJsonClass(item)) {
@@ -264,24 +270,8 @@ String _safeItemParse(DartType item, FieldContext c, {bool indexPath = false}) {
       ? "${c.pathExpr} + '[' + entry.key.toString() + ']'"
       : c.pathExpr;
 
-  // ===== Parâmetro de tipo (T) =====
-  if (item is TypeParameterType) {
-    final t = displayNonNull(item);
-    // Item não-nulo: sem fallback possível para `T`, depende do conversor.
-    if (!displayWithNull(item).endsWith('?')) return "fromJson$t(entry.value)";
-    return """
-      (() {
-        final v = entry.value;
-        if (v == null) return null;
-        try {
-          return fromJson$t(v);
-        } catch (_) {
-          onIssue?.call(EasyIssue(path: $pathPrefix, code: 'type_mismatch', message: 'Could not convert value to $t.'));
-          return null;
-        }
-      })()
-    """;
-  }
+  // ===== T, coleções aninhadas, classes genéricas =====
+  if (_viaCodec(item)) return _cSafe(item, 'entry.value', pathPrefix);
 
   final rs = _richScalar(item);
   if (rs != null) {
@@ -412,6 +402,7 @@ String _safeItemParse(DartType item, FieldContext c, {bool indexPath = false}) {
 }
 
 String _fastValueParse(DartType V, FieldContext c) {
+  if (c.valueFromJson == null && _viaCodec(V)) return _cFast(V, 'entry.value');
   if (isEasyJsonClass(V)) {
     final cn = displayNonNull(V);
     final vn = _lcFirst(cn);
@@ -454,6 +445,9 @@ String _safeValueParse(DartType V, FieldContext c, {bool keyPath = false}) {
   final pathPrefix = keyPath
       ? "${c.pathExpr} + '.' + k.toString()"
       : c.pathExpr;
+  if (c.valueFromJson == null && _viaCodec(V)) {
+    return _cSafe(V, 'entry.value', pathPrefix);
+  }
   if (isEasyJsonClass(V)) {
     final cn = displayNonNull(V);
     final vn = _lcFirst(cn);
@@ -553,6 +547,9 @@ String _lcFirst(String s) =>
     s.isEmpty ? s : (s[0].toLowerCase() + s.substring(1));
 
 String _safeItemParseForSet(DartType item, FieldContext c) {
+  if (_viaCodec(item)) {
+    return _cSafe(item, 'entry.value', "${c.pathExpr} + '[' + entry.key.toString() + ']'");
+  }
   // Item null num Set de tipo não-nullable: null_not_allowed (o mesmo código
   // que o validate usa), em vez do type_mismatch que cada ramo daria.
   final body = _safeItemParseForSetBody(item, c);

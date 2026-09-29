@@ -135,6 +135,45 @@ EasyValidationException: 3 issue(s) found
     });
   });
 
+  test('Generic classes as fields and superclasses', () {
+    final json = {
+      'results': {
+        'items': [
+          {'name': 'Ana', 'age': 30},
+        ],
+        'total': 1,
+      },
+      'byTeam': {
+        'core': [
+          {'name': 'Bia', 'age': 25},
+        ],
+      },
+    };
+    final search = userSearchFromJson(json); // no converters to pass
+    expect(search.results.items.single.name, 'Ana');
+    expect(search.byTeam['core']!.single.age, 25);
+    expect(search.toJson(), json);
+
+    final issues = userSearchValidate({
+      ...json,
+      'results': {
+        'items': [
+          {'name': 'Ana', 'age': 'x'},
+        ],
+        'total': 1,
+      },
+    });
+    expect(issues.map((i) => i.path), ['results.items[0].age']);
+
+    final page = userPageFromJson({
+      'items': [
+        {'name': 'Ana', 'age': 30},
+      ],
+    });
+    expect(page.items, isA<List<User>>());
+    expect(page.items.single.name, 'Ana');
+  });
+
   test('Unions', () {
     final posts = [
       {'type': 'text', 'content': 'Hello'},

@@ -49,7 +49,7 @@ class EasyJsonGenerator extends Generator {
 
       // Coleta tipos referenciados nos campos
       final referenced = <ClassElement>{};
-      for (final f in _getAllFields(clazz)) {
+      for (final (f, fieldType) in _getAllFields(clazz)) {
         // Adiciona imports de conversores e validadores customizados
         final easyConvert = _easyConvertChecker.firstAnnotationOfExact(f);
         if (easyConvert != null) {
@@ -62,7 +62,7 @@ class EasyJsonGenerator extends Generator {
         }
 
         // Coleta imports dos tipos dos campos
-        _collectReferencedClasses(f.type, referenced);
+        _collectReferencedClasses(fieldType, referenced);
       }
 
       // Bounds dos parâmetros de tipo (`class X<T extends Base>`) também
@@ -164,10 +164,11 @@ class EasyJsonGenerator extends Generator {
     // === Cria FieldContexts ===
     final fields = _getAllFields(clazz).toList();
     final contexts = [
-      for (final f in fields)
+      for (final (f, type) in fields)
         FieldContext(
           enclosingClass: clazz,
           element: f,
+          type: type,
           classIncludeIfNull: classIncludeIfNull,
           classCaseStyle: classCaseStyle,
         ),
@@ -176,7 +177,7 @@ class EasyJsonGenerator extends Generator {
     // === Genéricos / strict ===
     final generics = _Generics(clazz);
     for (final c in contexts) {
-      _checkGenericSupport(c, generics);
+      _checkGenericSupport(c);
       // fallback / itemFallback / enumFallback inválidos viram erro de build.
       checkEasyKeyValues(c);
     }
@@ -272,8 +273,9 @@ class EasyJsonGenerator extends Generator {
     Method mValidate() => Method(
       (b) => b
         ..name = '${varName}Validate'
-        // Genérico só para que `T` esteja em escopo caso alguma regra o
-        // mencione; nenhum conversor é necessário para validar.
+        // Validar `T` por dentro só é possível com um validador para ele
+        // (`validateT`, opcional). O gerador passa um quando a classe é
+        // usada como campo com o tipo conhecido (`Page<User>`).
         ..types.addAll(generics.typeRefs)
         ..returns = refer('List<EasyIssue>')
         ..requiredParameters.add(
@@ -283,6 +285,7 @@ class EasyJsonGenerator extends Generator {
               ..type = refer('Map<String, dynamic>'),
           ),
         )
+        ..optionalParameters.addAll(generics.validateParams)
         ..body = Code(validateBuf.toString()),
     );
 
@@ -596,59 +599,26 @@ class EasyJsonGenerator extends Generator {
     return buf.toString();
   }
 
-  /// Garante que o gerador sabe lidar com o tipo do campo quando há genéricos
-  /// envolvidos. Casos não suportados viram um erro claro no build, em vez de
-  /// gerar código que não compila.
-  void _checkGenericSupport(FieldContext c, _Generics generics) {
-    final t = c.type;
-    final where =
-        '`${c.enclosingClass.displayName}.${c.name}` (`${t.getDisplayString()}`)';
-
-    if (_usesGenericEasyJsonClass(t)) {
-      throw InvalidGenerationSourceError(
-        'Field $where uses a generic @EasyJson class as its type, '
-        'which is not supported yet.',
-        element: c.element,
-      );
+  /// Parâmetros de tipo só são suportados onde o gerador sabe repassar o
+  /// conversor: `T` direto ou dentro de List / Set / Map e de classes
+  /// @EasyJson genéricas. Fora disso (ex.: `Future<T>`), erro claro no build
+  /// em vez de código que não compila.
+  void _checkGenericSupport(FieldContext c) {
+    bool ok(DartType t) {
+      if (!containsTypeParameter(t) || t is TypeParameterType) return true;
+      final it = t as InterfaceType;
+      final container = const {'List', 'Set', 'Map'}.contains(it.element.name) ||
+          isEasyJsonClass(it);
+      return container && it.typeArguments.every(ok);
     }
 
-    final DartType? typeParam = t is TypeParameterType
-        ? t
-        : (c.isList && c.listItemType is TypeParameterType ? c.listItemType : null);
-
-    if (typeParam != null) {
-      if (!generics.names.contains(displayNonNull(typeParam))) {
-        throw InvalidGenerationSourceError(
-          'Field $where uses a type parameter that is not declared by '
-          '`${c.enclosingClass.displayName}` (e.g. a field inherited from a '
-          'generic superclass), which is not supported yet.',
-          element: c.element,
-        );
-      }
-      return;
-    }
-
-    if (_containsTypeParameter(t)) {
-      throw InvalidGenerationSourceError(
-        'Field $where: generic fields are only supported as `T`, `T?` or '
-        '`List<T>` for now.',
-        element: c.element,
-      );
-    }
-  }
-
-  bool _containsTypeParameter(DartType t) {
-    if (t is TypeParameterType) return true;
-    if (t is InterfaceType) return t.typeArguments.any(_containsTypeParameter);
-    return false;
-  }
-
-  /// `ApiResponse<User>`, `List<ApiResponse<User>>`, ... — uma classe
-  /// @EasyJson genérica usada como tipo de campo.
-  bool _usesGenericEasyJsonClass(DartType t) {
-    if (t is! InterfaceType) return false;
-    if (t.typeArguments.isNotEmpty && isEasyJsonClass(t)) return true;
-    return t.typeArguments.any(_usesGenericEasyJsonClass);
+    if (c.convertFromJson != null || ok(c.type)) return;
+    throw InvalidGenerationSourceError(
+      'Field `${c.enclosingClass.displayName}.${c.name}` '
+      '(`${c.type.getDisplayString()}`): type parameters are supported as '
+      '`T` / `T?` or inside List, Set, Map and @EasyJson classes.',
+      element: c.element,
+    );
   }
 
   // ===== infra =====
@@ -692,21 +662,25 @@ class EasyJsonGenerator extends Generator {
     }
   }
 
-  Iterable<FieldElement> _getAllFields(ClassElement clazz) {
-    final fieldsMap = <String, FieldElement>{};
+  /// Campos da classe e das superclasses, cada um com o tipo visto por
+  /// [clazz]: um `List<T> items` herdado de `Page<User>` vira `List<User>`.
+  Iterable<(FieldElement, DartType)> _getAllFields(ClassElement clazz) {
+    final fieldsMap = <String, (FieldElement, DartType)>{};
 
     // 1. Adiciona campos das superclasses (ignorando Object), do topo para a base.
     // Usamos o .reversed para que as classes mais altas na hierarquia sejam processadas primeiro.
+    // `allSupertypes` já vem com os argumentos de tipo em termos de [clazz].
     for (final supertype in clazz.allSupertypes.reversed) {
       if (supertype.isDartCoreObject) continue;
       for (final f in supertype.element.fields.where((f) => !f.isStatic)) {
-        fieldsMap[f.name!] = f;
+        final type = supertype.getGetter(f.name!)?.returnType ?? f.type;
+        fieldsMap[f.name!] = (f, type);
       }
     }
 
     // 2. Adiciona campos da classe atual (sobrescrevendo atributos pai, caso haja um override)
     for (final f in clazz.fields.where((f) => !f.isStatic)) {
-      fieldsMap[f.name!] = f;
+      fieldsMap[f.name!] = (f, f.type);
     }
 
     return fieldsMap.values;
@@ -853,6 +827,18 @@ class _Generics {
         (p) => p
           ..name = 'fromJson$t'
           ..type = refer('$t Function(Object? json)'),
+      ),
+  ];
+
+  /// `{List<EasyIssue> Function(Object? json)? validateT}` — issues com o
+  /// path relativo ao valor (`''`, `'.name'`, `'[0]'`).
+  List<Parameter> get validateParams => [
+    for (final t in names)
+      Parameter(
+        (p) => p
+          ..named = true
+          ..name = 'validate$t'
+          ..type = refer('List<EasyIssue> Function(Object? json)?'),
       ),
   ];
 

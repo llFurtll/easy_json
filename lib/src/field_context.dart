@@ -18,9 +18,12 @@ class FieldContext {
     required this.element,
     required this.classIncludeIfNull,
     this.classCaseStyle,
+    DartType? type,
   }) : name = element.displayName,
-    type = element.type,
-    isNullable = _isNullableType(element.type),
+    // Campo herdado de superclasse genérica: o tipo visto pela subclasse
+    // (`List<User>`, não o `List<T>` declarado).
+    type = type ?? element.type,
+    isNullable = _isNullableType(type ?? element.type),
     isIgnored = _easyIgnoreChecker.hasAnnotationOf(element),
     easyPath = _easyPathChecker.firstAnnotationOfExact(element)?.getField('path')?.toStringValue(),
     jsonKey =
@@ -196,6 +199,10 @@ bool isEasyJsonClass(DartType t) =>
 );
 
 bool isEnumType(DartType t) => t.element is EnumElement;
+
+bool containsTypeParameter(DartType t) =>
+    t is TypeParameterType ||
+    (t is InterfaceType && t.typeArguments.any(containsTypeParameter));
 
 DartType? asSetItem(DartType t) {
   if (t is InterfaceType &&

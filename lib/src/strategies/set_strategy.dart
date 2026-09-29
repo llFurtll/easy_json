@@ -13,7 +13,7 @@ class SetStrategy implements TypeStrategy {
         .replaceAll('{ITEM_PARSE}', itemParse);
 
     // quando o campo é não-nulo, garanta retorno não-nulo
-    return c.isNullable ? expr : '($expr) ?? const <$itemT>{}';
+    return c.isNullable ? expr : '($expr) ?? ${_constFor(item)}<$itemT>{}';
   }
 
   @override
@@ -21,7 +21,7 @@ class SetStrategy implements TypeStrategy {
     final item = c.setItemType!;
     final itemT = displayWithNull(item); // ex.: String ou String?
     final itemNN = displayNonNull(item); // ex.: String (sempre non-null)
-    final fb = c.isNullable ? 'null' : 'const <$itemT>{}';
+    final fb = c.isNullable ? 'null' : '${_constFor(item)}<$itemT>{}';
 
     // Parser específico para Set: retorna NULL quando inválido (e registra issue)
     final parse = _safeItemParseForSet(item, c);
@@ -65,7 +65,9 @@ class SetStrategy implements TypeStrategy {
   """);
 
     final rs = _richScalar(item);
-    if (rs != null) {
+    if (_viaCodec(item)) {
+      sb.writeln(_cValidateNonNull(item, 'e', "${c.pathExpr} + '[' + i.toString() + ']'"));
+    } else if (rs != null) {
       sb.writeln(_validateRich(rs, 'e', "${c.pathExpr} + '[' + i.toString() + ']'"));
     } else if (isEasyJsonClass(item)) {
       final cn = displayNonNull(item);
@@ -82,8 +84,13 @@ class SetStrategy implements TypeStrategy {
     """);
     } else if (isEnumType(item)) {
       final en = displayNonNull(item);
+      // Como no fromJsonSafe do Set, o índice do enum também é aceito.
       sb.writeln("""
-            if (e is! String) {
+            if (e is int) {
+              if (e < 0 || e >= $en.values.length) {
+                issues.add(EasyIssue(path: ${c.pathExpr} + '[' + i.toString() + ']', code: 'invalid_enum_index', message: 'Enum index out of range.'));
+              }
+            } else if (e is! String) {
               issues.add(EasyIssue(path: ${c.pathExpr} + '[' + i.toString() + ']', code: 'type_mismatch', message: 'Expected String with enum name.'));
             } else {
               final ok = $en.values.any((x) => x.name == e);
@@ -111,6 +118,9 @@ class SetStrategy implements TypeStrategy {
   @override
   String toJson(FieldContext c) {
     final item = c.setItemType!;
+    if (_viaCodec(item)) {
+      return "${c.instanceAccess}${c.isNullable ? '?' : ''}.map((e)=>${_cEncode(item, 'e')}).toList()";
+    }
     final rich = _richEncodeItem(item);
     if (rich != null) {
       return "${c.instanceAccess}${c.isNullable ? '?' : ''}.map((e)=>$rich).toList()";

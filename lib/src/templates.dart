@@ -53,7 +53,7 @@ const kMapSafeTpl = r"""
 const kMapFastTpl = """
 (Map<dynamic,dynamic>.from({VALUE} as Map))
   .entries
-  .fold(<{K_T}, {V_T}>{}, (acc, entry) {
+  .fold<Map<{K_T}, {V_T}>>(<{K_T}, {V_T}>{}, (acc, entry) {
     final k = {KEY_PARSE_FAST};
     final v = {VAL_PARSE};
     acc[k] = v;

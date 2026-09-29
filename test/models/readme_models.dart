@@ -55,6 +55,24 @@ class PageResponse<T> with PageResponseSerializer<T> {
   PageResponse({required this.items, required this.total});
 }
 
+@EasyJson()
+class UserSearch with UserSearchSerializer {
+  final PageResponse<User> results;
+  final Map<String, List<User>> byTeam;
+
+  UserSearch({required this.results, required this.byTeam});
+}
+
+class Page<T> {
+  final List<T> items;
+  Page({required this.items});
+}
+
+@EasyJson()
+class UserPage extends Page<User> with UserPageSerializer {
+  UserPage({required super.items});
+}
+
 // ---- Union ----
 @EasyJson()
 @EasyUnion(

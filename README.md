@@ -69,8 +69,8 @@ Null fields are left out of `toJson` by default (see `includeIfNull`).
 | `Duration` | number of **microseconds** | Matches `Duration.inMicroseconds`, no precision lost. |
 | `BigInt` | decimal string | JSON numbers can't safely carry big integers (a JS/web runtime only keeps exact integers up to 2^53). `fromJsonSafe` also accepts a plain number. |
 | `Uint8List` | Base64 string | |
-| `List<T>`, `Set<T>` | array | `T` can be any type in this table. |
-| `Map<String, V>`, `Map<int, V>` | object | Keys are always strings in JSON; `int` keys are converted both ways. |
+| `List<T>`, `Set<T>` | array | `T` can be any type in this table, collections included (`List<List<int>>`). |
+| `Map<String, V>`, `Map<int, V>` | object | `V` can be any type in this table. Keys are always strings in JSON; `int` keys are converted both ways. |
 | Other `@EasyJson` classes | object | Nested models, including lists and maps of them. |
 | Type parameters (`T`) | whatever your converter returns | See [Generic classes](#generic-classes). |
 
@@ -235,11 +235,28 @@ final out = page.toJson((user) => user.toJson());
 
 One `PageResponse<T>` serves every paginated endpoint, instead of a `UserPage`, `ProductPage`, ... per model. With several type parameters you pass one converter each, in declaration order (`pairFromJson(json, fromJsonA, fromJsonB)`); bounds like `<T extends Base>` are preserved; the companion class and list helpers take the same converters.
 
-**Current limitations** — these fail at build time with a clear message instead of generating broken code:
+`T` can also appear inside collections (`Set<T>`, `Map<String, T>`, `List<List<T>>`). When a generic class is used as a field of another model, the type argument is known, so the generator writes the converters for you:
 
-*   Generic fields can be `T`, `T?` or `List<T>`. `Set<T>`, `Map<K, T>` and nested collections like `List<List<T>>` aren't supported yet.
-*   A generic `@EasyJson` class can't be used as another field's type yet (e.g. `final PageResponse<User> page;`).
-*   Generic `@EasyUnion` classes and fields inherited from a generic superclass aren't supported yet.
+```dart
+@EasyJson()
+class UserSearch with UserSearchSerializer {
+  final PageResponse<User> results;
+  final Map<String, List<User>> byTeam;
+
+  UserSearch({required this.results, required this.byTeam});
+}
+
+final search = userSearchFromJson(json); // no converters to pass
+```
+
+Since the types are known, `validate` (and so `fromJsonSafe` and [strict mode](#strict-mode)) also checks inside `results`, with full paths like `results.items[0].name`.
+
+Extending a generic class works too; see [Inheritance](#inheritance).
+
+**Limitations:**
+
+*   Type parameters work as `T` / `T?` or inside `List`, `Set`, `Map` values and generic `@EasyJson` classes. Anything else (e.g. `Future<T>`) needs [`@EasyConvert`](#easyconvert), and generic `@EasyUnion` classes aren't supported. Both fail at build time with a clear message.
+*   Called directly, `pageResponseValidate(json)` can't look inside `T` values, since only your converter knows what `T` is. It takes an optional `validateT` (a function returning the issues of one value) if you want that.
 *   In `fromJsonSafe`, a nullable `T?` whose converter throws is reported and becomes `null`; a non-nullable `T` has no possible fallback, so it's only as safe as the converter you pass.
 
 ## Unions
@@ -308,6 +325,21 @@ print(UserModel(emailAddress: 'a@b.com').toJson()); // {email_address: a@b.com}
 ```
 
 To annotate an inherited field (a custom key, a validation rule, ...), `@override` it in the subclass and annotate it there.
+
+A generic superclass is fine: inherited fields use the subclass's type argument, so no converters are needed.
+
+```dart
+class Page<T> {
+  final List<T> items;
+  Page({required this.items});
+}
+
+@EasyJson()
+class UserPage extends Page<User> with UserPageSerializer {
+  UserPage({required super.items});
+}
+// userPageFromJson(json).items is a List<User>
+```
 
 ## Annotation reference
 
@@ -484,7 +516,7 @@ plugins:
 `dart_easy_json` follows [semantic versioning](https://semver.org) since `1.0.0`. These are part of the public API — breaking any of them requires a major version:
 
 *   The annotations and their parameters: `@EasyJson`, `@EasyKey`, `@EasyValidate`, `@EasyUnion`, `@EasyConvert`, `@EasyMapKey`, `@EasyIgnore`, `@EasyPath`, `CaseStyle`, `EasyFormat`.
-*   The names of generated code: `${x}FromJson`, `${x}ToJson`, `${x}Validate`, `${x}FromJsonSafe`, `${x}FromJsonList`, `${x}FromJsonSafeList`, `${x}ToJsonList`, the `${Class}Serializer` mixin, the `${Class}Json` companion class and, for generic classes, the `fromJson${T}` / `toJson${T}` converter parameters.
+*   The names of generated code: `${x}FromJson`, `${x}ToJson`, `${x}Validate`, `${x}FromJsonSafe`, `${x}FromJsonList`, `${x}FromJsonSafeList`, `${x}ToJsonList`, the `${Class}Serializer` mixin, the `${Class}Json` companion class and, for generic classes, the `fromJson${T}` / `toJson${T}` converter parameters and `validate${T}`.
 *   The shape of `EasyIssue` (`path` / `code` / `message`), the [issue codes](#issue-codes) and `EasyValidationException`.
 *   The public exports of `package:dart_easy_json/easy_json.dart` and `package:dart_easy_json/runtime.dart`.
 

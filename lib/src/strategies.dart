@@ -22,3 +22,4 @@ part 'strategies/object_strategy.dart';
 part 'strategies/list_strategy.dart';
 part 'strategies/set_strategy.dart';
 part 'strategies/map_strategy.dart';
+part 'strategies/nested_codec.dart';

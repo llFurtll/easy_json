@@ -1,10 +1,10 @@
 part of '../strategies.dart';
 
 class ListStrategy implements TypeStrategy {
-  /// Lista vazia de fallback. `const <T>[]` é inválido quando o item é um
+  /// Lista vazia de fallback. `const <T>[]` é inválido quando o item usa um
   /// parâmetro de tipo, então nesse caso a lista não pode ser const.
   String _emptyList(DartType item) =>
-      '${item is TypeParameterType ? '' : 'const '}<${displayWithNull(item)}>[]';
+      '${_constFor(item)}<${displayWithNull(item)}>[]';
 
   @override
   String fromJson(FieldContext c) {
@@ -55,8 +55,8 @@ class ListStrategy implements TypeStrategy {
   """);
 
     final rs = _richScalar(item);
-    if (item is TypeParameterType) {
-      // O tipo real de `T` só é conhecido pelo conversor: nada a checar aqui.
+    if (_viaCodec(item)) {
+      sb.writeln(_cValidateNonNull(item, 'e', "${c.pathExpr} + '[' + i.toString() + ']'"));
     } else if (rs != null) {
       sb.writeln(_validateRich(rs, 'e', "${c.pathExpr} + '[' + i.toString() + ']'"));
     } else if (isEasyJsonClass(item)) {
@@ -103,12 +103,11 @@ class ListStrategy implements TypeStrategy {
   @override
   String toJson(FieldContext c) {
     final item = c.listItemType!;
-    if (item is TypeParameterType) {
-      final t = displayNonNull(item);
-      final conv = displayWithNull(item).endsWith('?')
-          ? "e == null ? null : toJson$t(e as $t)"
-          : "toJson$t(e)";
-      return "${c.instanceAccess}${c.isNullable ? '?' : ''}.map((e)=>$conv).toList()";
+    if (_viaCodec(item)) {
+      final enc = _cEncode(item, 'e');
+      return enc == 'e'
+          ? c.instanceAccess
+          : "${c.instanceAccess}${c.isNullable ? '?' : ''}.map((e)=>$enc).toList()";
     }
     final rich = _richEncodeItem(item);
     if (rich != null) {
