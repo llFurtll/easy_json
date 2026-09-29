@@ -476,7 +476,7 @@ analyzer:
 
 ```yaml
 plugins:
-  dart_easy_json_lints: ^0.1.0
+  dart_easy_json_lints: ^0.2.0
 ```
 
 ## API stability
