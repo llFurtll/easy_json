@@ -8,6 +8,7 @@ Generics without the "not supported yet" list, and collections inside collection
 *   The generated `xValidate` of a generic class takes an optional named `validateT` per type parameter, so `T` values can be validated too (that's what the generator passes for the fields above). Issues it returns have paths relative to the value (`''`, `'.name'`, `'[0]'`).
 *   **Fields inherited from a generic superclass** use the subclass's type argument: in `class UserPage extends Page<User>`, an inherited `List<T> items` is read and written as `List<User>`.
 *   Type parameters in unsupported places (e.g. `Future<T>`) still fail at build time with a clear message, unless the field has an `@EasyConvert`. Generic `@EasyUnion` classes are still not supported.
+*   README: points to [`dart_easy_json_lints`](https://pub.dev/packages/dart_easy_json_lints) 0.3, which catches annotation mistakes in the editor and adds a *Convert to @EasyJson model* assist.
 *   Fix: a nullable `Map` field (`Map<String, int>? m`) generated code that didn't compile.
 *   Fix: `validate` rejected enum indexes in a `Set<Enum>` that `fromJsonSafe` accepts; it now accepts them too (`invalid_enum_index` when out of range), like single enum fields.
 
